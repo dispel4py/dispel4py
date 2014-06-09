@@ -22,4 +22,4 @@ Installation
 
 The easiest way to install dispel4py is via pip:
 
-`sudo pip install --upgrade git+git://github.com/akrause2014/dispel4py.git#egg=dispel4py`
+`sudo pip install git+git://github.com/akrause2014/dispel4py.git#egg=dispel4py`
