@@ -5,4 +5,14 @@ Dispel4Py is a Python library used to describe abstract workflows for distribute
 
 Abstract dataflows described in Dispel4Py can be executed in numerous environments, for example using a Storm cluster. Thus Dispel4Py allows to construct workflows without particular knowledge of the specific context in which they are to be executed, granting them greater generic applicability.
 
+Dependencies: 
 
+- networkx
+
+If using the registry:
+
+- requests
+
+If using Storm as execution engine:
+
+- Python Storm available here: https://github.com/krux/python-storm
