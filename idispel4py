@@ -14,4 +14,4 @@
 #	 See the License for the specific language governing permissions and
 #	 limitations under the License.
 
-python -m verce.dispel4py "$@"
+python -m dispel4py.dispel4py "$@"
