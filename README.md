@@ -21,6 +21,6 @@ If using Storm as execution engine:
 Installation
 ------------
 
-The easiest way to install dispel4py is via pip:
+The easiest way to install dispel4py is via pip (https://pypi.python.org/pypi/pip):
 
 `sudo pip install git+git://github.com/akrause2014/dispel4py.git#egg=dispel4py`
