@@ -11,15 +11,15 @@ Thus Dispel4Py allows to construct workflows without particular knowledge of the
 
 Let's start with a short example::
 
-	from verce.workflow_graph import WorkflowGraph
+	from dispel4py.workflow_graph import WorkflowGraph
 
 	# Connect to a remote registry
-	from verce import registry
+	from dispel4py import registry
 	reg = registry.initRegistry()
 
 	# Import existing processing elements from the registry
-	from eu.verce.test.RandomWordProducer import RandomWordProducer
-	from eu.verce.test.Filter import RandomFilter
+	from dispel4py.test.RandomWordProducer import RandomWordProducer
+	from dispel4py.test.Filter import RandomFilter
 
 	# Create the components of the workflow graph
 	words = RandomWordProducer()
@@ -45,7 +45,7 @@ We will introduce these concepts in more depth in the following chapters.
 **Processing Elements**
 	A processing element (PE) is a computational activity which encapsulates an algorithm, services and other data transformation processes — as such, PEs represent the basic computational blocks of any Dispel4Py workflow. 
  	Users can import existing processing elements from a remote registry, or register new PEs, either by writing new ones or by creating compositions of existing PEs.
-	A Dispel4Py processing element has a specific structure: a class that extends :py:class:`verce.GenericPE.GenericPE` and overrides the :py:func:`~verce.GenericPE.GenericPE.process` method. In addition, a PE must indicate its specification as a graph node: 
+	A Dispel4Py processing element has a specific structure: a class that extends :py:class:`dispel4py.GenericPE.GenericPE` and overrides the :py:func:`~dispel4py.GenericPE.GenericPE.process` method. In addition, a PE must indicate its specification as a graph node: 
 	 * The names of inputs and outputs
 	 * The input types that are consumed by the PE
 	 * The output types that are produced by the PE

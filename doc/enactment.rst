@@ -50,11 +50,11 @@ where ``<wait time>`` is the time that Storm waits between deactivation and shut
 Testing the Storm topology in local mode
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To test the topology in local mode, i.e. to run it on the client machine, change to the temporary directory to compile and run the Java client ``eu.verce.storm.ThriftSubmit``. Make sure that the Storm distribution jars are on the classpath and additionally the directory ``<temp dir>/resources/`` when running the client. For example::
+To test the topology in local mode, i.e. to run it on the client machine, change to the temporary directory to compile and run the Java client ``dispel4py.storm.ThriftSubmit``. Make sure that the Storm distribution jars are on the classpath and additionally the directory ``<temp dir>/resources/`` when running the client. For example::
 
     $ cd <temp dir>
-    $ javac -cp .:$STORM_HOME/lib/*:$STORM_HOME/storm-0.8.2.jar eu/verce/storm/ThriftSubmit.java
-    $ java -cp .:$STORM_HOME/lib/*:$STORM_HOME/storm-0.8.2.jar:./resources/ eu.verce.storm.ThriftSubmit topology.thrift <topology name>
+    $ javac -cp .:$STORM_HOME/lib/*:$STORM_HOME/storm-0.8.2.jar dispel4py/storm/ThriftSubmit.java
+    $ java -cp .:$STORM_HOME/lib/*:$STORM_HOME/storm-0.8.2.jar:./resources/ dispel4py.storm.ThriftSubmit topology.thrift <topology name>
 
 The last argument ``<topology name>`` is the name of the topology. Do not change any of the other arguments.
 

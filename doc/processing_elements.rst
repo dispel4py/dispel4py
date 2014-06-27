@@ -22,10 +22,10 @@ For example, to declare a graph with one input ``in1`` and one output ``out1``::
         out1[GenericPE.NAME] = "out1"
         self.outputconnections["out1"] = out1
 
-A PE *may* implement custom processing by overriding the :py:func:`~verce.GenericPE.GenericPE.process` method. 
+A PE *may* implement custom processing by overriding the :py:func:`~dispel4py.GenericPE.GenericPE.process` method. 
 This method is called for each data block in an input stream.
 The inputs parameter is a dictionary which maps the name of an input connection to the corresponding input data block.
-Note that at least one input will have input data when :py:func:`~verce.GenericPE.GenericPE.process` is called, but some inputs may be empty.
+Note that at least one input will have input data when :py:func:`~dispel4py.GenericPE.GenericPE.process` is called, but some inputs may be empty.
 The output data must be a dictionary mapping names of output connections to the corresponding output data blocks.
 
 The example shows show how to produce output after applying ``myfunc`` to the input::
@@ -35,15 +35,15 @@ The example shows show how to produce output after applying ``myfunc`` to the in
         result = myfunc(data)
         return { 'out1' : result }
 
-If a PE produces more than one output block in an iteration these can be written to output streams at any time during :py:func:`~verce.GenericPE.GenericPE.process` by calling :py:func:`~verce.GenericPE.GenericPE.write`.
+If a PE produces more than one output block in an iteration these can be written to output streams at any time during :py:func:`~dispel4py.GenericPE.GenericPE.process` by calling :py:func:`~dispel4py.GenericPE.GenericPE.write`.
 
 The method ``self.log(message)`` can be used for log statements when implementing custom PEs. 
 The enactment engine takes care of providing a logging mechanism for a particular environment.
 For example, a standalone enactment process would print the log messages to stdout.
 
-Initialisation of variables before the start of the processing loop can be implemented by overriding :py:func:`~verce.GenericPE.GenericPE.preprocess`.
+Initialisation of variables before the start of the processing loop can be implemented by overriding :py:func:`~dispel4py.GenericPE.GenericPE.preprocess`.
 
-Note that is possible to submit a PE from a client that does not support all of the libraries used in the processing function. Since a client doesn't execute :py:func:`~verce.GenericPE.GenericPE.process` it is possible to use the PE in the definition of a Dispel4Py workflow by ensuring that any corresponding :py:exc:`ImportError` is caught and ignored. For example, in the following the PE uses an obspy module when processing but doesn't require it to be available on the client for the graph definition::
+Note that is possible to submit a PE from a client that does not support all of the libraries used in the processing function. Since a client doesn't execute :py:func:`~dispel4py.GenericPE.GenericPE.process` it is possible to use the PE in the definition of a Dispel4Py workflow by ensuring that any corresponding :py:exc:`ImportError` is caught and ignored. For example, in the following the PE uses an obspy module when processing but doesn't require it to be available on the client for the graph definition::
 
     try:
         from obspy.core import Stream
