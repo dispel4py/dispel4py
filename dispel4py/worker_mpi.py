@@ -6,18 +6,18 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 #
-#	 Unless required by applicable law or agreed to in writing, software
-#	 distributed under the License is distributed on an "AS IS" BASIS,
-#	 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#	 See the License for the specific language governing permissions and
-#	 limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # Run this with 
-# mpiexec -n 4 python -m test.worker_mpi word_count graph <number of iterations>
+# mpiexec -n 4 python -m dispel4py.worker_mpi word_count graph <number of iterations>
 
 from __future__ import print_function
-from verce.workflow_graph import WorkflowGraph
-from verce.GenericPE import GenericPE, NAME, GROUPING
+from dispel4py.workflow_graph import WorkflowGraph
+from dispel4py.GenericPE import GenericPE, NAME, GROUPING
 
 from mpi4py import MPI
 
@@ -246,7 +246,7 @@ def buildProcess(workflow, processes, sourceInputs):
 ##############################################################
 # Simple processing
 
-from verce import simple_process
+from dispel4py import simple_process
 simple_process._log = simpleLogger
           
 class GraphWrapperPE(GenericPE):
@@ -405,7 +405,7 @@ def receiveWrapper():
     # print ('Rank %s: Received %s' % (rank, input))
     return input
 
-# from verce.utils import total_size
+# from dispel4py.utils import total_size
 def distributionWrapper(data,rank_list):
     # print("Rank %s: sending %s to %s" % (rank, str(data)[:100], rank_list))
     for i in rank_list:
@@ -414,7 +414,7 @@ def distributionWrapper(data,rank_list):
         request.Wait(status)
 
 ##############################################################
-from verce.utils import loadGraph          
+from dispel4py.utils import loadGraph          
                
 if __name__ == "__main__":
     

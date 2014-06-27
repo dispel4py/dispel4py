@@ -6,13 +6,13 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 #
-#	 Unless required by applicable law or agreed to in writing, software
-#	 distributed under the License is distributed on an "AS IS" BASIS,
-#	 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#	 See the License for the specific language governing permissions and
-#	 limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-from verce.GenericPE import GenericPE, NAME, TYPE
+from dispel4py.GenericPE import GenericPE, NAME, TYPE
 import datetime
 import uuid
 import traceback
@@ -93,7 +93,7 @@ class ProvenancePE(GenericPE):
         except:
             self.log(traceback.format_exc())
             self.__getMetadataWrapper()
-            output={"class":"eu.admire.seismo.metadata.Verce","streams":[{"data":None}],"metadata":self.metadata,"error":self.error,"pid":"%s" % (os.getpid(),)}
+            output={"streams":[{"data":None}],"metadata":self.metadata,"error":self.error,"pid":"%s" % (os.getpid(),)}
             
         return self.packageAll()
         

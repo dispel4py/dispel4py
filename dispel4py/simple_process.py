@@ -6,11 +6,11 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 #
-#	 Unless required by applicable law or agreed to in writing, software
-#	 distributed under the License is distributed on an "AS IS" BASIS,
-#	 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#	 See the License for the specific language governing permissions and
-#	 limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 '''
 Simple processor of Dispel4Py graphs. This processor determines the dependencies of each PE in the
@@ -30,7 +30,7 @@ with parameters
 
 For example::
 
-    python -m verce.simple_process test.graph_testing.pipeline_test -i 5
+    python -m dispel4py.simple_process test.graph_testing.pipeline_test -i 5
     
     Processing 5 iteration(s)
     Starting simple processing.
@@ -265,7 +265,7 @@ def multiprocess(graph, inputs=[{}], partitioned=False):
         
     return results
     
-from verce.GenericPE import GenericPE
+from dispel4py.GenericPE import GenericPE
 class SimpleLockstepWrapper(GenericPE):
     ''' 
     A PE that provides the input data in lockstep to the 'wrapped' PE.
@@ -299,7 +299,7 @@ class SimpleLockstepWrapper(GenericPE):
 
 if __name__ == "__main__":
     import argparse
-    from verce.utils import loadGraph
+    from dispel4py.utils import loadGraph
     
     parser = argparse.ArgumentParser(description='Simple processing of a dispel4py graph in sequence.')
     parser.add_argument('module', help='module that creates a dispel4py graph')

@@ -6,11 +6,11 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 #
-#	 Unless required by applicable law or agreed to in writing, software
-#	 distributed under the License is distributed on an "AS IS" BASIS,
-#	 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#	 See the License for the specific language governing permissions and
-#	 limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import uuid
 # Connection-level dict elements
@@ -26,7 +26,7 @@ class GenericPE(object):
 Base class for Dispel4Py processing elements (PEs). Custom PEs are expected to extend this class and 
 override the 'process' function.
 
-Custom PEs must override :py:func:`~verce.GenericPE.GenericPE.__init__` to declare the inputs and outputs that can be connected within
+Custom PEs must override :py:func:`~dispel4py.GenericPE.GenericPE.__init__` to declare the inputs and outputs that can be connected within
 the workflow graph, by defining a NAME and possibly a TYPE.
 The type of a connection is specific to the enactment system. In the example below the target system 
 is Storm and the type declares what kind of tuples are produced::
@@ -54,7 +54,7 @@ Example implementation::
     import cStringIO
     import base64
     from obspy.core import read,UTCDateTime,Stream,Trace
-    from verce.GenericPE import GenericPE, NAME, TYPE
+    from dispel4py.GenericPE import GenericPE, NAME, TYPE
 
     INPUT_NAME = 'input'
     OUTPUT_NAME = 'output'
@@ -132,7 +132,7 @@ Example implementation::
         
         .. note::
         
-            This method is always called before :py:func:`~verce.GenericPE.GenericPE.getOutputTypes`.
+            This method is always called before :py:func:`~dispel4py.GenericPE.GenericPE.getOutputTypes`.
 
         :param types: object types for each input stream
         :type types: dictionary mapping input name to input type
@@ -150,7 +150,7 @@ Example implementation::
         
         .. note::
             
-            This method is only called after the input types have been initialised in :py:func:`~verce.GenericPE.GenericPE.setInputTypes`. 
+            This method is only called after the input types have been initialised in :py:func:`~dispel4py.GenericPE.GenericPE.setInputTypes`. 
         
         :rtype: a dictionary mapping each output name to its type
         
@@ -182,7 +182,7 @@ Example implementation::
         The 'inputs' dictionary contains data from any or all of the streams that are connected to
         this PE, in any order. The return value of this function is a single output dictionary, with 
         the names of the output streams as keys. To produce more than one output data can be written 
-        at any point during processing using the :py:func:`~verce.GenericPE.GenericPE.write` method.
+        at any point during processing using the :py:func:`~dispel4py.GenericPE.GenericPE.write` method.
         
         :param inputs: the input data for this iteration
         :type inputs: dictionary
@@ -204,7 +204,7 @@ Example implementation::
 class LockstepPE(GenericPE):
     '''
     Representation of a PE which consumes its input in lockstep. The inputs dictionary that is passed to 
-    the :py:func:`~verce.GenericPE.LockStepPE.process` function is guaranteed to contain one data item 
+    the :py:func:`~dispel4py.GenericPE.LockStepPE.process` function is guaranteed to contain one data item 
     from each of the connected input streams.
     '''
     
