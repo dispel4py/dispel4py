@@ -6,13 +6,13 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 #
-#	 Unless required by applicable law or agreed to in writing, software
-#	 distributed under the License is distributed on an "AS IS" BASIS,
-#	 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#	 See the License for the specific language governing permissions and
-#	 limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-# Tests for verce.simple_process
+# Tests for dispel4py.simple_process
 '''
 Using nose (https://nose.readthedocs.org/en/latest/) run as follows:
 $ nosetests test/simple_process_test.py
@@ -23,9 +23,9 @@ Ran 3 tests in 0.006s
 OK
 '''
 
-from verce.workflow_graph import WorkflowGraph
-from verce.GenericPE import GenericPE, NAME
-from verce import simple_process
+from dispel4py.workflow_graph import WorkflowGraph
+from dispel4py.GenericPE import GenericPE, NAME
+from dispel4py import simple_process
 
 class TestProducer(GenericPE):
     def __init__(self, numOutputs=1):

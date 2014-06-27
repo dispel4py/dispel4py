@@ -6,11 +6,11 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 #
-#	 Unless required by applicable law or agreed to in writing, software
-#	 distributed under the License is distributed on an "AS IS" BASIS,
-#	 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#	 See the License for the specific language governing permissions and
-#	 limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 '''
 This graph is a modification of the :py:mod:`~test.graph_testing.parallel_pipeline` example, 
@@ -29,7 +29,7 @@ Execution:
 
     Execute the MPI mapping as follows::
     
-        mpiexec -n <number mpi_processes> python -m verce.worker_mpi <name_dispy_graph> <-f file containing the input dataset in JSON format>
+        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi <name_dispy_graph> <-f file containing the input dataset in JSON format>
 	<-i number of iterations/runs'> <-s>
 	
     The argument '-s' forces to run the graph in a simple processing, which means that the first node of the graph will be executed in a process, and the rest of nodes will be        executed in a second process.  
@@ -38,7 +38,7 @@ Execution:
         
     For example::
     
-        mpiexec -n 3 python -m verce.worker_mpi test.graph_testing.partition_parallel_pipeline -i 10 
+        mpiexec -n 3 python -m dispel4py.worker_mpi test.graph_testing.partition_parallel_pipeline -i 10 
 		
     Output::
 	
@@ -59,7 +59,7 @@ Execution:
 '''
 
 from test.graph_testing import testing_PEs as t
-from verce.workflow_graph import WorkflowGraph
+from dispel4py.workflow_graph import WorkflowGraph
 
 def testParallelPipeline():
     '''
