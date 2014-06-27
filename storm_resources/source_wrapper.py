@@ -22,10 +22,10 @@ class SourceWrapper(storm.Spout):
 
     def initialize(self, conf, context):
         try:        
-            self.modname = conf["verce.module"]
-            self.scriptname = conf["verce.script"]
+            self.modname = conf["dispel4py.module"]
+            self.scriptname = conf["dispel4py.script"]
             
-            scriptconfig = pickle.loads(str(conf['verce.config'])) if 'verce.config' in conf else {}
+            scriptconfig = pickle.loads(str(conf['dispel4py.config'])) if 'dispel4py.config' in conf else {}
             
             storm.log("Dispel4Py ------> loading script %s" % self.scriptname)
             mod = import_module(self.modname)

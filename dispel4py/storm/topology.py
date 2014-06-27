@@ -98,10 +98,10 @@ def buildTopology(workflow):
             if not key in pe.pickleIgnore:
                 pe_config[key] = value
     
-        json_conf = {'verce.module' : module_name, 
-                     'verce.script' : pe.__class__.__name__, 
-                     'verce.inputmapping' : {},
-                     'verce.config' : pickle.dumps(pe_config)}
+        json_conf = {'dispel4py.module' : module_name, 
+                     'dispel4py.script' : pe.__class__.__name__, 
+                     'dispel4py.inputmapping' : {},
+                     'dispel4py.config' : pickle.dumps(pe_config)}
         if not pe.inputconnections:
             # if there are no inputs it's a spout :P
             spout_specs[pe_name] = tt.SpoutSpec(spout_object=tt.ComponentObject(shell=tt.ShellComponent("python", PE_WRAPPER['source'])), 
@@ -110,7 +110,7 @@ def buildTopology(workflow):
                                                                                        json_conf=json.dumps(json_conf)))
         else:
             inputs = input_connections[pe] if pe in input_connections else {}
-            json_conf['verce.inputmapping'] = input_mappings[pe] if pe in input_mappings else {}
+            json_conf['dispel4py.inputmapping'] = input_mappings[pe] if pe in input_mappings else {}
             bolt_specs[pe_name] = tt.Bolt(bolt_object=tt.ComponentObject(shell=tt.ShellComponent("python", PE_WRAPPER[pe.wrapper])),
                                                    common=tt.ComponentCommon(inputs=inputs, 
                                                                              streams=streams,

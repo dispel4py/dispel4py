@@ -22,10 +22,10 @@ class SimpleWrapper(storm.Bolt):
 
     def initialize(self, conf, context):
         try:        
-            self.modname = conf["verce.module"]
-            self.scriptname = conf["verce.script"]
-            self.inputmapping = conf['verce.inputmapping']
-            scriptconfig = pickle.loads(str(conf['verce.config'])) if 'verce.config' in conf else {}
+            self.modname = conf["dispel4py.module"]
+            self.scriptname = conf["dispel4py.script"]
+            self.inputmapping = conf['dispel4py.inputmapping']
+            scriptconfig = pickle.loads(str(conf['dispel4py.config'])) if 'dispel4py.config' in conf else {}
 
             storm.log("Dispel4Py ------> loading script %s" % self.scriptname)
             mod = import_module(self.modname)
