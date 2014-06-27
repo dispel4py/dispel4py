@@ -18,7 +18,7 @@ All dependencies must be available in the named resources directory or from the 
 
 From the commandline, run the following::
 
-    python -m verce.storm.storm_submission module [name] [-h] -m {local,remote,create} [-r resourceDir] [-a attribute] [-s]
+    python -m dispel4py.storm.storm_submission module [name] [-h] -m {local,remote,create} [-r resourceDir] [-a attribute] [-s]
 
 with positional arguments:
     
@@ -55,10 +55,10 @@ from importlib import import_module
 from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol
 
-from verce.storm.topology import buildTopology
-from verce import registry
-from verce.utils import loadGraph
-from verce.workflow_graph import WorkflowGraph
+from dispel4py.storm.topology import buildTopology
+from dispel4py import registry
+from dispel4py.utils import loadGraph
+from dispel4py.workflow_graph import WorkflowGraph
 
 TOPOLOGY_THRIFT_FILE = 'topology.thrift'
 STORM_SUBMISSION_CLIENT = 'storm_submission_client.py'
@@ -84,25 +84,25 @@ def createPackage(module_name, attr, res):
 
     # copy dependencies of PEs in the graph to resources in temp directory
     shutil.copytree(res, resources_dir)
-    verce_dir = resources_dir + '/verce'
-    os.mkdir(verce_dir)
-    os.mkdir(verce_dir + '/storm')
-    shutil.copy('verce/__init__.py', verce_dir)
-    shutil.copy('verce/GenericPE.py', verce_dir)
-    shutil.copy('verce/__init__.py', verce_dir + '/storm/')
-    shutil.copy('verce/storm/utils.py', verce_dir + '/storm/')
+    dispel4py_dir = resources_dir + '/dispel4py'
+    os.mkdir(dispel4py_dir)
+    os.mkdir(dispel4py_dir + '/storm')
+    shutil.copy('dispel4py/__init__.py', dispel4py_dir)
+    shutil.copy('dispel4py/GenericPE.py', dispel4py_dir)
+    shutil.copy('dispel4py/__init__.py', dispel4py_dir + '/storm/')
+    shutil.copy('dispel4py/storm/utils.py', dispel4py_dir + '/storm/')
 
     # copy client and dependencies for storm submission to the temp directory
     storm_dir = tmpdir + '/storm'
     shutil.copytree('storm', storm_dir)
-    verce_dir = tmpdir + '/verce'
-    os.mkdir(verce_dir)
-    os.mkdir(verce_dir + '/storm')
-    shutil.copy('verce/__init__.py', verce_dir)
-    shutil.copy('verce/__init__.py', verce_dir + '/storm/')
-    shutil.copy('verce/storm/client.py', verce_dir + '/storm/')
-    shutil.copy('verce/storm/storm_submission_client.py', tmpdir)
-    shutil.copytree('java/src/eu', tmpdir + '/eu')
+    dispel4py_dir = tmpdir + '/dispel4py'
+    os.mkdir(dispel4py_dir)
+    os.mkdir(dispel4py_dir + '/storm')
+    shutil.copy('dispel4py/__init__.py', dispel4py_dir)
+    shutil.copy('dispel4py/__init__.py', dispel4py_dir + '/storm/')
+    shutil.copy('dispel4py/storm/client.py', dispel4py_dir + '/storm/')
+    shutil.copy('dispel4py/storm/storm_submission_client.py', tmpdir)
+    shutil.copytree('java/src/dispel4py', tmpdir + '/dispel4py')
     
     # create the storm topology
     topology = buildTopology(graph)
@@ -139,7 +139,7 @@ def submit(mod, attr, topologyName, res, save):
     STORM_HOME = _getStormHome()
     tmpdir = createPackage(mod, attr, res)
     print 'Created Storm submission package in %s' % tmpdir
-    # javacmd = 'javac', '-cp', '.:%s/lib/*:%s/*' % (STORM_HOME, STORM_HOME), 'eu/verce/storm/ThriftSubmit.java'
+    # javacmd = 'javac', '-cp', '.:%s/lib/*:%s/*' % (STORM_HOME, STORM_HOME), 'dispel4py/storm/ThriftSubmit.java'
     # try:
     #     proc = subprocess.Popen(javacmd, cwd=tmpdir)
     #     proc.wait()
@@ -173,10 +173,10 @@ def runLocal(mod, attr, topologyName, res, save):
     print 'Created Storm submission package in %s' % tmpdir
     try:
         javacp = '.:%s/lib/*:%s/*' % (STORM_HOME, STORM_HOME)
-        javacmd = 'javac', '-cp', javacp, 'eu/verce/storm/ThriftSubmit.java'
+        javacmd = 'javac', '-cp', javacp, 'dispel4py/storm/ThriftSubmit.java'
         proc = subprocess.Popen(javacmd, cwd=tmpdir)
         proc.wait()
-        javacmd = 'java', '-cp', javacp, 'eu.verce.storm.ThriftSubmit', 'topology.thrift', topologyName
+        javacmd = 'java', '-cp', javacp, 'dispel4py.storm.ThriftSubmit', 'topology.thrift', topologyName
         proc = subprocess.Popen(javacmd, cwd=tmpdir)
         proc.wait()
     except:

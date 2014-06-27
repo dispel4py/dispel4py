@@ -6,13 +6,13 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 #
-#	 Unless required by applicable law or agreed to in writing, software
-#	 distributed under the License is distributed on an "AS IS" BASIS,
-#	 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#	 See the License for the specific language governing permissions and
-#	 limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-from verce.seismo.seismo import SeismoPE
+from dispel4py.seismo.seismo import SeismoPE
 import traceback
 
 INPUT_NAME = 'input'
@@ -58,7 +58,7 @@ class ObspyStreamPE(SeismoPE):
             self.error+=traceback.format_exc()
             self.log("Failed to execute function '%s' with parameters %s" % (func.__name__, params))
 
-from verce.workflow_graph import WorkflowGraph
+from dispel4py.workflow_graph import WorkflowGraph
 
 def createProcessingComposite(chain, suffix='', controlParameters={}, provRecorder=None):
     '''
