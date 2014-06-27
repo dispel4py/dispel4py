@@ -1,8 +1,0 @@
-{ "input" : 
-    {
-        "station" : "TERO", 
-        "starttime" : "20120911",
-        "endtime" : "20120911", 
-        "rootdir" : "test-resources/laquila/20100501-20120930_fseed/" 
-    }
-}
