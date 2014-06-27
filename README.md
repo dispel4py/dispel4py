@@ -8,6 +8,8 @@ Abstract dataflows described in Dispel4Py can be executed in numerous environmen
 Dependencies 
 ------------
 
+Dispel4Py has been tested with Python versions *2.7.2* and *2.6.6*.
+
 - networkx
 
 If using the registry:
