@@ -1,3 +1,5 @@
+(![Logo](http://www2.epcc.ed.ac.uk/~amrey/VERCE/Dispel4Py/_images/DISPEL4PY_web.jpg)
+
 Dispel4py
 =========
 
