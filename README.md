@@ -1,5 +1,3 @@
-(![Logo](http://www2.epcc.ed.ac.uk/~amrey/VERCE/Dispel4Py/_images/DISPEL4PY_web.jpg)
-
 Dispel4py
 =========
 
@@ -28,3 +26,5 @@ Installation
 The easiest way to install dispel4py is via pip (https://pypi.python.org/pypi/pip):
 
 `sudo pip install git+git://github.com/akrause2014/dispel4py.git#egg=dispel4py`
+
+(![Logo](http://www2.epcc.ed.ac.uk/~amrey/VERCE/Dispel4Py/_images/DISPEL4PY_web.jpg)
