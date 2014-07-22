@@ -17,7 +17,6 @@ import datetime
 import uuid
 import traceback
 import os
-import pickle
 import socket
 
 INPUT_NAME = 'input'
@@ -76,11 +75,11 @@ class ProvenancePE(GenericPE):
         output = self.__processwrapper(streams)
         result = self.writeOutputStreams(output)
         # copy the metadata to another output stream so it can be collected separately.   
-        try:
-            result[OUTPUT_METADATA] = output['metadata']
-        except KeyError:
+        if not result or OUTPUT_METADATA not in result:
             # if there's no metadata then that's fine
             pass
+        else:
+            result[OUTPUT_METADATA] = output['metadata']
         return result
                     
     def __processwrapper(self, streams):
@@ -93,7 +92,7 @@ class ProvenancePE(GenericPE):
         except:
             self.log(traceback.format_exc())
             self.__getMetadataWrapper()
-            output={"streams":[{"data":None}],"metadata":self.metadata,"error":self.error,"pid":"%s" % (os.getpid(),)}
+            output={"class":"eu.admire.seismo.metadata.Verce","streams":[{"data":None}],"metadata":self.metadata,"error":self.error,"pid":"%s" % (os.getpid(),)}
             
         return self.packageAll()
         
@@ -136,15 +135,7 @@ class ProvenancePE(GenericPE):
             self.attributes = list()
             while (self.input["streams"]):
                 streamItem=self.input["streams"].pop(0)
-                data = {}
-                try:
-                    data = pickle.loads(streamItem["data"])
-                    # self.log("AK ------> %s: Unpickled input" % self.taskId)
-                except:
-                    # self.log("AK ------> %s: Passing input as string" % (self.taskId))
-                    data = streamItem["data"]
-                finally:
-                    self.streams.append(data)
+                self.streams.append(streamItem["data"])
                 self.attributes.append(streamItem['attr'])
                     
                 if self.provon:
@@ -191,12 +182,12 @@ class ProvenancePE(GenericPE):
             if (len(self.outputstreams)==0):
                 self.outputstreams=self.streams
             if not self.outputattr:
-                self.outputattr=[self.attr]
+                self.outputattr=self.attributes
             
             for st, attr in zip(self.outputstreams, self.outputattr):
                 
                 streamtransfer={}
-                streamtransfer['data'] = pickle.dumps(st)
+                streamtransfer['data'] = st
                 streamtransfer['attr'] = attr
 
                 if self.provon:

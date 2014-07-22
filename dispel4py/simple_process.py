@@ -18,7 +18,7 @@ graph and executes them sequentially.
 
 From the commandline, run the following command::
 
-    python simple_process.py module [-h] [-a attribute] [-f inputfile] [-i iterations]
+    python -m dispel4py.simple_process module [-h] [-a attribute] [-f inputfile] [-i iterations]
     
 with parameters
  
@@ -39,7 +39,10 @@ For example::
     
 '''
 
+import json
 import networkx as nx
+import sys
+import traceback
 import types
 
 storeResults = True
@@ -100,6 +103,14 @@ def _getTargets(graph, node):
             dest = edge['DIRECTION'][1]
             result.append(graph.objToNode[dest])
     return result
+
+def _hasInput(graph, node, input_name):
+    pe = node.getContainedObject()
+    for edge in graph.graph[node].values():
+        if pe == edge['DIRECTION'][1]:
+            if edge['TO_CONNECTION'] == input_name:
+                return True
+    return False
              
 def order(graph, subgraph=None):
     ''' 
@@ -145,8 +156,19 @@ def _initProcessingElements(graph, nodes):
                     roots.remove(node)
                 except:
                     pass
-        pe.preprocess()
     return connections, roots
+
+def _preprocess(nodes):
+    for node in nodes:
+        pe = node.getContainedObject()
+        # just in case the logger hasn't been assigned yet
+        pe.log = types.MethodType(_log, pe)
+        pe.preprocess()
+    
+def _postprocess(nodes):
+    for node in nodes:
+        pe = node.getContainedObject()
+        pe.postprocess()
     
 def _processInput(nodes, connections, resultconnections, inputData={}):
     data = inputData
@@ -165,7 +187,7 @@ def _processInput(nodes, connections, resultconnections, inputData={}):
         while inp:
             block = inp.pop(0)
             try:
-                # print 'input = %s' % block 
+                # print 'input = %s' % block
                 outp = pe.process(block)
                 # print 'output = %s' % outp
             except:
@@ -181,19 +203,46 @@ def _processInput(nodes, connections, resultconnections, inputData={}):
 
 def _processConnected(graph, nodes, inputs, provideAllInputs, resultconnections):
     # print 'Process connected : %s' % inputs
-    connections, roots = _initProcessingElements(graph, nodes)
     results = []
-    for inp in inputs:
-        if not provideAllInputs:
-            for node in roots:
-                # if the node is root of the graph and doesn't have inputs
-                # we pass an empty input to make it process once
-                if not node in inp:
-                    inp[node] = [{}]
-        # print 'Processing connected : input = %s' % inp
-        output = _processInput(nodes, connections, resultconnections, inp)
-        results.append(output)
+    if not inputs:
+        _preprocess(nodes)
+        _postprocess(nodes)
+    else:
+        connections, roots = _initProcessingElements(graph, nodes)
+        _preprocess(nodes)
+        for inp in inputs:
+            if not provideAllInputs:
+                for node in roots:
+                    # if the node is root of the graph and doesn't have inputs
+                    # we pass an empty input to make it process once
+                    if not node in inp:
+                        inp[node] = [{}]
+            # print 'Processing connected : input = %s' % inp
+            output = _processInput(nodes, connections, resultconnections, inp)
+            results.append(output)
+        _postprocess(nodes)
     return results
+
+def preprocessComposite(graph):
+    _preprocess(graph.graph.nodes())
+
+def processComposite(graph, inputs=[{}], resultconnections=[]):
+    components = nx.connected_components(graph.graph)
+    results = [ {} for i in inputs ]
+    for comp in components:
+        ordered = order(graph, comp)
+        # print "Processing component: %s" % [ node.obj.name for node in ordered ]
+        compResults = []
+        connections, roots = _initProcessingElements(graph, ordered)
+        for inp in inputs:
+            output = _processInput(ordered, connections, resultconnections, inp)
+            compResults.append(output)
+        for cr, r in zip(compResults, results):
+            r.update(cr)
+    return results
+    
+def postprocessComposite(graph):
+    _postprocess(graph.graph.nodes())
 
 def process(graph, inputs=[{}], provideAllInputs=False, resultconnections=[]):
     '''
@@ -208,61 +257,27 @@ def process(graph, inputs=[{}], provideAllInputs=False, resultconnections=[]):
     :param resultconnections: results of already processed iterations
     '''
     components = nx.connected_components(graph.graph)
+    
+    mappedInputs = []
+    for block in inputs:
+        mappedInp = {}
+        for node in graph.graph.nodes():
+            pe = node.getContainedObject()
+            for input_name in block:
+                if input_name in pe.inputconnections.keys() and not _hasInput(graph, node, input_name):
+                    try:
+                        mappedInp[node].append( { input_name : block[input_name] } )
+                    except KeyError:
+                        mappedInp[node] = [ { input_name : block[input_name] } ]
+        mappedInputs.append(mappedInp)
+        
     results = [ {} for i in inputs ]
     for comp in components:
         ordered = order(graph, comp)
         # print "Processing component: %s" % [ node.obj.name for node in ordered ]
-        compResults = _processConnected(graph, ordered, inputs, provideAllInputs, resultconnections)
+        compResults = _processConnected(graph, ordered, mappedInputs, provideAllInputs, resultconnections)
         for cr, r in zip(compResults, results):
             r.update(cr)
-    return results
-
-import multiprocessing
-
-def processWorker(graph, nodes, inputs, result_queue):
-    try:
-        ordered = order(graph, nodes)
-        results = processConnected(graph, ordered, inputs)
-    except:
-        results = {}
-    # print results
-    result_queue.put(results)
-
-def multiprocess(graph, inputs=[{}], partitioned=False):
-    '''
-    Executes the given inputs in the the graph in multiple processes.
-    If the graph is partitioned, i.e. every node has been assigned to a partition by giving a value
-    to pe.partition, each partition is executed in a separate process. 
-    If the graph is not partitioned each connected component is executed in a separate process.
-    Results of each partition are communicated to the main process and returned by the method.
-    '''
-    if partitioned:
-        partitions = {}
-        for node in graph.graph.nodes():
-            p = node.getContainedObject().partition
-            if p in partitions:
-                partitions[p].append(node)
-            else:
-                partitions[p] = [node]
-        components = partitions.values()
-    else:
-        # partition into connected components
-        components = nx.connected_components(graph.graph)
-
-    jobs = []
-    result_queue = multiprocessing.Queue()
-    for nodes in components:
-        p = multiprocessing.Process(target=processWorker, args=(graph, nodes, inputs, result_queue))
-        jobs.append(p)
-        # print p
-
-    for j in jobs:
-        j.start()
-        
-    results=[result_queue.get() for c in components]
-    for j in jobs:
-        j.join()
-        
     return results
     
 from dispel4py.GenericPE import GenericPE
@@ -317,9 +332,11 @@ if __name__ == "__main__":
         try:
             with open(args.file) as inputfile:
                 inputs = json.loads(inputfile.read())
-            if rank == 0: print("Processing input file %s" % args.file)
+            if not type(inputs) == list:
+                inputs = [inputs]
+            print "Processing input file %s" % args.file
         except:
-            print('Cannot read input file %s' % args.file)
+            print 'Failed to read input file %s' % args.file
             sys.exit(1)
     elif args.iter:
         inputs = [ {} for i in range(args.iter) ]

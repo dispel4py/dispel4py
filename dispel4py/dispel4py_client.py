@@ -12,22 +12,92 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import sys
 import os
 import json
+import base64
 import inspect
 import tempfile
 import subprocess
 import traceback
+import getpass
 
 from dispel4py import registry, utils
 
-def register(name, file=None):
+DISPEL4PY_CONFIG_DIR = os.path.expanduser('~/.dispel4py/')
+CACHE = DISPEL4PY_CONFIG_DIR + '.cache'
+
+def login(username, password=None):
+    if username is None:
+        username = raw_input('Username: ') 
+    if password is None:
+        password = getpass.getpass('Password: ')
+    try:
+        reg = registry.initRegistry(username, password)
+    except registry.NotAuthorisedException:
+        sys.stderr.write("Not authorised.\n")
+        sys.exit(4)
+    enc = base64.b64encode(password)
+    try:
+        os.mkdir(DISPEL4PY_CONFIG_DIR)
+    except:
+        pass
+    with open(CACHE, 'w') as file:
+        file.write('%s\n%s\n%s' % (username, enc, reg.token))
+    print 'Logged in.'
+    return reg
+        
+def removeCache():
+    try:
+        os.remove(CACHE)
+    except:
+        pass
+    print 'Cleared login cache.'
+        
+def _initRegistry(username=None, password=None):
+    token = None
+    if not username:
+        try:
+            with open(CACHE, 'r') as file:
+                [username, enc, token] = file.read().splitlines()
+                password = base64.b64decode(enc)
+        except IOError:
+            username = raw_input("Username: ")  
+            password = getpass.getpass('Password: ')
+    elif not password:
+        password = getpass.getpass('Password: ')
+
+    reg_conf = config['verce.registry']   
+    try:
+        workspace = reg_conf['workspace']
+    except KeyError:
+        sys.stderr.write('Must specify workspace for registry.')
+        sys.exit(-2)
+    try:
+        url = reg_conf['url']
+    except KeyError:
+        url = registry.DEF_URL
+        
+    try:
+        if token:
+            try:
+                reg = registry.initRegistry(token=token, url=url, workspace=workspace)
+            except registry.NotAuthorisedException:
+                reg = login(username, password)
+        else:
+            reg = login(username, password)
+    except registry.NotAuthorisedException:
+        sys.stderr.write("Not authorised.\n")
+        sys.exit(4)
+        
+    return reg
+
+def register(reg, name, file=None):
     '''
     Register the contents of the given file under the given name. If a file is not provided, use stdin.
     '''
     pkg, attr = registry.split_name(name)
-    registry.initRegistry()
     if file:
         with open(file, 'r') as source_file:
             source = source_file.read()
@@ -40,13 +110,13 @@ def register(name, file=None):
         else:
             reg.register_pe(pkg, attr, file)
     except registry.NotAuthorisedException:
-        sys.stderr.write("Not authorised.")
+        sys.stderr.write("Not authorised.\n")
         sys.exit(4)
     except Exception as err:
         sys.stderr.write("An error occurred:\n%s\n" % err)
         sys.exit(-1)        
 
-def view(name):
+def view(reg, name):
     '''
     Display the source for the Dispel4Py entity identified by 'name'
     '''
@@ -62,8 +132,9 @@ def view(name):
         sys.stderr.write("Resource '%s' not found\n" % name)
     else:
         sys.stdout.write(source)
+        sys.stdout.write('\n')
         
-def list(name):
+def list(reg, name):
     '''
     List the contents of the package with 'name'.
     '''
@@ -111,25 +182,25 @@ def list(name):
                 pass
         sys.stdout.write('\033[0m')
         
-def updateCode(name, code):
+def updateCode(reg, name, code):
     ''' 
     Updates/replaces the source code of the given Dispel4Py component identified by 'name' 
     with the contents of 'code'.
     '''
-    registry.initRegistry()
     reg.update_code(name, code)
 
-def update(name, file):
+def update(reg, name, file):
     with open(file, "r") as src:
         code = src.read()
     updateCode(name, code)
 
-def edit(name):
+def edit(reg, name):
     '''
     Downloads the source code of the given Dispel4Py component identified by 'name' and opens
     an editor. When the editor is closed the modified source code is uploaded to the registry.
     '''
     temp_path = None
+    def_editor = getEditor()
     try:
         if not def_editor:
             sys.stderr.write("Please specify environment variable EDITOR or 'default.editor' in the Dispel4Py configuration.")
@@ -153,62 +224,66 @@ def edit(name):
 def usage():
     sys.stderr.write("Usage: dispel4py <command> <arguments ...> \n")
     sys.stderr.write("Commands:\n")
+    sys.stderr.write("  - login [-u USERNAME] [-p PASSWORD]: Log in and store the username and password.")
     sys.stderr.write("  - list <package>: Lists all PEs and functions in the given package.\n")
     sys.stderr.write("  - register <name> <file>: Registers a dispel4py component specified in the given file, under the given name.\n")
     sys.stderr.write("  - view <name>: Displays the source code of the given Dispel4Py component.\n")
     sys.stderr.write("  - edit <name>: Edits the given dispel4py component and registers the modified source.\n")
     sys.stderr.write("  - update <name> <file>: Updates an existing Dispel4Py component.\n")
 
-reg = registry.VerceRegistry()
+def getEditor():
+    def_editor = None
+    try:
+        def_editor = os.environ['EDITOR'].encode('utf-8')
+    except KeyError:
+        pass
+    try:
+        def_editor = config['default.editor']
+    except KeyError:
+        pass
+    return def_editor
 
-def main():
-   try:
-       command = sys.argv[1]
-   except IndexError:
-       usage()
-       sys.exit(1)
+def configure():
+    configName = '.dispel4py/config.json'
+    try:
+        # look for an environment variable
+        CONFIG = os.environ['DISPEL4PY_CONFIG'].encode('utf-8')
+    except KeyError:
+        if os.path.isfile(configName):
+            # or is there a local file
+            CONFIG = os.path.abspath(configName)
+        else:
+            # or in the user home directory
+            CONFIG = os.path.expanduser('~/%s' % configName)
 
-   configName = '.dispel4py/config.json'
-   try:
-       # look for an environment variable
-       CONFIG = os.environ['DISPEL4PY_CONFIG'].encode('utf-8')
-   except KeyError:
-       if os.path.isfile(configName):
-           # or is there a local file
-           CONFIG = os.path.abspath(configName)
-       else:
-           # or in the user home directory
-           CONFIG = os.path.expanduser('~/%s' % configName)
-
-   try:
-       with open(CONFIG, 'r') as config_file:
-           conf = json.load(config_file)
-   except:
-       sys.stderr.write("No configuration found. Please ensure that the configuration is available at ~/%s or define $DISPEL4PY_CONFIG.\n" % configName)
-       sys.exit(1) 
-
-   reg_conf = conf['verce.registry']    
-   reg.registry_url = reg_conf['url']
-   reg.user = reg_conf['user']
-   # reg.group = reg_conf['group']
-   reg.workspace = reg_conf['workspace']
-
-   if 'DISPEL4PY_CONFIG' in os.environ:
-       def_editor = os.environ['EDITOR'].encode('utf-8')
-   elif 'default.editor' in conf:
-       def_editor = conf['default.editor']
-   else:
-       def_editor = None
-        
-   try:
-       globals()[command](*sys.argv[2:])
-   except KeyError:
-       sys.stderr.write("Unknown command: %s\n" % command)
-       usage()
-       sys.exit(2)
-
-
+    try:
+        with open(CONFIG, 'r') as config_file:
+            conf = json.load(config_file)
+    except:
+        sys.stderr.write("No configuration found. Please ensure that the configuration is available at ~/%s or define $DISPEL4PY_CONFIG.\n" % configName)
+        sys.exit(1) 
+    return conf 
 
 if __name__ == '__main__':
-   main()
-   
+    parser = argparse.ArgumentParser(description='View and register Dispel4Py objects in a registry.')
+    parser.add_argument('command', help='command to execute, one of: list, view, register')
+    parser.add_argument('args', nargs='*', help='command arguments')
+    parser.add_argument('-u', '--username', help='username for registry access')
+    parser.add_argument('-p', '--password', help='password')
+    args = parser.parse_args()
+    
+    if args.command == 'login':
+        login(args.username, args.password)
+    elif args.command == 'exit':
+        removeCache()
+    else:
+        config = configure()
+        reg = _initRegistry(args.username, args.password)
+        try:
+            globals()[args.command](reg, *args.args)
+        except KeyError:
+            sys.stderr.write("Unknown command: %s\n" % command)
+            usage()
+            sys.exit(2)
+    
+    

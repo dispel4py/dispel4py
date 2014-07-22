@@ -13,11 +13,12 @@
 # limitations under the License.
 
 # Run this with 
-# mpiexec -n 4 python -m dispel4py.worker_mpi word_count graph <number of iterations>
+# mpiexec -n 4 python -m test.worker_mpi test.graph_testing.pipeline_test [-i <number of iterations>]
 
 from __future__ import print_function
 from dispel4py.workflow_graph import WorkflowGraph
 from dispel4py.GenericPE import GenericPE, NAME, GROUPING
+from dispel4py.utils import make_hash
 
 from mpi4py import MPI
 
@@ -27,6 +28,7 @@ import traceback
 import types
 import json
 import copy
+from itertools import chain
 
 comm=MPI.COMM_WORLD
 rank=comm.Get_rank()
@@ -36,7 +38,7 @@ name = MPI.Get_processor_name()
 def simpleLogger(self, msg):
     print("%s (rank %s): %s" % (self.id, rank, msg))
     
-TERMINATE_MSG='dispy.__terminate_process__'
+TERMINATE_MSG='dispel4py.__terminate_process__'
 
 def getConnectedInputs(node, graph):
     names = []
@@ -73,6 +75,7 @@ class ProcessingWrapper(object):
             if input == TERMINATE_MSG:
                 self.nonTerminated -= 1
                 if self.nonTerminated <= 0:
+                    self.pe.postprocess()
                     self.terminateChildren()
                     hasFinished = True
                     break
@@ -131,7 +134,7 @@ class GroupByCommunication(object):
         self.input_name = input_name
     def getDestination(self,data):
         output = tuple([data[self.input_name][x] for x in self.groupby])
-        next=abs(hash(output))%len(self.processes_list)
+        next=abs(make_hash(output))%len(self.processes_list)
         self.process.rank_dest=[self.processes_list[next]]
 
 class AllToOneCommunication(object):
@@ -189,7 +192,6 @@ def assign(workflow):
             prcs = 1 if pe.id in sources else getNumProcesses(numSources, pe.numprocesses, totalProcesses)
             processes[pe.id]=range(node_counter, node_counter+prcs)
             node_counter = node_counter + prcs
-        print ('Processes:', processes)
     return success, sources, processes
     
 def getCommunication(process, source_processes, dest, dest_input, dest_processes):
@@ -207,8 +209,14 @@ def getCommunication(process, source_processes, dest, dest_input, dest_processes
         print("No input '%s' defined for PE '%s'" % (dest_input, dest.id))
         raise
     return communication
-             
+   
 def buildProcess(workflow, processes, sourceInputs):
+    groups = {}
+    for peid, procs in processes.iteritems():
+        group = comm.Get_group()
+        newgroup = group.Incl(procs)
+        if rank == 0: print('creating communicator group %s' % procs)
+        groups[peid] = comm.Create(newgroup)
     graph = workflow.graph
     for node in graph.nodes():
         pe=node.getContainedObject()
@@ -217,6 +225,7 @@ def buildProcess(workflow, processes, sourceInputs):
         myprocesses=processes[pe.id]
         if rank in myprocesses:
             pe.log = types.MethodType(simpleLogger, pe)
+            pe.log('Starting to process')
             outputmappings = {} 
             numInputs = 0
             for edge in graph.edges(node, data=True):
@@ -229,7 +238,7 @@ def buildProcess(workflow, processes, sourceInputs):
                 dest_input = edge[2]['TO_CONNECTION']
                 allconnections = edge[2]['ALL_CONNECTIONS']
                 if dest == pe:
-                    numInputs += len(source_processes)
+                    numInputs += len(source_processes) * len(allconnections)
                 if source == pe:
                     for (source_output, dest_input) in allconnections:
                         communication = getCommunication(process, source_processes, dest, dest_input, dest_processes)
@@ -239,9 +248,11 @@ def buildProcess(workflow, processes, sourceInputs):
                             outputmappings[source_output] = [(dest_processes, dest_input, communication)]
                         pe.outputconnections[source_output]['writer']=MPIWriter(outputmappings[source_output])
             inputs = sourceInputs if numInputs == 0 else None
+            pe.comm = groups[pe.id]
             wrapper=ProcessingWrapper(pe, numInputs, outputmappings, inputs)
             wrapper.compute()
             print ('%s (rank %s): Completed.' % (pe.id, rank))
+            
           
 ##############################################################
 # Simple processing
@@ -250,6 +261,15 @@ from dispel4py import simple_process
 simple_process._log = simpleLogger
           
 class GraphWrapperPE(GenericPE):
+
+    def getcomm(self): return self.__comm
+    def setcomm(self, value): 
+        self.__comm = value
+        for node in self.workflow.graph.nodes():
+            node.getContainedObject().comm = value
+    def delcomm(self): del self.__comm
+    comm = property(getcomm, setcomm, delcomm)
+
     def __init__(self, workflow, inputmappings={}, outputmappings={}):
         GenericPE.__init__(self)
         self.workflow = workflow
@@ -257,8 +277,18 @@ class GraphWrapperPE(GenericPE):
             self.inputconnections[input_name] = { NAME : input_name }
         for output_name in outputmappings.values():
             self.outputconnections[output_name] = { NAME : output_name }
+        for node in workflow.graph.nodes():
+            pe = node.getContainedObject()
+            pe.log = types.MethodType(simpleLogger, pe)
         self.inputmappings = inputmappings
         self.outputmappings = outputmappings
+        
+    def preprocess(self):
+        simple_process.preprocessComposite(self.workflow)
+
+    def postprocess(self):
+        simple_process.postprocessComposite(self.workflow)
+
     def process(self, inputs):
         # print ('%s (rank %s): processing inputs %s' % (self.id, rank, inputs))
         mappedInputs = {}
@@ -278,7 +308,8 @@ class GraphWrapperPE(GenericPE):
         for node in self.workflow.graph.nodes():
             if not node.getContainedObject().inputconnections: mappedInputs[node] = [{}]
         # print ('%s (rank %s): mapped inputs %s' % (self.id, rank, mappedInputs))
-        results = simple_process.process(self.workflow, [ mappedInputs ], True, resultconnections)
+        # results = simple_process.process(self.workflow, [ mappedInputs ], True, resultconnections)
+        results = simple_process.processComposite(self.workflow, [ mappedInputs ], resultconnections)
         # print ('%s (rank %s): results %s' % (self.id, rank, results))
         
         for result in results:
@@ -347,7 +378,7 @@ def simpleProcess(graph, sources, inputs):
                     elif source == pe and dest.id not in componentIds:
                         outputnames[(source.id, source_output)] = source.id + '_' + source_output
                         try:
-                            grouping = source.outputconnections[source_output][GROUPING]
+                            grouping = dest.inputconnections[dest_input][GROUPING]
                         except KeyError:
                             grouping = None
                         externalConnections.append((source.id, source_output, dest.id, dest_input, grouping))
@@ -378,10 +409,15 @@ def simpleProcess(graph, sources, inputs):
         sourceWrapper = wrappers[source_id]
         destWrapper = wrappers[dest_id]
         if grouping:
-            sourceWrapper.outputconnections[source_id + '_' + source_output][GROUPING] = grouping
+	    destWrapper.inputconnections[dest_id + '_' + dest_input][GROUPING] = grouping
         uberWorkflow.connect(sourceWrapper, source_id + '_' + source_output, destWrapper, dest_id + '_' + dest_input)
         # print ('%s: connected %s to %s' % (rank, sourceWrapper.id + '.' + source_id + '_' + source_output,
         #          destWrapper.id + '.' + dest_id + '_' + dest_input))
+        
+    if rank == 0:
+        for node in uberWorkflow.graph.nodes():
+            wrapperPE = node.getContainedObject()
+            print('%s contains %s' % (wrapperPE.id, [n.getContainedObject().id for n in wrapperPE.workflow.graph.nodes()]))
 
     success = True
     processes = {}
@@ -389,6 +425,7 @@ def simpleProcess(graph, sources, inputs):
         success, sources, processes = assign(uberWorkflow)
     success=comm.bcast(success, root=0)
     if success: 
+        if rank == 0: print ('Processes:', processes)
         processes=comm.bcast(processes,root=0)
         buildProcess(uberWorkflow, processes, mappedInput)
     else:
@@ -402,7 +439,7 @@ def processWrapper(pe,input=None):
 
 def receiveWrapper():
     input=comm.recv(source=MPI.ANY_SOURCE)
-    # print ('Rank %s: Received %s' % (rank, input))
+    # print ('Rank %s: Received %s' % (rank, str(input)[:100]))
     return input
 
 # from dispel4py.utils import total_size
@@ -457,6 +494,7 @@ if __name__ == "__main__":
         success, sources, processes = assign(graph)
     success=comm.bcast(success, root=0)
     if success and not args.simple:
+        if rank == 0: print ('Processes:', processes)
         processes=comm.bcast(processes,root=0)
         buildProcess(graph, processes, inputs)
     else:

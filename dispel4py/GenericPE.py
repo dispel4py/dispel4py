@@ -189,6 +189,12 @@ Example implementation::
         :rtype: a dictionary with the output data     
         '''
 	    None
+    
+    def postprocess(self):
+        '''
+        This method is called once after the last block has been processed and a terminate message was sent to this PE.
+        '''
+        None
         
     def write(self, name, data):
         '''
@@ -220,4 +226,3 @@ class SourcePE(GenericPE):
     def __init__(self):
         GenericPE.__init__(self)
         self.wrapper = 'source'
-                
