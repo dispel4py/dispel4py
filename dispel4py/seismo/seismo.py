@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dispel4py.provenance import ProvenancePE, OUTPUT_DATA, INPUT_NAME
-from dispel4py.GenericPE import NAME, TYPE
+from verce.provenance import ProvenancePE, OUTPUT_DATA, INPUT_NAME
+from verce.GenericPE import NAME, TYPE
 import uuid
 import traceback
 try:
@@ -21,10 +21,10 @@ try:
 except ImportError:
     pass
 
-INPUT_NAME = INPUT_NAME
-OUTPUT_DATA = OUTPUT_DATA
-
 class SeismoPE(ProvenancePE):
+    
+    INPUT_NAME = INPUT_NAME
+    OUTPUT_DATA = OUTPUT_DATA
     
     def __init__(self):
         ProvenancePE.__init__(self)
@@ -79,5 +79,11 @@ class SeismoPE(ProvenancePE):
                 streammeta.append(metadic);
         except Exception, err:
             streammeta=str(st);
-        return streammeta            
+        return streammeta   
+        
+    def writeStream(self, st, attr):        
+        streamtransfer={ 'data' : st, 'attr' : attr }
+        output_data = [self._timestamp, self._location, streamtransfer]
+        self.write(OUTPUT_DATA, output_data)      
+
 
