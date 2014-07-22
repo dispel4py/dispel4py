@@ -17,7 +17,7 @@ setup(
     license = "Apache 2",
     keywords = "dispel4py dispel workflows processing elements",
     url = "https://github.com/akrause2014/dispel4py",
-    packages=['dispel4py'],
+    packages=['dispel4py', 'test'],
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
