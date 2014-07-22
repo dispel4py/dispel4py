@@ -34,8 +34,7 @@ class VerceRegistry(object):
     
     registry_url = DEF_URL
     workspace = DEF_WORKSPACE
-    user = 1
-    group = 1
+    user = None
     registered_entities = {}
     token = None
     
@@ -142,7 +141,6 @@ class VerceRegistry(object):
         gendef = {}
         gendef["user"] = { 'username' : self.user }
         gendef["workspaceId"] = self.workspace
-        # gendef["groupId"] = self.group
         gendef["pckg"] = pkg + PKG_GENERICDEF
         gendef["name"] = simpleName
         data = {}
@@ -151,6 +149,7 @@ class VerceRegistry(object):
         try:
             response.raise_for_status()
         except:
+            print response.text
             raise RegistrationFailed, "Registration of generic definition failed", sys.exc_info()[2]
         return response.json().get("id")
                 
@@ -160,7 +159,6 @@ class VerceRegistry(object):
         impl = {}
         impl["user"] = { 'username' : self.user }
         impl["workspaceId"] = self.workspace
-        # impl["groupId"] = self.group
         impl["pckg"] = pkg + PKG_IMPLEMENTATION
         impl["name"] = simpleName
         impl["genericSigId"] = sigId
@@ -194,7 +192,6 @@ class VerceRegistry(object):
         function = {}
         function["user"] = { 'username' : self.user }
         function["workspaceId"] = self.workspace
-        # function["groupId"] = self.group
         function["pckg"] = pkg
         function["name"] = simpleName
         function["parameters"]=[]
@@ -240,7 +237,6 @@ class VerceRegistry(object):
         peSig = {}
         peSig["user"] = { 'username' : self.user }
         peSig["workspaceId"] = self.workspace
-        # peSig["groupId"] = self.group
         peSig["pckg"] = pkg
         peSig["name"] = simpleName
         connections = []
@@ -319,8 +315,12 @@ class VerceRegistry(object):
         response = requests.get(url, headers=getHeaders(self.token))
         if response.status_code == requests.codes.ok:
             genDefId = response.json()["id"]
-            requests.delete(self.registry_url + "gendef/%s" % genDefId)
-            print "Deleted " + fullname            
+            response = requests.delete(self.registry_url + "gendef/%s" % genDefId, headers=getHeaders(self.token))
+            if response.status_code == requests.codes.ok:
+                print "Deleted " + fullname
+            else:
+                print "Failed to delete %s" % fullname
+                print response.text
         else:
             print "Cannot find " + fullname
 
@@ -339,7 +339,7 @@ def currentRegistry():
     for i in sys.meta_path:
         if isinstance(i, VerceRegistry): return i
 
-def initRegistry(username, password, url=DEF_URL, workspace=DEF_WORKSPACE):
+def initRegistry(username=None, password=None, url=DEF_URL, workspace=DEF_WORKSPACE, token=None):
     '''
     Initialises the registry. This method must be called before any 'import' statements.
     '''
@@ -347,10 +347,17 @@ def initRegistry(username, password, url=DEF_URL, workspace=DEF_WORKSPACE):
     reg = VerceRegistry()
     reg.workspace = workspace
     reg.registry_url = url
-    reg.login(username, password)
+    reg.user = username
+    if token:
+        reg.token = token
+        response = requests.get(url + 'workspaces', headers=getHeaders(token))
+        if response.status_code == requests.codes.forbidden:
+            raise NotAuthorisedException()
+    else:
+        reg.login(username, password)
     sys.meta_path.append(reg)
     return reg
-    
+        
 def split_name(fullname):
     parts = fullname.split('.')
     pkg = ".".join(parts[:-1])
@@ -412,4 +419,3 @@ def store_resource(resources_dir, mod, code):
     except Exception as exc:
         print exc
         print "Warning: Could not store source code for module " + mod
-        

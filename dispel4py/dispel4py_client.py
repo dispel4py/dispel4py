@@ -82,7 +82,7 @@ def _initRegistry(username=None, password=None):
     try:
         if token:
             try:
-                reg = registry.initRegistry(token=token, url=url, workspace=workspace)
+                reg = registry.initRegistry(username=username, token=token, url=url, workspace=workspace)
             except registry.NotAuthorisedException:
                 reg = login(username, password)
         else:
@@ -93,11 +93,11 @@ def _initRegistry(username=None, password=None):
         
     return reg
 
-def register(reg, name, file=None):
+def register(reg, name, attr, file=None):
     '''
     Register the contents of the given file under the given name. If a file is not provided, use stdin.
     '''
-    pkg, attr = registry.split_name(name)
+    pkg, simpleName = registry.split_name(name)
     if file:
         with open(file, 'r') as source_file:
             source = source_file.read()
@@ -106,9 +106,9 @@ def register(reg, name, file=None):
     try:
         obj = utils.loadIgnoreImports('temp', attr, source)
         if inspect.isroutine(obj):
-            reg.register_function(pkg, attr, file)
+            reg.register_function(name, attr, file)
         else:
-            reg.register_pe(pkg, attr, file)
+            reg.register_pe(name, attr, file)
     except registry.NotAuthorisedException:
         sys.stderr.write("Not authorised.\n")
         sys.exit(4)
@@ -181,6 +181,9 @@ def list(reg, name):
             except:
                 pass
         sys.stdout.write('\033[0m')
+        
+def delete(reg, name):
+    reg.delete(name)
         
 def updateCode(reg, name, code):
     ''' 
