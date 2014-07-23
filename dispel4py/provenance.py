@@ -75,7 +75,7 @@ class ProvenancePE(GenericPE):
         output = self.__processwrapper(streams)
         result = self.writeOutputStreams(output)
         # copy the metadata to another output stream so it can be collected separately.   
-        if not result or OUTPUT_METADATA not in output:
+        if result is None or output is None or OUTPUT_METADATA not in output:
             # if there's no metadata then that's fine
             pass
         else:
