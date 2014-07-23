@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from verce.provenance import ProvenancePE, OUTPUT_DATA, INPUT_NAME
-from verce.GenericPE import NAME, TYPE
+from dispel4py.provenance import ProvenancePE, OUTPUT_DATA, INPUT_NAME
+from dispel4py.GenericPE import NAME, TYPE
 import uuid
 import traceback
 try:
