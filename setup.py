@@ -17,7 +17,7 @@ setup(
     license = "Apache 2",
     keywords = "dispel4py dispel workflows processing elements",
     url = "https://github.com/akrause2014/dispel4py",
-    packages=['dispel4py', 'test'],
+    packages=['dispel4py', 'dispel4py.seismo', 'dispel4py.storm', 'test', 'test.graph_testing'],
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
