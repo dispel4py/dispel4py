@@ -75,11 +75,12 @@ class ProvenancePE(GenericPE):
         output = self.__processwrapper(streams)
         result = self.writeOutputStreams(output)
         # copy the metadata to another output stream so it can be collected separately.   
-        if not result or OUTPUT_METADATA not in result:
+        if not result or OUTPUT_METADATA not in output:
             # if there's no metadata then that's fine
             pass
         else:
-            result[OUTPUT_METADATA] = output['metadata']
+            if self.provon:
+                result[OUTPUT_METADATA] = output['metadata']
         return result
                     
     def __processwrapper(self, streams):
@@ -92,7 +93,7 @@ class ProvenancePE(GenericPE):
         except:
             self.log(traceback.format_exc())
             self.__getMetadataWrapper()
-            output={"class":"eu.admire.seismo.metadata.Verce","streams":[{"data":None}],"metadata":self.metadata,"error":self.error,"pid":"%s" % (os.getpid(),)}
+            output={"streams":[{"data":None}],"metadata":self.metadata,"error":self.error,"pid":"%s" % (os.getpid(),)}
             
         return self.packageAll()
         
@@ -136,7 +137,10 @@ class ProvenancePE(GenericPE):
             while (self.input["streams"]):
                 streamItem=self.input["streams"].pop(0)
                 self.streams.append(streamItem["data"])
-                self.attributes.append(streamItem['attr'])
+                try:
+                    self.attributes.append(streamItem['attr'])
+                except KeyError:
+                    self.attributes.append({})
                     
                 if self.provon:
                     self.buildDerivation(streamItem)
