@@ -140,7 +140,7 @@ class ProvenancePE(GenericPE):
                 try:
                     self.attributes.append(streamItem['attr'])
                 except KeyError:
-                    self.attributes.append({})
+                    self.attributes.append(None)
                     
                 if self.provon:
                     self.buildDerivation(streamItem)

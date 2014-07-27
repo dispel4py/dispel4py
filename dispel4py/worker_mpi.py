@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Run this with 
-# mpiexec -n 4 python -m test.worker_mpi test.graph_testing.pipeline_test [-i <number of iterations>]
+# mpiexec -n 4 python -m dispel4py.worker_mpi test.graph_testing.pipeline_test [-i <number of iterations>]
 
 from __future__ import print_function
 from dispel4py.workflow_graph import WorkflowGraph

@@ -223,7 +223,7 @@ def edit(reg, name):
         if temp_path: os.remove(temp_path)
         sys.stderr.write("An error occurred:\n%s\n" % err)
         sys.exit(-1)
-    
+
 def usage():
     sys.stderr.write("Usage: dispel4py <command> <arguments ...> \n")
     sys.stderr.write("Commands:\n")

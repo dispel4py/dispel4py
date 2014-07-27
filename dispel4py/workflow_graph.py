@@ -122,6 +122,9 @@ class WorkflowGraph(object):
                 **{'FROM_CONNECTION' : fromConnection, 'TO_CONNECTION' : toConnection, 'DIRECTION' : (fromNode,toNode), 
                 'ALL_CONNECTIONS' : [(fromConnection, toConnection)]})
                     
+    def getContainedObjects(self):
+        return [ node.getContainedObject() for node in self.graph.nodes() ]
+
     def propagate_types(self):
         '''
         Propagates the types throughout the graph by retrieving the output types from each node, starting
@@ -292,4 +295,12 @@ def extractAnnotations(fn):
                 ret['return'] = toks[1].strip()
     return ret
 
-                        
+def getConnectedInputs(node, graph):
+    names = []
+    for edge in graph.edges(node, data=True):
+        direction = edge[2]['DIRECTION']
+        dest = direction[1] 
+        dest_input = edge[2]['TO_CONNECTION']
+        if dest == node.getContainedObject():
+            names.append(dest_input)
+    return names

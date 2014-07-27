@@ -323,6 +323,15 @@ class VerceRegistry(object):
                 print response.text
         else:
             print "Cannot find " + fullname
+            
+    def createWorkspace(self, name):
+        url = self.registry_url + 'workspace'
+        data = { 'workspace': { 'name' : name, 'owner' : self.user } }
+        response = requests.post(url, data=json.dumps(data), headers=getHeaders(self.token))
+        if response.status_code == requests.codes.forbidden:
+            raise NotAuthorisedException()
+        if response.status_code != requests.codes.ok:
+            raise RegistrationFailed()
 
 ##############################################################################
 # Utility and static methods: 
