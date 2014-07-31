@@ -30,9 +30,10 @@ The easiest way to install dispel4py is via pip (https://pypi.python.org/pypi/pi
 Documentation
 -------------
 
-The wiki documentation explains how to install and test Dispel4Py: https://github.com/akrause2014/dispel4py/wiki 
+The wiki documentation explains how to install and test Dispel4Py: https://github.com/akrause2014/dispel4py/wiki
+
+Dispel4Py user documentation: http://www2.epcc.ed.ac.uk/~amrey/VERCE/Dispel4Py/
 
 
-
-![Logo](http://www2.epcc.ed.ac.uk/~amrey/VERCE/Dispel4Py/_images/DISPEL4PY_web.jpg)
+![Logo](http://www2.epcc.ed.ac.uk/~amrey/VERCE/Dispel4Py/_static/DISPEL4PY_web_trans.png)
 
