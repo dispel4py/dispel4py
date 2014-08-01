@@ -60,14 +60,13 @@ def _processWorker(pe, staticinputs, inconnections, outconnections):
         inputs = receive(pe.rank, open_inconnections)
         # pe.log('Received data %s' % inputs)
         if inputs is None:
-            pe.log('Processing is complete. Processed %s block(s).' % count)
             # we're finished
             break
         count += 1
         results = pe.process(inputs)
         if results is not None:
             for name, value in results.iteritems():
-                # pe.log('Writing %s to %s.%s' % ({name:value}, pe.id, name))
+                pe.log('Writing %s to %s.%s' % ({name:value}, pe.id, name))
                 try:
                     for dest_input, communication in outconnections[name]:
                         output = { dest_input : value }
@@ -78,7 +77,7 @@ def _processWorker(pe, staticinputs, inconnections, outconnections):
                     # print 'Discarding output from %s.%s' % (pe.id, name)
                     pass
                     
-    pe.log('Closing all output queues')
+    pe.log('Processing is complete. Processed %s block(s).' % count)
     for name in outconnections:
         for dest_input, communication in outconnections[name]:
             communication.closeQueue(pe.rank)
@@ -119,7 +118,7 @@ class GroupByCommunication(Communication):
         self.input_name = input_name
     def getDestination(self, data):
         output = tuple([data[self.input_name][x] for x in self.groupby])
-        index = abs(make_hash(output))%len(self.connections)
+        index = abs(make_hash(output))%len(self.destinations)
         return [self.destinations[index]]
     def getQueues(self):
         return self.connections
@@ -133,7 +132,6 @@ def _receiveWrapper(rank, open_inconnections):
             try:
                 queue = comm.getQueues()[rank]
                 received = queue.get_nowait()
-                # print 'Received %s from %s' % (received, queue)
                 inputs[name] = received[name]
                 break
             except multiprocessing.queues.Empty:
@@ -174,8 +172,9 @@ def _getCommunication(dest, dest_input, source_pes, dest_pes):
         raise
     return communication
    
+from dispel4py.partition import simpleProcess
 
-def multiprocess(workflow, numProcesses, inputs=[{}]):
+def multiprocess(workflow, numProcesses, inputs=[{}], simple=False):
     '''
     Executes the given inputs in the the graph in multiple processes.
     If the graph is partitioned, i.e. every node has been assigned to a partition by giving a value
@@ -185,14 +184,18 @@ def multiprocess(workflow, numProcesses, inputs=[{}]):
     '''
     
     success, sources, processes = _assign(workflow, numProcesses)
-    if success:
-        print 'Processes: %s' %  { pe.id : rank for (pe, rank) in processes.iteritems() }
+    if success and not simple:
+        graph = workflow.graph
     else:
-        print 'Simple processing: not implemented yet.'
-        return
+        print 'Start simple processing.'
+        uberWorkflow, inputs = simpleProcess(workflow, sources, inputs)
+        success, sources, processes = _assign(uberWorkflow, numProcesses)
+        graph = uberWorkflow.graph
+        for node in uberWorkflow.graph.nodes():
+            wrapperPE = node.getContainedObject()
+            print('%s contains %s' % (wrapperPE.id, [n.getContainedObject().id for n in wrapperPE.workflow.graph.nodes()]))
         
-    
-    graph = workflow.graph
+    print 'Processes: %s' %  { pe.id : rank for (pe, rank) in processes.iteritems() }
     inconnections = {}
     outconnections = {}
     process_pes = {}
@@ -300,6 +303,7 @@ if __name__ == "__main__":
     parser.add_argument('-a', '--attr', metavar='attribute', help='name of graph variable in the module')
     parser.add_argument('-f', '--file', metavar='inputfile', help='file containing the input dataset in JSON format')
     parser.add_argument('-i', '--iter', metavar='iterations', type=int, help='number of iterations')
+    parser.add_argument('-s', '--simple', help='force simple processing', action='store_true')
     args = parser.parse_args()
     
     graph = loadGraph(args.module, args.attr)
@@ -326,4 +330,4 @@ if __name__ == "__main__":
     
     print 'Starting multiprocessing with %s processes.' % args.num    
     print 'Inputs: %s' % inputs
-    multiprocess(graph, args.num, inputs)
+    multiprocess(graph, args.num, inputs, args.simple)

@@ -409,7 +409,7 @@ def simpleProcess(graph, sources, inputs):
         sourceWrapper = wrappers[source_id]
         destWrapper = wrappers[dest_id]
         if grouping:
-	    destWrapper.inputconnections[dest_id + '_' + dest_input][GROUPING] = grouping
+            destWrapper.inputconnections[dest_id + '_' + dest_input][GROUPING] = grouping
         uberWorkflow.connect(sourceWrapper, source_id + '_' + source_output, destWrapper, dest_id + '_' + dest_input)
         # print ('%s: connected %s to %s' % (rank, sourceWrapper.id + '.' + source_id + '_' + source_output,
         #          destWrapper.id + '.' + dest_id + '_' + dest_input))
