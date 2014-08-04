@@ -24,9 +24,6 @@ from dispel4py import simple_process, workflow_graph
 from dispel4py.GenericPE import GROUPING
 from dispel4py.utils import make_hash
 
-# delay in seconds between requests for input data from queue
-POLL_DELAY = 1
-
 class QueueWriter(object):
     def __init__(self, targets):
         self.targets = targets
