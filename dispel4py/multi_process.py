@@ -34,8 +34,9 @@ class QueueWriter(object):
         if result:
             for dest_input, communication in self.targets:
                 output = { dest_input : result }
-                destinations = communication.getDestination(output)
-                _distributionWrapper(output, destinations)
+                communication.send(output)
+                # destinations = communication.getDestination(output)
+                # _distributionWrapper(output, destinations)
 
 class NullWriter(object): 
     def write(self, result):
@@ -45,33 +46,35 @@ class NullWriter(object):
 def _log(self, msg):
     print("%s (rank %s): %s" % (self.id, self.rank, msg))
 
-def _processWorker(pe, staticinputs, inconnections, outconnections):
-    if inconnections:
+def _processWorker(pe, staticinputs, inputqueue, numInputs, outconnections):
+    if numInputs:
+        # pe.log("I'm a bolt - number of inputs: %s" % numInputs)
         receive = _receiveWrapper
+        open_inputs = numInputs
     else:
-        receive = lambda rank, inconnections: staticinputs.pop(0) if staticinputs else None
+        # pe.log("I'm a spout")
+        receive = lambda inputqueue: staticinputs.pop(0) if staticinputs else None
+        open_inputs = 1
     pe.log('Preprocessing')
     pe.preprocess()
     count = 0
     pe.log('Starting to process')
-    open_inconnections = dict(inconnections)
-    while True:
-        # pe.log('Waiting for input data %s' % inconnections)
-        inputs = receive(pe.rank, open_inconnections)
+    while open_inputs > 0:
+        # pe.log('Waiting for input data from %s' % inputqueue.name)
+        inputs = receive(inputqueue)
         # pe.log('Received data %s' % inputs)
         if inputs is None:
-            # we're finished
-            break
+            open_inputs -= 1
+            continue
         count += 1
         results = pe.process(inputs)
         if results is not None:
             for name, value in results.iteritems():
-                pe.log('Writing %s to %s.%s' % ({name:value}, pe.id, name))
+                # pe.log('Writing %s to %s.%s' % ({name:value}, pe.id, name))
                 try:
                     for dest_input, communication in outconnections[name]:
                         output = { dest_input : value }
-                        destinations = communication.getDestination(output)
-                        _distributionWrapper(output, destinations )
+                        communication.send(output)
                 except KeyError:
                     # the output is not connected so we ignore it
                     # print 'Discarding output from %s.%s' % (pe.id, name)
@@ -80,7 +83,7 @@ def _processWorker(pe, staticinputs, inconnections, outconnections):
     pe.log('Processing is complete. Processed %s block(s).' % count)
     for name in outconnections:
         for dest_input, communication in outconnections[name]:
-            communication.closeQueue(pe.rank)
+            communication.closeQueue()
             # for rank, queue in communication.getQueues().iteritems():
             #     queue.put(None)
     
@@ -89,84 +92,65 @@ def _processWorker(pe, staticinputs, inconnections, outconnections):
     pe.log('Done.')
     
 class Communication(object):
-    def __init__(self, source_pes, dest_pes):
+    def __init__(self, source_pes, dest_pes, dest_queues):
         self.source_pes = source_pes
         self.dest_pes = dest_pes
-        self.closed_queues = multiprocessing.Value('i', len(source_pes))
-    def closeQueue(self, rank):
-        with self.closed_queues.get_lock():
-            self.closed_queues.value -= 1
-    def isClosed(self):
-        return self.closed_queues.value <= 0
+        self.dest_queues = dest_queues
+    def closeQueue(self):
+        for q in self.destinations:
+            q.put(None)
+    def send(self, data):
+        dest = self.getDestination(data)
+        for q in dest:
+            q.put(data)
     
 class ShuffleCommunication(Communication):
-    def __init__(self, source_pes, dest_pes):
-        Communication.__init__(self, source_pes, dest_pes)
-        self.queue = multiprocessing.Queue()
-        self.queues = { rank : self.queue for rank in self.dest_pes }
+    def __init__(self, rank, source_pes, dest_pes, dest_queues):
+        Communication.__init__(self, source_pes, dest_pes, dest_queues)
+        self.currentIndex = (source_pes.keys().index(rank) % len(dest_pes)) -1
+        self.destinations = [ dest_queues[p] for r, p in dest_pes.iteritems() ]
+        # print 'shuffle sources: %s, destinations: %s' % (source_pes.keys(), [ r for r in dest_pes ])
+        # print 'shuffle, rank %s, currentIndex: %s' % (rank, self.currentIndex)
     def getDestination(self, data):
-        return [self.queue]
-    def getQueues(self):
-        return self.queues
+        self.currentIndex = (self.currentIndex+1)%len(self.destinations)
+        # print 'sending %s to %s' % (data, self.dest_pes.keys()[index])
+        return [self.destinations[self.currentIndex]]
 
 class GroupByCommunication(Communication):
-    def __init__(self, source_pes, dest_pes, input_name, groupby):
-        Communication.__init__(self, source_pes, dest_pes)
+    def __init__(self, source_pes, dest_pes, dest_queues, input_name, groupby):
+        Communication.__init__(self, source_pes, dest_pes, dest_queues)
         self.groupby = groupby
-        self.connections = { rank : multiprocessing.Queue() for rank in dest_pes }
-        self.destinations = [ q for r, q in self.connections.iteritems() ]
+        self.destinations = [ dest_queues[p] for r, p in dest_pes.iteritems() ]
         self.input_name = input_name
     def getDestination(self, data):
         output = tuple([data[self.input_name][x] for x in self.groupby])
-        index = abs(make_hash(output))%len(self.destinations)
+        index = abs(make_hash(output))%len(self.dest_pes)
         return [self.destinations[index]]
-    def getQueues(self):
-        return self.connections
         
                         
-def _receiveWrapper(rank, open_inconnections):
-    inputs = {}
-    closed_inconnections = set()
-    while not inputs:
-        for name, comm in open_inconnections.iteritems():
-            try:
-                queue = comm.getQueues()[rank]
-                received = queue.get_nowait()
-                inputs[name] = received[name]
-                break
-            except multiprocessing.queues.Empty:
-                # if there is nothing in the queue we check if the input is closed
-                if comm.isClosed():
-                    # print 'input %s is closed' % name
-                    closed_inconnections.add(name)
-                    continue
-        for name in closed_inconnections:
-            del open_inconnections[name]
-        if not inputs:
-            # if everything has been closed we stop
-            if not open_inconnections:
-                return None
-            # otherwise wait and try again with the remaining queues
-            time.sleep(POLL_DELAY)
-    # print 'closed inputs: %s' % closed_inputs
-    return inputs
+def _receiveWrapper(queue):
+    received = queue.get()
+    return received
 
 def _distributionWrapper(data, outconnections):
-    for queue in outconnections:
-        # print 'WRITING %s to %s' % (data, queue)
-        queue.put(data)
+    # print 'WRITING %s to %s' % (data, queue)
+    comm.send(data)
                 
-def _getCommunication(dest, dest_input, source_pes, dest_pes):
-    communication = ShuffleCommunication(source_pes, dest_pes)
+def _getCommunication(source, dest, dest_input, process_pes, input_queues):
+    communication = {}
     try:
         if GROUPING in dest.inputconnections[dest_input]:
             groupingtype = dest.inputconnections[dest_input][GROUPING]
             if isinstance(groupingtype, list):
-                communication = GroupByCommunication(source_pes, dest_pes, dest_input, groupingtype)
+                for rank, cp in process_pes[source].iteritems():
+                    communication[cp] = GroupByCommunication(process_pes[source], process_pes[dest], input_queues, dest_input, groupingtype)
             # elif groupingtype == 'all':
             #     communication = OneToAllCommunication(connections)
             # elif groupingtype == 'global':
             #     communication = AllToOneCommunication(connections)
+        else:
+            for rank, cp in process_pes[source].iteritems():
+                communication[cp] = ShuffleCommunication(rank, process_pes[source], process_pes[dest], input_queues)
     except KeyError:
         print("No input '%s' defined for PE '%s'" % (dest_input, dest.id))
         raise
@@ -196,12 +180,13 @@ def multiprocess(workflow, numProcesses, inputs=[{}], simple=False):
             print('%s contains %s' % (wrapperPE.id, [n.getContainedObject().id for n in wrapperPE.workflow.graph.nodes()]))
         
     print 'Processes: %s' %  { pe.id : rank for (pe, rank) in processes.iteritems() }
-    inconnections = {}
     outconnections = {}
     process_pes = {}
+    input_queues = {}
+    numInputs = {}
     for node in graph.nodes():
         pe = node.getContainedObject()
-        inconnections[pe] = {}
+        numInputs[pe] = 0
         outconnections[pe] = {}
         for output_name in pe.outputconnections:
             pe.outputconnections[output_name]['writer']=NullWriter()
@@ -211,13 +196,16 @@ def multiprocess(workflow, numProcesses, inputs=[{}], simple=False):
             cp.rank = proc
             cp.log = types.MethodType(_log, cp)
             process_pes[pe][proc] = cp
+            q= multiprocessing.Queue()
+            q.name = 'Queue_%s_%s' % (cp.id, cp.rank)
+            input_queues[cp] = q
+            outconnections[cp] = {}
         
     # print 'PROCESS PES: %s' % process_pes
     mappedInputs = {}
     
     for node in graph.nodes():
         pe = node.getContainedObject()
-        outconnections[pe] = {}
         for edge in graph.edges(node, data=True):
             direction = edge[2]['DIRECTION']
             source = direction[0]
@@ -225,25 +213,24 @@ def multiprocess(workflow, numProcesses, inputs=[{}], simple=False):
             dest = direction[1]
             dest_processes=processes[dest]
             source_processes=processes[source]
+                
             if dest == pe:
-                dest_input = edge[2]['TO_CONNECTION']
+                # dest_input = edge[2]['TO_CONNECTION']
+                numInputs[dest] += len(source_processes)
             if source == pe:
                 allconnections = edge[2]['ALL_CONNECTIONS']
-                try:
-                    inconx = inconnections[dest]
-                except KeyError:
-                    inconx = {}
-                    inconnections[dest] = inconx
-                outconnections[pe][source_output] = []
-                for (source_output, dest_input) in allconnections:
-                    communication = _getCommunication(dest, dest_input, process_pes[source], process_pes[dest])
-                    outconnections[pe][source_output].append((dest_input, communication))
-                    inconx[dest_input] = communication
                 for cp in process_pes[pe].values():
-                    cp.outputconnections[source_output]['writer']=QueueWriter(outconnections[pe][source_output])
+                    outconnections[cp][source_output] = []
+                for (source_output, dest_input) in allconnections:
+                    communication = _getCommunication(source, dest, dest_input, process_pes, input_queues)
+                    for cp in communication:
+                        outconnections[cp][source_output].append((dest_input, communication[cp]))
+                for cp in process_pes[pe].values():
+                    cp.outputconnections[source_output]['writer']=QueueWriter(outconnections[cp][source_output])
 
-        mappedInputs[pe] = inputs if pe in sources else None
-    # print 'INCONNECTIONS: %s' % inconnections
+        mappedInputs[pe] = inputs if pe in sources else None            
+        
+    # print 'INPUTQUEUES: %s' % input_queues
     # print 'OUTCONNECTIONS: %s' % outconnections
     # print 'MAPPED INPUTS: %s' % mappedInputs
     
@@ -251,7 +238,7 @@ def multiprocess(workflow, numProcesses, inputs=[{}], simple=False):
     for node in graph.nodes():
         pe = node.getContainedObject()
         for cp in process_pes[pe].values():
-            p = multiprocessing.Process(target=_processWorker, args=(cp, mappedInputs[pe], inconnections[pe], outconnections[pe]))
+            p = multiprocessing.Process(target=_processWorker, args=(cp, mappedInputs[pe], input_queues[cp], numInputs[pe], outconnections[cp]))
             jobs.append(p)
         # print p
 
