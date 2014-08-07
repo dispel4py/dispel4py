@@ -48,13 +48,22 @@ class SourceWrapper(storm.Spout):
         
     def nextTuple(self):
         try:
-            outputs = self.script.process(None)
+            input_tuple = None
+            try:
+                input_tuple = self.script._static_input.pop(0)
+            except AttributeError:
+                # there is no static input
+                pass
+            except IndexError:
+                # static input is empty - no more processing
+                return
+            outputs = self.script.process(input_tuple)
             if outputs is None:
                 return
             for streamname, output in outputs.iteritems():
-                tuple = output if isinstance(output, list) else [output]
-                storm.emit(tuple, stream=streamname)
-                storm.log("Dispel4Py ------> %s: emitted tuple %s to stream %s" % (self.script.id, tuple, streamname))
+                result = output if isinstance(output, list) else [output]
+                storm.emit(result, stream=streamname)
+                storm.log("Dispel4Py ------> %s: emitted tuple %s to stream %s" % (self.script.id, result, streamname))
         except:
             # logging the error but it should be passed to client somehow
             storm.log("Dispel4Py ------> %s: %s" % (self.scriptname, traceback.format_exc(), ))

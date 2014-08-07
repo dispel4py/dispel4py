@@ -16,7 +16,7 @@ import storm
 import traceback
 from importlib import import_module
 import pickle
-from output_writer import OutputWriter
+from output_writer import OutputWriter, encode_types, decode_types
 
 class SimpleWrapper(storm.Bolt):
 
@@ -48,23 +48,31 @@ class SimpleWrapper(storm.Bolt):
             raise
             
     def process(self,tup):
-        # storm.log("Dispel4Py ------> %s: Received block." % (self.boltId, ))
+        # storm.log("Dispel4Py ------> %s: Received block." % (self.script.id, ))
         try:
             inputname = self.inputmapping[tup.component][tup.stream]
             storm.log("Dispel4Py ------> %s: Received block at input '%s'" % (self.script.id, inputname, ))
-            outputs = self.script.process( { inputname : tup.values })
+            # inputs = tup.values
+            inputs = decode_types(tup.values)
+            outputs = self.script.process( { inputname : inputs })
             # storm.log("Dispel4Py ------> %s: Processing complete." % self.scriptname)
             
             if outputs is None:
                 return
             for streamname, output in outputs.iteritems():
-                tuple = output if isinstance(output, list) else [output]
-                storm.emit(tuple, stream=streamname)
-                storm.log("Dispel4Py ------> %s: Emitted output: %s" % (self.script.id, str(tuple)[:400]))
-                
-            
+                result = output if isinstance(output, list) else [output]
+                try:
+                    storm.emit(result, stream=streamname)
+                    storm.log("Dispel4Py ------> %s: Emitted to stream %s: %s" % (self.script.id, streamname, str(result)[:200]))
+                except TypeError:
+                    # encode manually
+                    encoded = encode_types(result)
+                    storm.emit(encoded, stream=streamname)
+                    storm.log("Dispel4Py ------> %s: Emitted to stream %s" % (self.script.id, streamname))
+                # except:
+                #     storm.log("%s: %s" % (self.script.id, traceback.format_exc()))
         except:
-            storm.log("Dispel4Py ------> %s: %s" % (self.boltId, traceback.format_exc(), ))
-
+            storm.log("Dispel4Py ------> %s: %s" % (self.script.id, traceback.format_exc(), ))
+            
 if __name__ == "__main__":
     SimpleWrapper().run()
