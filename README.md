@@ -18,7 +18,7 @@ If using the registry:
 
 If using Storm as execution engine:
 
-- Python Storm thrift generated code, available here: https://github.com/krux/python-storm
+- Python Storm thrift generated code, available here: https://github.com/apache/incubator-storm/tree/master/storm-core/src/py
 
 Installation
 ------------

@@ -104,8 +104,6 @@ def createPackage(args, static_input):
     shutil.copy('dispel4py/storm/utils.py', dispel4py_dir + '/storm/')
 
     # copy client and dependencies for storm submission to the temp directory
-    storm_dir = tmpdir + '/storm'
-    shutil.copytree('storm', storm_dir)
     dispel4py_dir = tmpdir + '/dispel4py'
     _mkdir_ifnotexists(dispel4py_dir)
     _mkdir_ifnotexists(dispel4py_dir + '/storm')
