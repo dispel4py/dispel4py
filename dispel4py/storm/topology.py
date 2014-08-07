@@ -65,8 +65,16 @@ def buildTopology(workflow):
         if GenericPE.GROUPING in dest.inputconnections[dest_input]:
             groupingtype = dest.inputconnections[dest_input][GenericPE.GROUPING]
             if isinstance(groupingtype, list):
+                fields = []
+                try:
+                    # try if the grouping type is a list of indexes
+                    for i in groupingtype:
+                        fields.append(source.getOutputTypes()[source_output][i])
+                except TypeError:
+                    # hopefully the grouping type is a list of tuple element names
+                    fields = groupingtype
                 # fields grouping with the list of fields
-                grouping = tt.Grouping(fields=groupingtype)
+                grouping = tt.Grouping(fields=fields)
             elif groupingtype == 'all':
                 grouping = tt.Grouping(all=tt.NullStruct())
             elif groupingtype == 'none':
@@ -102,12 +110,12 @@ def buildTopology(workflow):
                      'dispel4py.script' : pe.__class__.__name__, 
                      'dispel4py.inputmapping' : {},
                      'dispel4py.config' : pickle.dumps(pe_config)}
-        if not pe.inputconnections:
+        if not pe.inputconnections or pe not in input_connections:
             # if there are no inputs it's a spout :P
             spout_specs[pe_name] = tt.SpoutSpec(spout_object=tt.ComponentObject(shell=tt.ShellComponent("python", PE_WRAPPER['source'])), 
                                                              common=tt.ComponentCommon(inputs={}, 
                                                                                        streams=streams, 
-                                                                                       json_conf=json.dumps(json_conf)))
+                                                                                       json_conf=json.dumps(json_conf)))    
         else:
             inputs = input_connections[pe] if pe in input_connections else {}
             json_conf['dispel4py.inputmapping'] = input_mappings[pe] if pe in input_mappings else {}

@@ -6,11 +6,11 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 #
-#	 Unless required by applicable law or agreed to in writing, software
-#	 distributed under the License is distributed on an "AS IS" BASIS,
-#	 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#	 See the License for the specific language governing permissions and
-#	 limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 '''
 Submits a Dispel4Py graph for processing to Storm. 
@@ -45,11 +45,13 @@ and optional arguments:
 import argparse
 import datetime
 import getpass
+import json
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
+import traceback
 from importlib import import_module
 
 from thrift.transport import TTransport
@@ -63,7 +65,13 @@ from dispel4py.workflow_graph import WorkflowGraph
 TOPOLOGY_THRIFT_FILE = 'topology.thrift'
 STORM_SUBMISSION_CLIENT = 'storm_submission_client.py'
 
-def createPackage(module_name, attr, res):
+def _mkdir_ifnotexists(path):
+    try:
+        os.mkdir(path)
+    except OSError:
+        pass
+
+def createPackage(args, static_input):
     '''
     Creates a Storm submission package for the given dispel4py graph.
     
@@ -72,6 +80,9 @@ def createPackage(module_name, attr, res):
     :param res: resource directory - if None the default is "resources"
     :rtype: name of the temporary directory that contains the submission package
     '''
+    module_name = args.module
+    attr = args.attr
+    res = args.resources
     if res is None: res='resources'
     
     graph=loadGraph(module_name, attr)            
@@ -85,8 +96,8 @@ def createPackage(module_name, attr, res):
     # copy dependencies of PEs in the graph to resources in temp directory
     shutil.copytree(res, resources_dir)
     dispel4py_dir = resources_dir + '/dispel4py'
-    os.mkdir(dispel4py_dir)
-    os.mkdir(dispel4py_dir + '/storm')
+    _mkdir_ifnotexists(dispel4py_dir)
+    _mkdir_ifnotexists(dispel4py_dir + '/storm')
     shutil.copy('dispel4py/__init__.py', dispel4py_dir)
     shutil.copy('dispel4py/GenericPE.py', dispel4py_dir)
     shutil.copy('dispel4py/__init__.py', dispel4py_dir + '/storm/')
@@ -96,13 +107,27 @@ def createPackage(module_name, attr, res):
     storm_dir = tmpdir + '/storm'
     shutil.copytree('storm', storm_dir)
     dispel4py_dir = tmpdir + '/dispel4py'
-    os.mkdir(dispel4py_dir)
-    os.mkdir(dispel4py_dir + '/storm')
+    _mkdir_ifnotexists(dispel4py_dir)
+    _mkdir_ifnotexists(dispel4py_dir + '/storm')
     shutil.copy('dispel4py/__init__.py', dispel4py_dir)
     shutil.copy('dispel4py/__init__.py', dispel4py_dir + '/storm/')
     shutil.copy('dispel4py/storm/client.py', dispel4py_dir + '/storm/')
     shutil.copy('dispel4py/storm/storm_submission_client.py', tmpdir)
-    shutil.copytree('java/src/dispel4py', tmpdir + '/dispel4py')
+    shutil.copy('java/src/dispel4py/storm/ThriftSubmit.java', tmpdir + '/dispel4py/storm/')
+    
+    sources = []
+    for node in graph.graph.nodes():
+        pe = node.getContainedObject()
+        is_source = True
+        for edge in graph.graph.edges(node, data=True):
+            if pe == edge[2]['DIRECTION'][1]:
+                is_source = False
+                break
+        if is_source:
+            sources.append(pe)
+    print "Sources: %s" % [ pe.id for pe in sources ]
+    for pe in sources:
+        pe._static_input = static_input
     
     # create the storm topology
     topology = buildTopology(graph)
@@ -127,7 +152,7 @@ def _getStormHome():
         print 'Error: Please provide the installation directory of Storm as environment variable STORM_HOME'
         sys.exit(1)
 
-def submit(mod, attr, topologyName, res, save):
+def submit(args, inputs):
     '''
     Creates a Storm submission package and submits it to a remote cluster.
     
@@ -137,9 +162,10 @@ def submit(mod, attr, topologyName, res, save):
     :param save: if True the Storm submission package is not deleted at the end of the run
     '''
     STORM_HOME = _getStormHome()
-    tmpdir = createPackage(mod, attr, res)
+    topologyName = args.name
+    tmpdir = createPackage(args, inputs)
     print 'Created Storm submission package in %s' % tmpdir
-    # javacmd = 'javac', '-cp', '.:%s/lib/*:%s/*' % (STORM_HOME, STORM_HOME), 'dispel4py/storm/ThriftSubmit.java'
+    # javacmd = 'javac', '-cp', '.:%s/lib/*:%s/*' % (STORM_HOME, STORM_HOME), 'eu/dispel4py/storm/ThriftSubmit.java'
     # try:
     #     proc = subprocess.Popen(javacmd, cwd=tmpdir)
     #     proc.wait()
@@ -152,13 +178,13 @@ def submit(mod, attr, topologyName, res, save):
         proc.wait()
     except:
         pass
-    if save:
+    if args.save:
         print tmpdir
     else:
         shutil.rmtree(tmpdir)
         print 'Deleted %s' % tmpdir
         
-def runLocal(mod, attr, topologyName, res, save):
+def runLocal(args, inputs):
     '''
     Creates a Storm submission package and executes it locally.
     Note that the Storm topology runs until the process is explicitly killed, for example by pressing Ctrl-C.
@@ -169,24 +195,28 @@ def runLocal(mod, attr, topologyName, res, save):
     :param save: if True the Storm submission package is not deleted at the end of the run
     '''
     STORM_HOME = _getStormHome()
-    tmpdir = createPackage(mod, attr, res)
+    topologyName = args.name
+    tmpdir = createPackage(args, inputs)
     print 'Created Storm submission package in %s' % tmpdir
     try:
+        print 'Compiling java client'
         javacp = '.:%s/lib/*:%s/*' % (STORM_HOME, STORM_HOME)
         javacmd = 'javac', '-cp', javacp, 'dispel4py/storm/ThriftSubmit.java'
         proc = subprocess.Popen(javacmd, cwd=tmpdir)
         proc.wait()
+        print 'Running topology in local mode'
         javacmd = 'java', '-cp', javacp, 'dispel4py.storm.ThriftSubmit', 'topology.thrift', topologyName
         proc = subprocess.Popen(javacmd, cwd=tmpdir)
         proc.wait()
     except:
-        if save:
+        print traceback.format_exc()
+        if args.save:
             print tmpdir
         else:
             shutil.rmtree(tmpdir)
             print 'Deleted %s' % tmpdir
             
-def create(mod, attr, res):
+def create(args):
     '''
     Creates a Storm submission package and prints the temp directory containing the package.
     
@@ -194,7 +224,7 @@ def create(mod, attr, res):
     :param attr: name of graph attribute within the module - if None the first WorkflowGraph is used
     :param res: resource directory
     '''
-    tmpdir = createPackage(mod, attr, res)
+    tmpdir = createPackage(args)
     print 'Created Storm submission package in %s' % tmpdir    
 
 if __name__ == "__main__":
@@ -206,11 +236,30 @@ if __name__ == "__main__":
     parser.add_argument('-r', '--resources', metavar='resourceDir', help='path to local modules used by the graph - default "./resources/" ')
     parser.add_argument('-a', '--attr', metavar='attribute', help='name of graph variable in the module')
     parser.add_argument('-s', '--save', help='do not remove Storm resources after submission', action='store_true')
+    parser.add_argument('-f', '--file', metavar='inputfile', help='file containing the input dataset in JSON format')
+    parser.add_argument('-i', '--iter', metavar='iterations', type=int, help='number of iterations')
     args = parser.parse_args()
+    
+    inputs = None
+    if args.file:
+        try:
+            with open(args.file) as inputfile:
+                inputs = json.loads(inputfile.read())
+            print("Processing input file %s" % args.file)
+        except:
+            print traceback.format_exc()
+            print('Cannot read input file %s' % args.file)
+            sys.exit(1)
+    elif args.iter > 0:
+        inputs = [ {} for i in range(args.iter) ]
+        print("Processing %s iterations" % args.iter)
+    if type(inputs) != list:
+        inputs = [inputs]
+    
     if args.mode == 'local':
-        runLocal(args.module, args.attr, args.name, args.resources, args.save)
+        runLocal(args, inputs)
     elif args.mode == 'remote':
-        submit(args.module, args.attr, args.name, args.resources, args.save)
+        submit(args, inputs)
     elif args.mode == 'create':
-        create(args.module, args.attr, args.resources)
+        create(args)
     
