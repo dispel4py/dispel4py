@@ -10,16 +10,22 @@ Dependencies
 
 Dispel4Py has been tested with Python versions *2.7.5*, *2.7.2* and *2.6.6*.
 
+The following Python packages are required to run Dispel4Py:
+
 - networkx
+
+If using the MPI mapping:
+
+- mpi4py
+
+If using the Storm mapping:
+
+- Python Storm module, available here: https://github.com/apache/incubator-storm/tree/master/storm-core/src/multilang/py, to be placed in directory `resources`.
+- Python Storm thrift generated code, available here: https://github.com/apache/incubator-storm/tree/master/storm-core/src/py
 
 If using the registry:
 
 - requests
-
-If using Storm as execution engine:
-
-- Python Storm module, available here: https://github.com/apache/incubator-storm/tree/master/storm-core/src/multilang/py, to be placed in `resources`.
-- Python Storm thrift generated code, available here: https://github.com/apache/incubator-storm/tree/master/storm-core/src/py
 
 Installation
 ------------
