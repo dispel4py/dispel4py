@@ -33,7 +33,7 @@ It can be executed with MPI and STORM.
 
     For example::
     
-        mpiexec -n 11 python -m dispel4py.worker_mpi test.graph_testing.grouping_alltoone -i 10
+        mpiexec -n 11 python -m dispel4py.worker_mpi dispel4py.examples.graph_testing.grouping_alltoone -i 10
         
     .. note::
     
@@ -86,7 +86,7 @@ It can be executed with MPI and STORM.
 * STORM:  
 '''
 
-from test.graph_testing import testing_PEs as t
+from dispel4py.examples.graph_testing import testing_PEs as t
 from dispel4py.workflow_graph import WorkflowGraph
 
 def testAlltoOne():

@@ -33,7 +33,7 @@ Execution:
         
     For example::
     
-        mpiexec -n 6 python -m dispel4py.worker_mpi test.graph_testing.pipeline_test 
+        mpiexec -n 6 python -m dispel4py.worker_mpi dispel4py.examples.graph_testing.pipeline_test 
         
     .. note::
     
@@ -71,7 +71,7 @@ Execution:
 
     From the dispy directory launch the Storm submission client::
     
-        python storm_submission.py test.graph_testing.pipeline_test
+        python storm_submission.py dispel4py.examples.graph_testing.pipeline_test -m remote
         
     Output::
     
@@ -89,7 +89,7 @@ Execution:
         
 '''
 
-from test.graph_testing import testing_PEs as t
+from dispel4py.examples.graph_testing import testing_PEs as t
 from dispel4py.workflow_graph import WorkflowGraph
 
 def testPipeline(graph):

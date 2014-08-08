@@ -38,7 +38,7 @@ Execution:
         
     For example::
     
-        mpiexec -n 3 python -m dispel4py.worker_mpi test.graph_testing.partition_parallel_pipeline -i 10 
+        mpiexec -n 3 python -m dispel4py.worker_mpi dispel4py.examples.graph_testing.partition_parallel_pipeline -i 10 
 		
     Output::
 	
@@ -58,7 +58,7 @@ Execution:
 * STORM:  
 '''
 
-from test.graph_testing import testing_PEs as t
+from dispel4py.examples.graph_testing import testing_PEs as t
 from dispel4py.workflow_graph import WorkflowGraph
 
 def testParallelPipeline():

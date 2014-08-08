@@ -12,15 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from nose import tools
+from dispel4py.examples.graph_testing.testing_PEs import TestProducer, TestOneInOneOut
 from dispel4py.workflow_graph import WorkflowGraph
+from dispel4py.multi_process import multiprocess
 
-from testing import RandomWordProducer, WordCounter
-
-words = RandomWordProducer()
-words.numprocesses=1
-counter = WordCounter()
-counter.numprocesses=3
-graph = WorkflowGraph()
-graph.connect(words, 'output', counter, 'input')
-
-print "Built workflow"
+def testPipeline():
+    graph = WorkflowGraph()
+    prod = TestProducer()
+    cons = TestOneInOneOut()
+    graph.connect(prod, 'output', cons, 'input')
+    multiprocess(graph, 2, [{}, {}, {}, {}, {}])
+    
+def testPipelineMulti():
+    graph = WorkflowGraph()
+    prod = TestProducer()
+    cons = TestOneInOneOut()
+    graph.connect(prod, 'output', cons, 'input')
+    multiprocess(graph, 6, [{}, {}, {}, {}, {}])

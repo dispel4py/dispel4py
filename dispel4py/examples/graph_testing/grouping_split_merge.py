@@ -32,7 +32,7 @@ It can be executed with MPI and STORM.
     
     For example::
     
-        mpiexec -n 4 python -m dispel4py.worker_mpi test.graph_testing.grouping_split_merge 
+        mpiexec -n 4 python -m dispel4py.worker_mpi dispel4py.examples.graph_testing.grouping_split_merge 
 
 
     .. note::
@@ -68,7 +68,7 @@ It can be executed with MPI and STORM.
 * STORM:  
 '''
 
-from test.graph_testing import testing_PEs as t
+from dispel4py.examples.graph_testing import testing_PEs as t
 from dispel4py.workflow_graph import WorkflowGraph
 
 def testGrouping():

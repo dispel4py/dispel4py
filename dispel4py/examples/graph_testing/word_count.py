@@ -14,14 +14,11 @@
 
 from dispel4py.workflow_graph import WorkflowGraph
 
-from dispel4py import registry
-reg = registry.initRegistry()
-
-from testing import RandomWordProducer, RandomFilter
+from dispel4py.examples.graph_testing.testing_PEs import RandomWordProducer, WordCounter
 
 words = RandomWordProducer()
-filter = RandomFilter()
+words.numprocesses=1
+counter = WordCounter()
+counter.numprocesses=3
 graph = WorkflowGraph()
-graph.connect(words, 'output', filter, 'input')
-
-print "Built workflow"
+graph.connect(words, 'output', counter, 'input')

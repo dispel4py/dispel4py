@@ -14,55 +14,21 @@
 
 # Tests for dispel4py.simple_process
 '''
-Using nose (https://nose.readthedocs.org/en/latest/) run as follows:
-$ nosetests test/simple_process_test.py
-...
-----------------------------------------------------------------------
-Ran 3 tests in 0.006s
+Using nose (https://nose.readthedocs.org/en/latest/) run as follows::
 
-OK
+    $ nosetests dispel4py/test/simple_process_test.py 
+    ...
+    ----------------------------------------------------------------------
+    Ran 3 tests in 0.006s
+
+    OK
 '''
 
 from dispel4py.workflow_graph import WorkflowGraph
 from dispel4py.GenericPE import GenericPE, NAME
 from dispel4py import simple_process
 
-class TestProducer(GenericPE):
-    def __init__(self, numOutputs=1):
-        GenericPE.__init__(self)
-        if numOutputs == 1:
-            self.outputconnections = { 'output' : { NAME : 'output' } }
-        else:
-            for i in range(numOutputs):
-                self.outputconnections['output%s' % i] = { NAME : 'output%s' % i } 
-        self.counter = 0
-    def process(self, inputs):
-        self.counter += 1
-        result = {}
-        for output in self.outputconnections:
-            result[output] = self.counter
-        return result
-
-class TestOneInOneOut(GenericPE):
-    def __init__(self):
-        GenericPE.__init__(self)
-        self.inputconnections = { 'input' : { NAME : 'input' } }
-        self.outputconnections = { 'output' : { NAME : 'output' } }
-    def process(self, inputs):
-        return { 'output' : inputs['input'] }
-
-class TestTwoInOneOut(GenericPE):
-    def __init__(self):
-        GenericPE.__init__(self)
-        self.inputconnections = { 'input0' : { NAME : 'input0' }, 'input1' : { NAME : 'input1' } }
-        self.outputconnections = { 'output' : { NAME : 'output' } }
-    def process(self, inputs):
-        result = ''
-        for inp in self.inputconnections:
-            if inp in inputs:
-                result += '%s' % (inputs[inp])
-        if result:
-            return { 'output' : result }
+from dispel4py.examples.graph_testing.testing_PEs import TestProducer, TestOneInOneOut, TestTwoInOneOut
 
 from nose import tools
 def testPipeline():
