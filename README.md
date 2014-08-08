@@ -12,11 +12,11 @@ Dispel4Py has been tested with Python versions *2.7.5*, *2.7.2* and *2.6.6*.
 
 The following Python packages are required to run Dispel4Py:
 
-- networkx
+- networkx (https://networkx.github.io/)
 
 If using the MPI mapping:
 
-- mpi4py
+- mpi4py (http://mpi4py.scipy.org/)
 
 If using the Storm mapping:
 
@@ -25,7 +25,7 @@ If using the Storm mapping:
 
 If using the registry:
 
-- requests
+- requests (http://docs.python-requests.org/)
 
 Installation
 ------------
