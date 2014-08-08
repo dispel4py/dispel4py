@@ -21,7 +21,7 @@ For example, to visualise a graph named 'pipeline'::
     display(pipeline)
     
 '''
-from verce.workflow_graph import drawDot
+from dispel4py.workflow_graph import drawDot
 from IPython.core.display import display_png
 
 def display(graph):
@@ -29,5 +29,3 @@ def display(graph):
     Visualises the input graph.
     '''
     display_png(drawDot(graph), raw=True)    
-
-from IPython.core.magic import (Magics, magics_class, line_magic)
