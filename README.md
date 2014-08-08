@@ -18,6 +18,7 @@ If using the registry:
 
 If using Storm as execution engine:
 
+- Python Storm module, available here: https://github.com/apache/incubator-storm/tree/master/storm-core/src/multilang/py, to be placed in `resources`.
 - Python Storm thrift generated code, available here: https://github.com/apache/incubator-storm/tree/master/storm-core/src/py
 
 Installation
