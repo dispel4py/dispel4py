@@ -23,7 +23,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name = "Dispel4py",
+    name = "dispel4py",
     version = "0.0.1",
     author = "The University of Edinburgh",
     author_email = "a.krause@epcc.ed.ac.uk",
