@@ -23,10 +23,6 @@ If using the Storm mapping:
 - Python Storm module, available here: https://github.com/apache/incubator-storm/tree/master/storm-core/src/multilang/py, to be placed in directory `resources`.
 - Python Storm thrift generated code, available here: https://github.com/apache/incubator-storm/tree/master/storm-core/src/py
 
-If using the registry:
-
-- requests (http://docs.python-requests.org/)
-
 Installation
 ------------
 
