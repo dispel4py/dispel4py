@@ -39,9 +39,6 @@ class WorkflowNode:
         # TODO: This may not be accurate - check.
         if inspect.isroutine(o): # it's a 'function'
             self.nodeType = self.WORKFLOW_NODE_FN
-            annotations = extractAnnotations(o)
-            self.inputs = annotations['params']
-            self.retType = annotations['return']
         elif isinstance(o, GenericPE):
             # TODO Perhaps we should have a similar arrangement for annotating PEs and their ins/outs 
             o.id = o.name + str(WorkflowNode.node_counter)
@@ -261,40 +258,6 @@ def drawDot(graph):
     stdout, stderr = p.communicate(dot.encode('utf-8'))
     return stdout
     
-#Convenience method; if more are needed they should be moved into a new helper module
-def extractAnnotations(fn):
-    '''
-    Extract and return method annotations according to the format::
-    
-        <Description - free text>
-        @param <name> <type> <','> Free text description
-        @return <type>
-    '''
-    ret = {'doc':'', 'params':[], 'return':''}
-    if fn.__doc__ == None: return ret
-    for l in fn.__doc__.splitlines():
-        l = l.strip()
-        if l == '': continue
-        if not l.startswith('@'):
-            ret['doc'] += l
-        else:
-            if l.startswith('@param'):
-                toks = l.split(',')
-                pdescr = ''
-                if len(toks) == 2:
-                    pdescr = toks[1].strip()
-                lhstoks = toks[0].split()
-                pname = lhstoks[1]
-                ptype = ''
-                if len(lhstoks) >= 3:
-                    ptype = lhstoks[2]
-
-                ret['params'].append({'name':pname, 'type':ptype, 'doc':pdescr})
-            elif l.startswith('@return'):
-                toks = l.split()
-                ret['return'] = toks[1].strip()
-    return ret
-
 def getConnectedInputs(node, graph):
     names = []
     for edge in graph.edges(node, data=True):
