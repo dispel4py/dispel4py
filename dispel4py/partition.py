@@ -5,7 +5,7 @@
 import copy
 import types
 
-from dispel4py.GenericPE import GenericPE, NAME, GROUPING
+from dispel4py.core import GenericPE, NAME, GROUPING
 from dispel4py.workflow_graph import WorkflowGraph
 from dispel4py import simple_process
 

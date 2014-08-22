@@ -21,7 +21,7 @@ import types
 import traceback
 
 from dispel4py import simple_process, workflow_graph
-from dispel4py.GenericPE import GROUPING
+from dispel4py.core import GROUPING
 from dispel4py.utils import make_hash
 
 class QueueWriter(object):

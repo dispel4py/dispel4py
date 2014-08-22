@@ -1,4 +1,4 @@
-from dispel4py.GenericPE import GenericPE, NAME, TYPE
+from dispel4py.core import GenericPE, NAME, TYPE
 from dispel4py.seismo.seismo import SeismoPE
 from obspy.core import read 
 

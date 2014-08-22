@@ -280,7 +280,7 @@ def process(graph, inputs=[{}], provideAllInputs=False, resultconnections=[]):
             r.update(cr)
     return results
     
-from dispel4py.GenericPE import GenericPE
+from dispel4py.core import GenericPE
 class SimpleLockstepWrapper(GenericPE):
     ''' 
     A PE that provides the input data in lockstep to the 'wrapped' PE.

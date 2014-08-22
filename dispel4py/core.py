@@ -54,7 +54,7 @@ Example implementation::
     import cStringIO
     import base64
     from obspy.core import read,UTCDateTime,Stream,Trace
-    from dispel4py.GenericPE import GenericPE, NAME, TYPE
+    from dispel4py.core import GenericPE, NAME, TYPE
 
     INPUT_NAME = 'input'
     OUTPUT_NAME = 'output'
@@ -63,13 +63,8 @@ Example implementation::
 
         def __init__(self):
             GenericPE.__init__(self)
-            in1 = {}
-            in1[NAME] = INPUT_NAME
-            self.inputconnections[INPUT_NAME] = in1
-            out1 = {}
-            out1[NAME] = OUTPUT_NAME
-            out1[TYPE] = ['timestamp', 'origin', 'streams']
-            self.outputconnections[OUTPUT_NAME] = out1
+            self._add_input(INPUT_NAME)
+            self._add_output(OUTPUT_NAME, ['timestamp', 'origin', 'streams'])
 
         def process(self, inputs):
             values = inputs[INPUT_NAME]

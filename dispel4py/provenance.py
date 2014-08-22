@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dispel4py.GenericPE import GenericPE, NAME, TYPE
+from dispel4py.core import GenericPE, NAME, TYPE
 import datetime
 import uuid
 import traceback
