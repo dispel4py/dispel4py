@@ -178,15 +178,13 @@ class WorkflowGraph(object):
                             self.connect(fromPE, fromConnection, toPE, toConnection)
                     for outputname in wfGraph.outputmappings:
                         fromPE, fromConnection = wfGraph.outputmappings[outputname]
-                        edge = None
-                        toPE, toConnection = None, None
+                        destinations = []
                         for e in self.graph[node].values():
                             if wfGraph == e['DIRECTION'][0] and outputname == e['FROM_CONNECTION']:
                                 toPE = e['DIRECTION'][1]
                                 toConnection = e['TO_CONNECTION']
-                                edge = self.objToNode[wfGraph], self.objToNode[toPE]
-                                break
-                        if edge is not None:
+                                destinations.append((toPE, toConnection))
+                        for (toPE, toConnection) in destinations:
                             # print 'connecting output %s.%s' % (toPE, toConnection)
                             self.connect(fromPE, fromConnection, toPE, toConnection)
                     self.graph.remove_node(node)
