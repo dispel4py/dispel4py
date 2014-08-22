@@ -16,7 +16,7 @@ import networkx as nx
 import inspect
 import sys
 
-from GenericPE import GenericPE 
+from dispel4py.core import GenericPE 
 
 class WorkflowNode:
     '''
@@ -58,7 +58,7 @@ class WorkflowNode:
             except AttributeError:
                 pass
         else:
-            sys.stderr.write('Error: Unknown type of object passed as a Workflow Node: ' + str(type(o)))
+            sys.stderr.write('Error: Unknown type of object passed as a Workflow Node: %s\n' % type(o))
             raise Exception("Unknown type of object passed as a Workflow Node: %s" % type(o))
             # sys.exit(1) # too harsh?
             
