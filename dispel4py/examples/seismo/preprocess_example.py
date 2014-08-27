@@ -22,7 +22,7 @@ from obspy.core import read as obread
 
 
 # These are the file locations
-ROOT_DIR = '/path/to/test/data/'
+ROOT_DIR = '/Users/akrause/VERCE/data/Terracorrelator/'
 IN1=ROOT_DIR + "A25A.TA..BHZ.2011.025.00.00.00.000-2011.026.00.00.39.000.rm.scale-AUTO.SAC"
 IN2=ROOT_DIR + "BMN.LB..BHZ.2011.025.00.00.00.023-2011.026.00.00.38.998.rm.scale-AUTO.SAC"
 R1=ROOT_DIR + "RESP.A25A.TA..BHZ"

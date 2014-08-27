@@ -14,8 +14,7 @@
 
 # Test PEs
 '''
-This file is going to be used for testing different workflows.
-It contains the PEs that the workflows are going to use. 
+Example PEs for test workflows, implementing various patterns.
 '''
 
 from dispel4py.core import GenericPE, NAME, TYPE, GROUPING

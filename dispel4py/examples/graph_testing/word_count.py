@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+'''
+Counts words produced by a WordProducer.
+'''
+
 from dispel4py.workflow_graph import WorkflowGraph
 
 from dispel4py.examples.graph_testing.testing_PEs import RandomWordProducer, WordCounter

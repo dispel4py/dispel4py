@@ -13,7 +13,7 @@
 # limitations under the License.
 
 '''
-This is a dispy graph where each MPI process computes a partition of the workflow instead of a PE instance. 
+This is a dispel4py graph where each MPI process computes a partition of the workflow instead of a PE instance. 
 This happens automatically when the graph has more nodes than MPI processes. 
 In terms of internal execution, the user has control which parts of the graph are distributed to each MPI process. 
 See :py:mod:`~test.graph_testing.partition_parallel_pipeline` on how to specify the partitioning. 
@@ -22,12 +22,12 @@ See :py:mod:`~test.graph_testing.partition_parallel_pipeline` on how to specify 
 
 It can be executed with MPI and STORM.
 
-* MPI: Please, locate yourself into the dispy directory. 
+* MPI: Please, locate yourself into the dispel4py directory. 
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi <name_dispy_graph> <-f file containing the input dataset in JSON format>
-	<-i number of iterations/runs'> <-s>
+        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi [-a name_dispel4py_graph] [-f file containing the input dataset in JSON format]
+	[-i number of iterations/runs'] [-s]
 	
     The argument '-s' forces to run the graph in a simple processing, which means that the first node of the graph will be executed in a process, and the rest of nodes will be        executed in a second process.  
     When <-i number of interations/runs> is not indicated, the graph is executed once by default. 	

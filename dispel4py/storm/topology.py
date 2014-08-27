@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+'''
+Creates a Storm topology from a dispel4py graph.
+'''
+
 import json
 import pickle
             

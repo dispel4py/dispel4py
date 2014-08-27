@@ -13,19 +13,19 @@
 # limitations under the License.
 
 '''
-This is a dispy graph which produces a workflow with a pipeline 
+This is a dispel4py graph which produces a workflow with a pipeline 
 in which the producer node ``prod`` sends data to the consumer node ``cons1`` which then sends data to node ``cons2``. 
 Note that in this graph we have defined several instances of the cons1 and cons2 nodes
 and all the instances of the cons1 node are sending data to only one instance of cons2 node. 
-This type of grouping is called *global* in dispy (all to one). 
+This type of grouping is called *global* in dispel4py (all to one). 
 
 It can be executed with MPI and STORM.
 
-* MPI: Please, locate yourself into the dispy directory. 
+* MPI: Please, locate yourself into the dispel4py directory. 
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi <name_dispy_graph> <-f file containing the input dataset in JSON format>
+        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi <name_dispel4py_graph> <-f file containing the input dataset in JSON format>
 	<-i number of iterations/runs'> <-s>
 	
     The argument '-s' forces to run the graph in a simple processing, which means that the first node of the graph will be executed in a process, and the rest of nodes will be        executed in a second process.  

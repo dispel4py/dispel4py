@@ -13,7 +13,7 @@
 # limitations under the License.
 
 '''
-This is a dispy graph which produces a workflow which copies the data (from node ``prod``) to one node (``cons``). 
+This is a dispel4py graph which produces a workflow which copies the data (from node ``prod``) to one node (``cons``). 
 
 Note, that in this graph, we have decided to assign two processes to instances of the same PE:: 
 
@@ -37,12 +37,12 @@ whereas in :py:mod:`~test.graph_testing.teecopy` the node ``prod`` sends the sam
 
 It can be executed with MPI and STORM.
 
-* MPI: Please, locate yourself into the dispy directory. 
+* MPI: Please, locate yourself into the dispel4py directory. 
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi <name_dispy_graph> <-f file containing the input dataset in JSON format>
-	<-i number of iterations/runs'> <-s>
+        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi [-a name_dispel4py_graph] [-f file containing the input dataset in JSON format]
+	[-i number of iterations/runs'] [-s]
 
     The argument '-s' forces to run the graph in a simple processing, which means that the first node of the graph will be executed in a process, and the rest of nodes will be        executed in a second process.  
     When <-i number of interations/runs> is not indicated, the graph is executed once by default. 	

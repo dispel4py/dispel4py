@@ -13,19 +13,19 @@
 # limitations under the License.
 
 '''
-This is a dispy graph which produces a pipleline workflow with one producer node (prod) and 5 consumer nodes. 
+This is a dispel4py graph which produces a pipeline workflow with one producer node (prod) and 5 consumer nodes. 
 It can be executed with MPI and STORM. 
 
 .. image:: /api/images/pipeline_test.png
 
 Execution: 
 
-* MPI: Please, locate yourself into the dispy directory. 
+* MPI: Please, locate yourself into the dispel4py directory. 
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi <name_dispy_graph> <-f file containing the input dataset in JSON format>
-	<-i number of iterations/runs'> <-s>
+        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi [-a name_dispel4py_graph] [-f file containing the input dataset in JSON format]
+	[-i number of iterations/runs'] [-s]
 	
     The argument '-s' forces to run the graph in a simple processing, which means that the first node of the graph will be executed in a process, and the rest of nodes will be        executed in a second process.  
     When <-i number of interations/runs> is not indicated, the graph is executed once by default. 	
@@ -69,7 +69,7 @@ Execution:
         
 * STORM:  
 
-    From the dispy directory launch the Storm submission client::
+    From the dispel4py directory launch the Storm submission client::
     
         python storm_submission.py dispel4py.examples.graph_testing.pipeline_test -m remote
         
