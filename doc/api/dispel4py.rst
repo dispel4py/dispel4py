@@ -7,7 +7,6 @@ Subpackages
 .. toctree::
 
     dispel4py.examples
-    dispel4py.registry
     dispel4py.seismo
     dispel4py.storm
     dispel4py.test
@@ -15,10 +14,18 @@ Subpackages
 Submodules
 ----------
 
-dispel4py.GenericPE module
+dispel4py.core module
 --------------------------
 
-.. automodule:: dispel4py.GenericPE
+.. automodule:: dispel4py.core
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+dispel4py.base module
+--------------------------
+
+.. automodule:: dispel4py.base
     :members:
     :undoc-members:
     :show-inheritance:

@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+'''
+The core module for dispel4py.
+'''
+
 import uuid
 # Connection-level dict elements
 NAME = 'name'

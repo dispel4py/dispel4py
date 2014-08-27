@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+'''
+Collection of dispel4py utilities.
+'''
+
 from dispel4py.workflow_graph import WorkflowGraph
 
 from importlib import import_module

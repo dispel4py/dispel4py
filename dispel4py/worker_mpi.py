@@ -15,6 +15,10 @@
 # Run this with 
 # mpiexec -n 4 python -m dispel4py.worker_mpi test.graph_testing.pipeline_test [-i <number of iterations>]
 
+'''
+Enactment of dispel4py graphs with MPI.
+'''
+
 from __future__ import print_function
 from dispel4py.workflow_graph import WorkflowGraph
 from dispel4py.core import GenericPE, NAME, GROUPING
