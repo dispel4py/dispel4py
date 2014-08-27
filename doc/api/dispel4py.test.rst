@@ -1,14 +1,6 @@
 dispel4py.test package
 ======================
 
-Subpackages
------------
-
-.. toctree::
-
-    dispel4py.test.hpc
-    dispel4py.test.seismo
-
 Submodules
 ----------
 

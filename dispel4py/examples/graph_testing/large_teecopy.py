@@ -16,8 +16,6 @@
 This is a dispy graph which produces a workflow that copies the data (from node prod) to two nodes (cons2 and cons3). 
 This example can be used to process a large number of data blocks for testing.
     
-.. image:: /api/images/large_teecopy.png
-
 It can be executed with MPI and STORM.
 
 * MPI: Please, locate yourself into the dispy directory. 

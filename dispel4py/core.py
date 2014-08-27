@@ -26,7 +26,7 @@ class GenericPE(object):
 Base class for Dispel4Py processing elements (PEs). Custom PEs are expected to extend this class and 
 override the 'process' function.
 
-Custom PEs must override :py:func:`~dispel4py.GenericPE.GenericPE.__init__` to declare the inputs and outputs that can be connected within
+Custom PEs must override :py:func:`~dispel4py.core.GenericPE.__init__` to declare the inputs and outputs that can be connected within
 the workflow graph, by defining a NAME and possibly a TYPE.
 The type of a connection is specific to the enactment system. In the example below the target system 
 is Storm and the type declares what kind of tuples are produced::
@@ -121,7 +121,7 @@ Example implementation::
         '''
         Declares an input for this PE. 
         This method may be used when initialising a PE instead of modifying 
-        :py:attr:`~dispel4py.GenericPE.GenericPE.inputconnections` directly.
+        :py:attr:`~dispel4py.core.GenericPE.inputconnections` directly.
         
         :param name: name of the input
         :param grouping: the grouping type that this input expects (optional)
@@ -137,7 +137,7 @@ Example implementation::
         '''
         Declares an output for this PE. 
         This method may be used when initialising a PE instead of modifying 
-        :py:attr:`~dispel4py.GenericPE.GenericPE.outputconnections` directly.
+        :py:attr:`~dispel4py.core.GenericPE.outputconnections` directly.
         
         :param name: name of the output
         :param tuple_type: type of tuples produced by this output (optional)
@@ -153,7 +153,7 @@ Example implementation::
         
         .. note::
         
-            This method is always called before :py:func:`~dispel4py.GenericPE.GenericPE.getOutputTypes`.
+            This method is always called before :py:func:`~dispel4py.core.GenericPE.getOutputTypes`.
 
         :param types: object types for each input stream
         :type types: dictionary mapping input name to input type
@@ -171,7 +171,7 @@ Example implementation::
         
         .. note::
             
-            This method is only called after the input types have been initialised in :py:func:`~dispel4py.GenericPE.GenericPE.setInputTypes`. 
+            This method is only called after the input types have been initialised in :py:func:`~dispel4py.core.GenericPE.setInputTypes`. 
         
         :rtype: a dictionary mapping each output name to its type
         
@@ -203,7 +203,7 @@ Example implementation::
         The 'inputs' dictionary contains data from any or all of the streams that are connected to
         this PE, in any order. The return value of this function is a single output dictionary, with 
         the names of the output streams as keys. To produce more than one output data can be written 
-        at any point during processing using the :py:func:`~dispel4py.GenericPE.GenericPE.write` method.
+        at any point during processing using the :py:func:`~dispel4py.core.GenericPE.write` method.
         
         :param inputs: the input data for this iteration
         :type inputs: dictionary

@@ -2,7 +2,7 @@ from dispel4py.core import GenericPE, NAME, TYPE, GROUPING
 
 class BasePE(GenericPE):
     '''
-    A basic implementation of a :py:class:`~dispel4py.GenericPE.GenericPE` that
+    A basic implementation of a :py:class:`~dispel4py.core.GenericPE` that
     allows to easily extend the GenericPE with named inputs and outputs.
     '''
     INPUT_NAME = 'input'
