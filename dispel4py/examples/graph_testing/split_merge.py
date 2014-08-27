@@ -13,22 +13,22 @@
 # limitations under the License.
 
 '''
-This is a dispy graph which produces a workflow that splits the data and sends it to two nodes (cons1 and cons2)
+This is a dispel4py graph which produces a workflow that splits the data and sends it to two nodes (cons1 and cons2)
 and the output of those two nodes is merged by another node (last). 
 
 .. image:: /api/images/split_merge.png
 
 It can be executed with MPI and STORM. 
 
-* MPI: Please, locate yourself into the dispy directory. 
+* MPI: Please, locate yourself into the dispel4py directory. 
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi <name_dispy_graph> <-f file containing the input dataset in JSON format>
-	<-i number of iterations/runs'> <-s>
+        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi [-a name_dispel4py_graph] [-f file containing the input dataset in JSON format]
+	[-i number of iterations/runs'] [-s]
 	
     The argument '-s' forces to run the graph in a simple processing, which means that the first node of the graph will be executed in a process, and the rest of nodes will be        executed in a second process.  
-    When <-i number of interations/runs> is not indicated, the graph is executed once by default. 	
+    When [-i number of interations/runs] is not indicated, the graph is executed once by default. 	
         
 
     For example::

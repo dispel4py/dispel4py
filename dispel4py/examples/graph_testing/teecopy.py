@@ -13,7 +13,7 @@
 # limitations under the License.
 
 '''
-This is a dispy graph which produces a workflow that copies the data (from node prod) to two nodes (cons1 and cons2). 
+This is a dispel4py graph which produces a workflow that copies the data (from node prod) to two nodes (cons1 and cons2). 
 If you compare this graph with :py:mod:`~test.graph_testing.grouping_onetoall` they look quite similar. 
 However, they do different things. 
 In this example, the nodes ``cons1`` and ``cons2`` are different PE and the node ``prod`` sends the same data to both PEs.
@@ -22,15 +22,15 @@ In this example, the nodes ``cons1`` and ``cons2`` are different PE and the node
 
 It can be executed with MPI and STORM.
 
-* MPI: Please, locate yourself into the dispy directory. 
+* MPI: Please, locate yourself into the dispel4py directory. 
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi <name_dispy_graph> <-f file containing the input dataset in JSON format>
-	<-i number of iterations/runs'> <-s>
+        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi [-a name_dispel4py_graph] [-f file containing the input dataset in JSON format]
+	[-i number of iterations/runs'] [-s]
 	
     The argument '-s' forces to run the graph in a simple processing, which means that the first node of the graph will be executed in a process, and the rest of nodes will be        executed in a second process.  
-    When <-i number of interations/runs> is not indicated, the graph is executed once by default. 	
+    When [-i number of interations/runs] is not indicated, the graph is executed once by default. 	
     
 
     For example::

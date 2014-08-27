@@ -31,7 +31,7 @@ PE_WRAPPER = { 'source'   : 'source_wrapper.py',
             
 def buildTopology(workflow):
     '''
-    Builds a Storm topology from the given dispy workflow.
+    Builds a Storm topology from the given dispel4py workflow.
     '''
     workflow.propagate_types()
     graph = workflow.graph
