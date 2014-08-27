@@ -21,16 +21,16 @@ To list the available components in a package::
       
 View the source of a Dispel4Py PE::
 
-    $ ./dispel4py view dispel4py.test.MyTestPE
-    
-    from dispel4py.GenericPE import GenericPE, NAME
-    class MyTestPE(GenericPE):
-        def __init__(self):
-            GenericPE.__init__(self)
-            self.outputconnections = { 'output' :  { NAME : 'output' } }
-        def process(inputs):
-            return { 'output' : 'Hello World!' }
-            
+    $ ./dispel4py view eu.verce.seismo.Detrend_CM
+    import numpy as np
+
+    def detrend(stream, method):
+        _method=method
+        for tr in stream:
+            tr.detrend(_method)
+            tr.data=np.float32(tr.data)
+        return stream
+     
 Register a new component::
 
     $ ./dispel4py register test.myexample.MyFunction test/myexample.py
@@ -46,7 +46,7 @@ The IPython extension for Dispel4Py allows to run the commands described above w
 You can now list package contents in the registry, view the source of Dispel4Py components or register new Dispel4Py components using the ``%dispel4py`` command from the notebook::
 
     %dispel4py list dispel4py.test
-    %dispel4py view dispel4py.MyTestPE
+    %dispel4py view eu.verce.seismo.Detrend_CM
     
 The Dispel4Py extension supports the display of the workflow graph with a layout created by dot. If the commandline tool *Graphviz dot* (http://www.graphviz.org/) is available on the IPython notebook server a workflow graph can be displayed::
 

@@ -1,24 +1,28 @@
 .. .. documentation master file, created by
-   sphinx-quickstart on Wed Jun  4 09:55:24 2014.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+   sphinx-quickstart on Mon Aug 11 11:22:11 2014.
 
 Dispel4Py API documentation
 ===========================
 
-Contents:
+.. rubric:: Core packages
 
-.. toctree::
-   :maxdepth: 4
+.. autosummary::
+   :nosignatures:
+   :toctree: generated/
+   
+   dispel4py
+   dispel4py.seismo
+   dispel4py.storm
 
-   dispel4py_extension
-   getFlistRaw
-   mpi_submission
-   storm
-   storm_submission
-   test
-   verce
+.. rubric:: Examples and tests
 
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
+    
+    dispel4py.examples.graph_testing
+    dispel4py.test
+    
 
 Indices and tables
 ==================

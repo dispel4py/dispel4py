@@ -1,4 +1,4 @@
 API Documentation
 =================
 
-:doc:`/api/index`
+Module reference: :doc:`/api/index`

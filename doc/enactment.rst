@@ -8,20 +8,29 @@ Storm
 
 A Dispel4Py graph can be translated to a Storm topology to be enacted on a Storm cluster.
 
-To use a Storm client, download a release from http://storm.incubator.apache.org/downloads.html and unpack it. You may want to add ``$STORM_HOME/bin`` to the PATH where ``$STORM_HOME`` is the root directory of the unpacked Storm distribution.
+To use Storm, download a release from http://storm.incubator.apache.org/downloads.html and unpack it. You may want to add ``$STORM_HOME/bin`` to the PATH where ``$STORM_HOME`` is the root directory of the unpacked Storm distribution. 
 
-Creating a Storm topology
-^^^^^^^^^^^^^^^^^^^^^^^^^
+    .. note :: When calling the Storm enactment as described below make sure that ``$STORM_HOME`` is defined as an environment variable.
 
-To create a Storm topology from a Dispel4Py workflow and copy all required resources into a temporary directory run the following::
 
-	$ python create_resources.py <module> <graph var>
+Using the Storm submission client
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-where the first argument ``<module>`` is the name of the python module (**without the file extension .py**) that creates a workflow graph, and the second argument ``<graph var>`` is the name of the variable that contains the graph object. For example::
+From the dispy directory launch the Storm submission client::
 
-	$ python create_resources.py test.workflow_client graph
+    python -m dispel4py.storm.storm_submission -m {local,remote,create} [-r resourceDir] [-a attribute] [-s] module [name]
 
-The last line of output from this script (if there are no errors) is the path of the temporary directory ``<temp dir>`` where the generated topology and all required resources are stored.
+where ``module`` is the name of the python module (**without the file extension .py**) that creates a workflow graph. The parameter ``-m`` specifies the execution mode of the Storm topology:
+    *local*
+        Local mode, executes the graph on the local machine in Storm local mode. No installation is required. Usually used for testing before submitting a topology to a remote cluster.
+    *remote*
+        Submits the graph as a Storm topology to a remote cluster. This assumes the Storm client is configured for the target cluster (usually in ``~/.storm/storm.yaml``)
+    *create*
+        Creates a Storm topology and resources in a temporary directory. 
+
+The graph attribute within the given module is discovered automatically or can be specified (if there is more than one graph defined, for example) by using ``-a`` with the name of the variable.
+The resulting topology is assigned the id ``name`` if provided, or an id is created automatically. 
+If using ``-s`` (save) the Storm topology and resources are not deleted when the topology has been submitted or completed execution in local mode. This is useful for debugging.
 
 Submitting Dispel4Py to a Storm cluster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -34,14 +43,15 @@ Configure the host name of the Storm cluster in ``~/.storm/storm.yaml`` as descr
 
 	nimbus.host: "storm.example.com"
 
-To submit the topology to the remote cluster, change to the temporary directory created above and execute ``storm shell``::
+To submit the topology to the remote cluster::
 
-	$ cd <temp dir>
-	$ $STORM_HOME/bin/storm shell resources/ python storm_submission_client.py <topology name>
+	$ python -m dispel4py.storm.storm_submission mytestgraph MyTopologyTest01 -m remote
 
-The last argument ``<topology name>`` is the name of the topology as it is submitted to the Storm cluster. This is an arbitrary name that you can choose but only one topology with a given name can run at a time. Do not change any of the other arguments.
+Here, ``mytestgraph`` is the name of the Python module that creates the Dispel4Py graph, and ``MyTopologyTest01`` is the name that is assigned to the topology on the cluster. The name is optional and a random UUID will be assigned if it is not provided.
 
-A topology runs forever until it is killed explicitly. To kill the topology on the remote cluster::
+The topology can be monitored on the web interface of the Storm cluster.
+
+Note that a topology runs forever until it is killed explicitly. To kill the topology on the remote cluster use the web interface or the Storm client::
 
 	$ $STORM_HOME/bin/storm kill <topology name> -w <wait time>
 
@@ -50,17 +60,59 @@ where ``<wait time>`` is the time that Storm waits between deactivation and shut
 Testing the Storm topology in local mode
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To test the topology in local mode, i.e. to run it on the client machine, change to the temporary directory to compile and run the Java client ``dispel4py.storm.ThriftSubmit``. Make sure that the Storm distribution jars are on the classpath and additionally the directory ``<temp dir>/resources/`` when running the client. For example::
+To test the topology in local mode, call the Storm submission client with local mode, for example::
 
-    $ cd <temp dir>
-    $ javac -cp .:$STORM_HOME/lib/*:$STORM_HOME/storm-0.8.2.jar dispel4py/storm/ThriftSubmit.java
-    $ java -cp .:$STORM_HOME/lib/*:$STORM_HOME/storm-0.8.2.jar:./resources/ dispel4py.storm.ThriftSubmit topology.thrift <topology name>
-
-The last argument ``<topology name>`` is the name of the topology. Do not change any of the other arguments.
+    $ python -m dispel4py.storm.storm_submission mytestgraph -m local
 
 Note that the topology runs forever and does not shut down by itself. It can be cancelled with Ctrl-C on the commandline or by killing the JVM process.
 
 MPI
 -----
 
+A Dispel4Py graph can also be mapped to MPI for executing in parallel by any of MPI implementations as mpich2 or openmpi.
+To use Dispel4py + MPI is needed to have installed mpi4py (which is wrapper for using MPI in python) and mpich2 or openmpi (which are MPI interfaces).
 
+Installing mpi4py and openmpi
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+For installing openmpi and mpi4py follow the next steps.
+
+    .. note:: These steps can be different depending on the host operating system. Those are for Mac OS X.
+
+Install openmpi::
+	
+    $ sudo por install openmpi
+    $ mkdir ~/src
+    $ cd ~/src
+    $ cd /Users/xxx/Downloads/openmpi-1.6.5.tar.gz .	 	
+    $ tar zxvf openmpi-1.6.5.tar.gz 
+    $ cd openmpi-1.6.5
+    $ ./configure --prefix=/usr/local
+    $  make all  (This step take a while) 
+    $ sudo make install
+ 
+Important: 
+
+    .. note:: Check if ``/usr/local/bin`` is in your path (echo $PATH). If you do not see ``/usr/local/bin`` listed between the colons, you will need to add it. ( echo export PATH=/usr/local/bin:$PATH' >> ~/.bash_profile )  	
+
+
+Install mpi4py::
+
+    $ sudo easy_install mpi4py
+
+
+Submitting Dispel4Py with MPI 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To execute a Dispel4py graph by using the MPI mapping run the following::
+
+    $ mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi module [-f file containing the input dataset in JSON format] [-i number of iterations/runs] [-s]
+
+If the number of iterations is not indicated, the graph is executed once by default.
+If an input file is specified with ``-f`` then the parameter ``-i`` will be ignored.
+
+The argument ``-s`` forces to run the graph in simple processing mode, which means that a number of nodes can be wrapped and executed within the same process. The partitioning of the graph, i.e. which nodes are executed in the same process, can be specified when building the graph. By default, the root nodes in the graph (that is, nodes that have no inputs) are executed in one process, and the rest of the graph is executed in many copies distributed across the remaining processes.
+
+For example:: 
+    
+    $ mpiexec -n 3 python -m dispel4py.worker_mpi test.graph_testing.grouping_onetoall 
+        

@@ -1,0 +1,31 @@
+{%- extends "pyramid/layout.html" %}
+
+{% block header %}
+{%- if theme_transparent_logo or theme_header_text %}
+<div class="header">
+  <table width="100%">
+    <tr>
+      <td>
+        <div class="headertext">
+          {{theme_header_text}}
+        </div>
+      </td>
+      <td>
+        <div class="logo">
+          <a href="{{ pathto(master_doc) }}">
+            <img class="logo" src="{{ pathto('_static/' + theme_transparent_logo, 1) }}" alt="Logo"/>
+          </a>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+{%- endif %}
+{% endblock %}
+
+{%- block sidebarlogo %}
+<img class="logo" src="{{ pathto('_static/' + logo, 1) }}" alt="Logo"/>
+{%- endblock %}
+
+{%- block sidebarsourcelink %}{%- endblock %}

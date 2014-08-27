@@ -4,7 +4,7 @@ Processing Elements
 Basic processing elements
 -------------------------
 
-Processing elements in Dispel4Py extend the class :py:class:`verce.GenericPE.GenericPE`.
+Processing elements in Dispel4Py extend the class :py:class:`dispel4py.GenericPE.GenericPE`.
 This class has several methods that must or may be overridden.
 Please refer to the API documentation of the class for further information.
 
