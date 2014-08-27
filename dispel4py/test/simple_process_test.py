@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Tests for dispel4py.simple_process
 '''
+Tests for simple sequential processing engine.
+
 Using nose (https://nose.readthedocs.org/en/latest/) run as follows::
 
     $ nosetests dispel4py/test/simple_process_test.py 

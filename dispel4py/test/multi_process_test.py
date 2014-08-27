@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+'''
+Tests for multiprocessing engine.
+'''
+
 from nose import tools
 from dispel4py.examples.graph_testing.testing_PEs import TestProducer, TestOneInOneOut
 from dispel4py.workflow_graph import WorkflowGraph
