@@ -60,6 +60,14 @@ dispel4py.examples.graph_testing.partition_parallel_pipeline module
     :undoc-members:
     :show-inheritance:
 
+dispel4py.examples.graph_testing.pipeline_composite module
+----------------------------------------------------------
+
+.. automodule:: dispel4py.examples.graph_testing.pipeline_composite
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 dispel4py.examples.graph_testing.pipeline_test module
 -----------------------------------------------------
 

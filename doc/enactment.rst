@@ -2,6 +2,84 @@ Enactment of Dispel4Py workflows
 ================================
 
 A workflow must be submitted for execution over available resources in order to produce results. 
+Dispel4Py provides various mappings for a number of enactment engines.
+
+
+Sequential Processing
+---------------------
+
+This mapping serves as an enactment engine for processing small datasets, typically during development or when testing a new installation.
+The processing elements of the graph are executed in sequence by a single process.
+
+To execute a Dispel4py graph by using the simple (sequential) mapping run the following::
+
+    $ python -m dispel4py.simple_process <module> [-f file containing the input dataset in JSON format] [-i number of iterations]
+
+If the number of iterations is not indicated, the graph is executed once by default.
+If an input file is specified with ``-f`` then the parameter ``-i`` will be ignored.
+
+Multiprocessing
+----------------
+
+This mapping leverages multiple processors on a shared memory system using the Python multiprocessing package. 
+The user can control the number of processes used by the mapping.
+
+To execute a Dispel4py graph by using the multiprocessing mapping run the following::
+
+    $ python -m dispel4py.multi_process -n <number of processes> <module> [-f file containing the input dataset in JSON format] [-i number of iterations] [-s]
+    
+If ``-s`` is specified the graph is partitioned to execute several PEs within one process.
+
+MPI
+-----
+
+A Dispel4Py graph can also be mapped to MPI for executing in parallel by any of MPI implementations as mpich2 or openmpi.
+To use Dispel4py + MPI is needed to have installed mpi4py (which is wrapper for using MPI in python) and mpich2 or openmpi (which are MPI interfaces).
+
+Installing mpi4py and openmpi
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+For installing openmpi and mpi4py follow the next steps.
+
+    .. note:: These steps can be different depending on the host operating system. Those are for Mac OS X.
+
+Install openmpi::
+	
+    $ sudo por install openmpi
+    $ mkdir ~/src
+    $ cd ~/src
+    $ cd /Users/xxx/Downloads/openmpi-1.6.5.tar.gz .	 	
+    $ tar zxvf openmpi-1.6.5.tar.gz 
+    $ cd openmpi-1.6.5
+    $ ./configure --prefix=/usr/local
+    $  make all  (This step take a while) 
+    $ sudo make install
+ 
+Important: 
+
+    .. note:: Check if ``/usr/local/bin`` is in your path (echo $PATH). If you do not see ``/usr/local/bin`` listed between the colons, you will need to add it. ( echo export PATH=/usr/local/bin:$PATH' >> ~/.bash_profile )  	
+
+
+Install mpi4py::
+
+    $ sudo easy_install mpi4py
+
+
+Submitting Dispel4Py with MPI 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To execute a Dispel4py graph by using the MPI mapping run the following::
+
+    $ mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi module [-f file containing the input dataset in JSON format] [-i number of iterations/runs] [-s]
+
+If the number of iterations is not indicated, the graph is executed once by default.
+If an input file is specified with ``-f`` then the parameter ``-i`` will be ignored.
+
+The argument ``-s`` forces to run the graph in simple processing mode, which means that a number of nodes can be wrapped and executed within the same process. The partitioning of the graph, i.e. which nodes are executed in the same process, can be specified when building the graph. By default, the root nodes in the graph (that is, nodes that have no inputs) are executed in one process, and the rest of the graph is executed in many copies distributed across the remaining processes.
+
+For example:: 
+    
+    $ mpiexec -n 3 python -m dispel4py.worker_mpi test.graph_testing.grouping_onetoall 
+        
 
 Storm
 -----
@@ -66,53 +144,3 @@ To test the topology in local mode, call the Storm submission client with local 
 
 Note that the topology runs forever and does not shut down by itself. It can be cancelled with Ctrl-C on the commandline or by killing the JVM process.
 
-MPI
------
-
-A Dispel4Py graph can also be mapped to MPI for executing in parallel by any of MPI implementations as mpich2 or openmpi.
-To use Dispel4py + MPI is needed to have installed mpi4py (which is wrapper for using MPI in python) and mpich2 or openmpi (which are MPI interfaces).
-
-Installing mpi4py and openmpi
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-For installing openmpi and mpi4py follow the next steps.
-
-    .. note:: These steps can be different depending on the host operating system. Those are for Mac OS X.
-
-Install openmpi::
-	
-    $ sudo por install openmpi
-    $ mkdir ~/src
-    $ cd ~/src
-    $ cd /Users/xxx/Downloads/openmpi-1.6.5.tar.gz .	 	
-    $ tar zxvf openmpi-1.6.5.tar.gz 
-    $ cd openmpi-1.6.5
-    $ ./configure --prefix=/usr/local
-    $  make all  (This step take a while) 
-    $ sudo make install
- 
-Important: 
-
-    .. note:: Check if ``/usr/local/bin`` is in your path (echo $PATH). If you do not see ``/usr/local/bin`` listed between the colons, you will need to add it. ( echo export PATH=/usr/local/bin:$PATH' >> ~/.bash_profile )  	
-
-
-Install mpi4py::
-
-    $ sudo easy_install mpi4py
-
-
-Submitting Dispel4Py with MPI 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-To execute a Dispel4py graph by using the MPI mapping run the following::
-
-    $ mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi module [-f file containing the input dataset in JSON format] [-i number of iterations/runs] [-s]
-
-If the number of iterations is not indicated, the graph is executed once by default.
-If an input file is specified with ``-f`` then the parameter ``-i`` will be ignored.
-
-The argument ``-s`` forces to run the graph in simple processing mode, which means that a number of nodes can be wrapped and executed within the same process. The partitioning of the graph, i.e. which nodes are executed in the same process, can be specified when building the graph. By default, the root nodes in the graph (that is, nodes that have no inputs) are executed in one process, and the rest of the graph is executed in many copies distributed across the remaining processes.
-
-For example:: 
-    
-    $ mpiexec -n 3 python -m dispel4py.worker_mpi test.graph_testing.grouping_onetoall 
-        

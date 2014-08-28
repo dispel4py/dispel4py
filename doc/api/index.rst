@@ -45,6 +45,7 @@ Dispel4Py API documentation
     dispel4py.examples.graph_testing.grouping_split_merge
     dispel4py.examples.graph_testing.parallel_pipeline
     dispel4py.examples.graph_testing.partition_parallel_pipeline
+    dispel4py.examples.graph_testing.pipeline_composite
     dispel4py.examples.graph_testing.word_count
     dispel4py.examples.graph_testing.word_count_filter
     dispel4py.examples.graph_testing.testing_PEs
