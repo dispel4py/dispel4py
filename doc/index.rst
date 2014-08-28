@@ -6,8 +6,12 @@
 Welcome to Dispel4Py's documentation!
 =====================================
 
-Dispel4Py is a Python library used to describe abstract workflows for distributed data-intensive applications. 
+Dispel4Py is a Python library for describing **abstract workflows** for **distributed data-intensive applications**. 
 
+* **Abstract:** users don't need to worry about the properties of underlying middleware, implementations or systems.
+* **Workflow:** workflows represent an alternative way to program in a modular, reusable and exchangeable fashion.
+* **Distributed:** dispel4py is designed for programming in large, heterogeneous, distributed systems. Abstract workflows get translated and *enacted*-executed in a number of contexts, such as Apache Storm and MPI-powered clusters.
+* **Data-intensive:** as *data-intensive* we describe the applications which are complex due to data-volume or algorithmic reasons. dispel4py employs the streaming model for dealing with large volumes of data over distributed systems, or with complex data-driven algorithms.
 
 Contents
 --------
