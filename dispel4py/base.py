@@ -95,7 +95,7 @@ class SimpleFunctionPE(IterativePE):
         self.compute_fn = compute_fn
         self.params = params
     def _process(self, data):
-        return self.compute_fn(data, **params)
+        return self.compute_fn(data, **self.params)
         
 from dispel4py.workflow_graph import WorkflowGraph
         
