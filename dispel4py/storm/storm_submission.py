@@ -99,7 +99,8 @@ def createPackage(args, static_input):
     _mkdir_ifnotexists(dispel4py_dir)
     _mkdir_ifnotexists(dispel4py_dir + '/storm')
     shutil.copy('dispel4py/__init__.py', dispel4py_dir)
-    shutil.copy('dispel4py/GenericPE.py', dispel4py_dir)
+    shutil.copy('dispel4py/core.py', dispel4py_dir)
+    shutil.copy('dispel4py/base.py', dispel4py_dir)
     shutil.copy('dispel4py/__init__.py', dispel4py_dir + '/storm/')
     shutil.copy('dispel4py/storm/utils.py', dispel4py_dir + '/storm/')
 
