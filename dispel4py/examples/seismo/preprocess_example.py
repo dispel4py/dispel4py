@@ -123,3 +123,4 @@ graph.connect(streamProducer, StreamProducer.OUTPUT_NAME, preTask, 'input')
 graph.connect(preTask, 'output', streamToFile, StreamToFile.INPUT_NAME)
 graph.connect(preTask, 'output', whiten, IterativePE.INPUT_NAME)
 graph.connect(whiten, IterativePE.OUTPUT_NAME, streamToFileWhitened, StreamToFile.INPUT_NAME)
+graph.partitions = [ [streamProducer], preTask.getContainedObjects() + [streamToFile], [whiten, streamToFileWhitened] ]
