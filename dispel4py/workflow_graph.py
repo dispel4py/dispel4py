@@ -124,7 +124,8 @@ class WorkflowGraph(object):
                 'ALL_CONNECTIONS' : [(fromConnection, toConnection)]})
                     
     def getContainedObjects(self):
-        return [ node.getContainedObject() for node in self.graph.nodes() ]
+        nodes = [ node.getContainedObject() for node in self.graph.nodes() ]
+        return sorted(nodes, key=lambda x: x.id)
 
     def propagate_types(self):
         '''
