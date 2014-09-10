@@ -20,7 +20,6 @@ from normalization import onebit_norm, mean_norm, gain_norm
 import numpy as np
 from obspy.core import read as obread
 
-
 # These are the file locations
 ROOT_DIR = '/Users/akrause/VERCE/data/Terracorrelator/'
 IN1=ROOT_DIR + "A25A.TA..BHZ.2011.025.00.00.00.000-2011.026.00.00.39.000.rm.scale-AUTO.SAC"
@@ -123,4 +122,3 @@ graph.connect(streamProducer, StreamProducer.OUTPUT_NAME, preTask, 'input')
 graph.connect(preTask, 'output', streamToFile, StreamToFile.INPUT_NAME)
 graph.connect(preTask, 'output', whiten, IterativePE.INPUT_NAME)
 graph.connect(whiten, IterativePE.OUTPUT_NAME, streamToFileWhitened, StreamToFile.INPUT_NAME)
-graph.partitions = [ [streamProducer], preTask.getContainedObjects() + [streamToFile], [whiten, streamToFileWhitened] ]
