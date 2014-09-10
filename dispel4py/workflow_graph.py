@@ -193,28 +193,27 @@ class WorkflowGraph(object):
                             # print 'connecting output %s.%s' % (toPE, toConnection)
                             self.connect(fromPE, fromConnection, toPE, toConnection)
                     self.graph.remove_node(node)
-                    
-
-def draw(graph):
-    '''
-    Creates a representation of the workflow graph in the dot language.
-    '''
-    dot = 'digraph request\n{\nnode [shape=Mrecord];\n'
-    instanceNames = {}
-    counter = 0
-
+                
+def _create_dot(graph, instanceNames={}, counter=0):
+    dot = ''
     # assign unique names
     for node in graph.graph.nodes():
         try:
-            name = node.getContainedObject().name, counter
+            name = node.getContainedObject().id, counter
         except:
             name = node.getContainedObject().__class__.__name__, counter
         instanceNames[node] = name
         counter += 1
     
     # now add all the nodes and their input and output connections
+    cluster_index = 0
     for node in graph.graph.nodes():
         pe = node.getContainedObject()
+        if isinstance(pe, WorkflowGraph):
+            dot += _create_cluster(pe, cluster_index, instanceNames, counter)
+            cluster_index += 1
+            continue
+            
         name, index = instanceNames[node]
         dot += name + str(index) + "[label=\"{ "
         # add inputs
@@ -244,10 +243,34 @@ def draw(graph):
             if pe == edge['DIRECTION'][0]:
                 # pe is the source so look up the connected destination
                 dest = edge['DIRECTION'][1]
-                destNode = graph.objToNode[dest]
+                dest_input = edge['TO_CONNECTION']
+                if isinstance(dest, WorkflowGraph):
+                    inner_dest, dest_input = dest.inputmappings[edge['TO_CONNECTION']]
+                    destNode = dest.objToNode[inner_dest]
+                else:
+                    destNode = graph.objToNode[dest]
                 dot += '%s%s' % instanceNames[node] + ':out_' + edge['FROM_CONNECTION']
                 dot += ' -> '
-                dot += '%s%s' % instanceNames[destNode] + ':in_' + edge['TO_CONNECTION'] +';\n'
+                dot += '%s%s' % instanceNames[destNode] + ':in_' + dest_input +';\n'
+    return dot
+                        
+def _create_cluster(graph, index, instanceNames, counter):
+    dot = 'subgraph cluster_%s {\n' % index
+    dot += 'label = "%s";' % graph.name
+    dot += 'style=filled;\n'
+    dot += 'color=lightgrey;\n'
+    if index % 2:
+        dot += 'fillcolor=lightgrey;\n'
+    dot += _create_dot(graph, instanceNames, counter)
+    dot += '}\n'
+    return dot
+    
+def draw(graph):
+    '''
+    Creates a representation of the workflow graph in the dot language.
+    '''
+    dot = 'digraph request\n{\nnode [shape=Mrecord, style=filled, fillcolor=white];\n'
+    dot += _create_dot(graph)
     dot += '}\n'
     return dot
 
