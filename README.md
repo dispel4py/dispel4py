@@ -30,6 +30,13 @@ The easiest way to install dispel4py is via pip (https://pypi.python.org/pypi/pi
 
 `sudo pip install git+git://github.com/akrause2014/dispel4py.git#egg=dispel4py`
 
+Alternatively, download the ZIP or clone this repository to your desktop and add it to the PYTHON_PATH.
+
+Docker image
+------------
+
+A Docker image with the latest Dispel4Py installation is available from the Docker Hub: https://registry.hub.docker.com/u/akrause2014/dispel4py/
+
 Documentation
 -------------
 
