@@ -256,7 +256,11 @@ def _create_dot(graph, instanceNames={}, counter=0):
                         
 def _create_cluster(graph, index, instanceNames, counter):
     dot = 'subgraph cluster_%s {\n' % index
-    dot += 'label = "%s";' % graph.name
+    try:
+        # names for composite PEs are optional
+        dot += 'label = "%s";' % graph.name
+    except:
+        pass
     dot += 'style=filled;\n'
     dot += 'color=lightgrey;\n'
     if index % 2:
