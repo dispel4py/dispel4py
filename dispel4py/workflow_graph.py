@@ -158,11 +158,14 @@ class WorkflowGraph(object):
         Subgraphs contained within composite PEs are added to the top level workflow.
         '''
         hasComposites = True
+        toRemove = set()
         while hasComposites:
             hasComposites = False
+            toRemove = set()
             for node in self.graph.nodes():
                 if node.nodeType == WorkflowNode.WORKFLOW_NODE_CP:
                     hasComposites = True
+                    toRemove.add(node)
                     wfGraph = node.getContainedObject()
                     subgraph = wfGraph.graph
                     self.graph.add_nodes_from(subgraph.nodes(data=True))
@@ -192,7 +195,7 @@ class WorkflowGraph(object):
                         for (toPE, toConnection) in destinations:
                             # print 'connecting output %s.%s' % (toPE, toConnection)
                             self.connect(fromPE, fromConnection, toPE, toConnection)
-                    self.graph.remove_node(node)
+            self.graph.remove_nodes_from(toRemove)
                 
 def _create_dot(graph, instanceNames={}, counter=0):
     dot = ''
@@ -241,15 +244,20 @@ def _create_dot(graph, instanceNames={}, counter=0):
         pe = node.getContainedObject()
         for edge in graph.graph[node].values():
             if pe == edge['DIRECTION'][0]:
+                if isinstance(pe, WorkflowGraph):
+                    inner_source, source_output = pe.outputmappings[edge['FROM_CONNECTION']]
+                    node = pe.objToNode[inner_source]
+                else:
+                    source_output = edge['FROM_CONNECTION']
                 # pe is the source so look up the connected destination
                 dest = edge['DIRECTION'][1]
-                dest_input = edge['TO_CONNECTION']
                 if isinstance(dest, WorkflowGraph):
                     inner_dest, dest_input = dest.inputmappings[edge['TO_CONNECTION']]
                     destNode = dest.objToNode[inner_dest]
                 else:
                     destNode = graph.objToNode[dest]
-                dot += '%s%s' % instanceNames[node] + ':out_' + edge['FROM_CONNECTION']
+                    dest_input = edge['TO_CONNECTION']
+                dot += '%s%s' % instanceNames[node] + ':out_' + source_output
                 dot += ' -> '
                 dot += '%s%s' % instanceNames[destNode] + ':in_' + dest_input +';\n'
     return dot
