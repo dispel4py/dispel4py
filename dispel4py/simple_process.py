@@ -39,6 +39,7 @@ For example::
     
 '''
 
+import copy
 import json
 import networkx as nx
 import sys
@@ -256,6 +257,8 @@ def process(graph, inputs=[{}], provideAllInputs=False, resultconnections=[]):
            (i.e. an empty input block is provided for PEs expecting inputs)
     :param resultconnections: results of already processed iterations
     '''
+    graph = copy.deepcopy(graph)
+    graph.flatten()
     components = nx.connected_components(graph.graph)
     
     mappedInputs = []
