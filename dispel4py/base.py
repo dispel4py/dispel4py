@@ -92,6 +92,7 @@ class SimpleFunctionPE(IterativePE):
     
     def __init__(self, compute_fn, params = {}):
         IterativePE.__init__(self)
+        self.name = 'PE_%s' % compute_fn.__name__
         self.compute_fn = compute_fn
         self.params = params
     def _process(self, data):
