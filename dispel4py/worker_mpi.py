@@ -463,6 +463,7 @@ if __name__ == "__main__":
     parser.add_argument('module', help='module that creates a dispel4py graph')
     parser.add_argument('-a', '--attr', metavar='attribute', help='name of graph variable in the module')
     parser.add_argument('-f', '--file', metavar='inputfile', help='file containing the input dataset in JSON format')
+    parser.add_argument('-d', '--data', metavar='inputdata', help='input dataset in JSON format')
     parser.add_argument('-i', '--iter', metavar='iterations', type=int, help='number of iterations')
     parser.add_argument('-s', '--simple', help='force simple processing', action='store_true')
     args = parser.parse_args()
@@ -480,6 +481,8 @@ if __name__ == "__main__":
         except:
             print('Cannot read input file %s' % args.file)
             sys.exit(1)
+    elif args.data:
+        inputs = json.loads(args.data)
     elif args.iter:
         inputs = [ {} for i in range(args.iter) ]
         if rank == 0: print("Processing %s iterations" % args.iter)

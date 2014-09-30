@@ -109,13 +109,8 @@ def loadIgnoreImports(module_name, attr_name, code):
     __builtin__.__import__ = realimport
     
     return attr
-    
-def loadGraph(module_name, attr=None):
-    '''
-    Loads a graph from the given module.
-    '''
-    mod = import_module(module_name)
-    graph = None
+
+def findWorkflowGraph(mod, attr):
     if attr is not None:
         # use the named attribute
         graph = getattr(mod, attr)
@@ -124,9 +119,51 @@ def loadGraph(module_name, attr=None):
         for i in dir(mod):
             attr = getattr(mod, i)
             if isinstance(attr, WorkflowGraph):
-                graph = attr
+                if not hasattr(attr, 'inputmappings') and not hasattr(attr, 'outputmappings'):
+                    graph = attr
     return graph
+    
+def loadGraphFromFile(module_name, path, attr=None):
+    mod = load_source(module_name, path)
+    attr = findWorkflowGraph(mod, attr)
+    return attr
 
+def loadGraphFromSource(module_name, source, attr=None):
+    mod = new_module(module_name)
+    exec source in mod.__dict__
+    attr = findWorkflowGraph(mod, attr)
+    return attr
+    
+def loadGraph(module_name, attr=None):
+    '''
+    Loads a graph from the given module.
+    '''
+    mod = import_module(module_name)
+    graph = findWorkflowGraph(mod, attr)
+    return graph
+    
+def load_graph(graph_source, attr=None):
+    # try to load from a module
+    try:
+        return loadGraph(graph_source, attr)
+    except:
+        pass
+        
+    # maybe it's a file?
+    try:
+        return loadGraphFromFile('temp', graph_source, attr)
+    except:
+        pass
+    
+    # or the source code as a string
+    try:
+        return loadGraphFromSource('temp', graph_source, attr)
+    except:
+        pass
+
+    # we don't know what it is
+    print 'Failed to load graph from %s' % graph_source
+        
     
 from sys import getsizeof
 from itertools import chain

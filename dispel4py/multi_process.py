@@ -290,6 +290,7 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--num', metavar='num_processes', required=True, type=int, help='number of processes to run')
     parser.add_argument('-a', '--attr', metavar='attribute', help='name of graph variable in the module')
     parser.add_argument('-f', '--file', metavar='inputfile', help='file containing the input dataset in JSON format')
+    parser.add_argument('-d', '--data', metavar='inputdata', help='input dataset in JSON format')
     parser.add_argument('-i', '--iter', metavar='iterations', type=int, help='number of iterations')
     parser.add_argument('-s', '--simple', help='force simple processing', action='store_true')
     args = parser.parse_args()
@@ -310,6 +311,8 @@ if __name__ == "__main__":
             print traceback.format_exc()
             print 'Failed to read input file %s' % args.file
             sys.exit(1)
+    elif args.data:
+        inputs = json.loads(args.data)
     elif args.iter:
         inputs = [ {} for i in range(args.iter) ]
         print "Processing %s iteration(s)" % args.iter
