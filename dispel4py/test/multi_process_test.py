@@ -34,3 +34,13 @@ def testPipelineMulti():
     cons = TestOneInOneOut()
     graph.connect(prod, 'output', cons, 'input')
     multiprocess(graph, 6, [{}, {}, {}, {}, {}])
+
+def testTwoPipelines():
+    graph = WorkflowGraph()
+    prod1 = TestProducer()
+    cons1 = TestOneInOneOut()
+    prod2 = TestProducer()
+    cons2 = TestOneInOneOut()
+    graph.connect(prod1, 'output', cons1, 'input')
+    graph.connect(prod2, 'output', cons2, 'input')
+    multiprocess(graph, 2, [{}, {}, {}, {}, {}])

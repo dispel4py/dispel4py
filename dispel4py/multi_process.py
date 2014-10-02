@@ -225,7 +225,10 @@ def multiprocess(workflow, numProcesses, inputs=[{}], simple=False):
                 for (source_output, dest_input) in allconnections:
                     communication = _getCommunication(source, dest, dest_input, process_pes, input_queues)
                     for cp in communication:
-                        outconnections[cp][source_output].append((dest_input, communication[cp]))
+                        try:
+                            outconnections[cp][source_output].append((dest_input, communication[cp]))
+                        except KeyError:
+                            outconnections[cp][source_output] = [(dest_input, communication[cp])]
                 for cp in process_pes[pe].values():
                     cp.outputconnections[source_output]['writer']=QueueWriter(outconnections[cp][source_output])
 
