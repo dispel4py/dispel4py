@@ -57,6 +57,9 @@ class WorkflowNode:
             try:
                 for i in o.inputmappings:
                     self.inputs.append({})
+            except AttributeError:
+                pass
+            try:
                 for i in o.outputmappings:
                     self.outputs.append({})
             except AttributeError:
