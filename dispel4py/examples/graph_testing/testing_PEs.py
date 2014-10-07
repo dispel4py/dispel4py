@@ -38,6 +38,7 @@ class TestProducer(GenericPE):
         result = {}
         for output in self.outputnames:
             result[output] = self.counter
+        # self.log("Writing out %s" % result)
         return result
         
 class NumberProducer(GenericPE):
@@ -60,7 +61,7 @@ class TestOneInOneOut(GenericPE):
         self.inputconnections = { 'input' : { NAME : 'input' } }
         self.outputconnections = { 'output' : { NAME : 'output', TYPE: ['number'] } }
     def process(self, inputs):
-        # print '%s: Processing inputs %s' % (self, inputs)
+        # self.log('Processing inputs %s' % inputs)
         return { 'output' : inputs['input'] }
 
 class TestOneInOneOutWriter(GenericPE):
