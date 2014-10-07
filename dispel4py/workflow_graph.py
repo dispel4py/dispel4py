@@ -53,6 +53,8 @@ class WorkflowNode:
             for i in o.outputconnections.values():
                 self.outputs.append({})
         elif isinstance(o, WorkflowGraph):
+            o.id = 'Composite_%s' % WorkflowNode.node_counter
+            WorkflowNode.node_counter += 1
             self.nodeType = self.WORKFLOW_NODE_CP
             try:
                 for i in o.inputmappings:
@@ -129,6 +131,15 @@ class WorkflowGraph(object):
     def getContainedObjects(self):
         nodes = [ node.getContainedObject() for node in self.graph.nodes() ]
         return sorted(nodes, key=lambda x: x.id)
+        
+    def getAllContainedObjects(self):
+        allObjects=[]
+        for obj in self.getContainedObjects():
+            if isinstance(obj, WorkflowGraph):
+                allObjects.extend(obj.getAllContainedObjects())
+            else:
+                allObjects.append(obj)
+        return allObjects
 
     def propagate_types(self):
         '''
@@ -227,15 +238,15 @@ def _create_dot(graph, instanceNames={}, counter=0):
         outputNames = []
         for edge in graph.graph[node].values():
             if pe == edge['DIRECTION'][1]:
-                inputName = edge['TO_CONNECTION']
-                dotName = "<in_" + inputName + ">" + inputName
-                if dotName not in inputNames:
-                    inputNames.append(dotName)
+                for (outputName, inputName) in edge['ALL_CONNECTIONS']:
+                    dotName = "<in_" + inputName + ">" + inputName
+                    if dotName not in inputNames:
+                        inputNames.append(dotName)
             else:
-                outputName = edge['FROM_CONNECTION']
-                dotName = "<out_" + outputName + ">" + outputName
-                if dotName not in outputNames:
-                    outputNames.append(dotName)
+                for (outputName, inputName) in edge['ALL_CONNECTIONS']:
+                    dotName = "<out_" + outputName + ">" + outputName
+                    if dotName not in outputNames:
+                        outputNames.append(dotName)
             
         if inputNames: dot += '{' + ' | '.join(inputNames) + '} | '
         dot += name
@@ -247,22 +258,23 @@ def _create_dot(graph, instanceNames={}, counter=0):
         pe = node.getContainedObject()
         for edge in graph.graph[node].values():
             if pe == edge['DIRECTION'][0]:
-                if isinstance(pe, WorkflowGraph):
-                    inner_source, source_output = pe.outputmappings[edge['FROM_CONNECTION']]
-                    node = pe.objToNode[inner_source]
-                else:
-                    source_output = edge['FROM_CONNECTION']
-                # pe is the source so look up the connected destination
-                dest = edge['DIRECTION'][1]
-                if isinstance(dest, WorkflowGraph):
-                    inner_dest, dest_input = dest.inputmappings[edge['TO_CONNECTION']]
-                    destNode = dest.objToNode[inner_dest]
-                else:
-                    destNode = graph.objToNode[dest]
-                    dest_input = edge['TO_CONNECTION']
-                dot += '%s%s' % instanceNames[node] + ':out_' + source_output
-                dot += ' -> '
-                dot += '%s%s' % instanceNames[destNode] + ':in_' + dest_input +';\n'
+                for (from_connection, to_connection) in edge['ALL_CONNECTIONS']:
+                    if isinstance(pe, WorkflowGraph):
+                        inner_source, source_output = pe.outputmappings[from_connection]
+                        node = pe.objToNode[inner_source]
+                    else:
+                        source_output = from_connection
+                    # pe is the source so look up the connected destination
+                    dest = edge['DIRECTION'][1]
+                    if isinstance(dest, WorkflowGraph):
+                        inner_dest, dest_input = dest.inputmappings[to_connection]
+                        destNode = dest.objToNode[inner_dest]
+                    else:
+                        destNode = graph.objToNode[dest]
+                        dest_input = to_connection
+                    dot += '%s%s' % instanceNames[node] + ':out_' + source_output
+                    dot += ' -> '
+                    dot += '%s%s' % instanceNames[destNode] + ':in_' + dest_input +';\n'
     return dot
                         
 def _create_cluster(graph, index, instanceNames, counter):
