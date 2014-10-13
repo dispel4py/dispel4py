@@ -257,22 +257,38 @@ def process(graph, inputs=[{}], provideAllInputs=False, resultconnections=[]):
            (i.e. an empty input block is provided for PEs expecting inputs)
     :param resultconnections: results of already processed iterations
     '''
+    oldgraph = graph
     graph = copy.deepcopy(graph)
+    newids = {}
+    for node in graph.graph.nodes():
+        newids[node.getContainedObject().id] = node
     graph.flatten()
     components = nx.connected_components(graph.graph)
     
     mappedInputs = []
     for block in inputs:
-        mappedInp = {}
-        for node in graph.graph.nodes():
-            pe = node.getContainedObject()
-            for input_name in block:
-                if input_name in pe.inputconnections.keys() and not _hasInput(graph, node, input_name):
-                    try:
-                        mappedInp[node].append( { input_name : block[input_name] } )
-                    except KeyError:
-                        mappedInp[node] = [ { input_name : block[input_name] } ]
-        mappedInputs.append(mappedInp)
+        mapped_block = {}
+        mappedInputs.append(mapped_block)
+        for pe, inp in block.iteritems():
+            try:
+                copy_node = newids[pe.id]
+            except:
+                # pe is the id itself
+                copy_node = newids[pe]
+            mapped_block[copy_node] = inp
+    
+    # mappedInputs = []
+    # for block in inputs:
+    #     mappedInp = {}
+    #     for node in graph.graph.nodes():
+    #         pe = node.getContainedObject()
+    #         for input_name in block:
+    #             if input_name in pe.inputconnections.keys() and not _hasInput(graph, node, input_name):
+    #                 try:
+    #                     mappedInp[node].append( { input_name : block[input_name] } )
+    #                 except KeyError:
+    #                     mappedInp[node] = [ { input_name : block[input_name] } ]
+    #     mappedInputs.append(mappedInp)
         
     results = [ {} for i in inputs ]
     for comp in components:
@@ -349,7 +365,7 @@ if __name__ == "__main__":
         print "Processing %s iteration(s)" % args.iter
     else:
         print 'Processing 1 iteration.'
-    
+        
     print 'Starting simple processing.'    
     print 'Inputs: %s' % inputs
     results = process(graph, inputs)

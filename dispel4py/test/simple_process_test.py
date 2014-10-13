@@ -32,6 +32,7 @@ from dispel4py import simple_process
 from dispel4py.examples.graph_testing.testing_PEs import TestProducer, TestOneInOneOut, TestTwoInOneOut
 
 from nose import tools
+
 def testPipeline():
     graph = WorkflowGraph()
     prod = TestProducer()
@@ -78,3 +79,32 @@ def testTee():
         output = resultsIter.next()
         tools.eq_({(cons1.id, 'output'):[counter], (cons2.id, 'output'):[counter]}, output)
     
+def testPipelineWithInput():
+    graph = WorkflowGraph()
+    first = TestOneInOneOut()
+    prev = first
+    for i in range(5):
+        cons = TestOneInOneOut()
+        graph.connect(prev, 'output', cons, 'input')
+        prev = cons
+    results = simple_process.process(graph, [{ first: [{'input': 1}] }, { first: [{'input': 2}] }, { first: [{'input': 3}] }])
+    counter = 1
+    for output in results:
+        tools.eq_({(prev.id, 'output'):[counter]}, output)
+        counter += 1
+    tools.eq_(4, counter)
+    
+def testPipelineWithInputId():
+    graph = WorkflowGraph()
+    first = TestOneInOneOut()
+    prev = first
+    for i in range(5):
+        cons = TestOneInOneOut()
+        graph.connect(prev, 'output', cons, 'input')
+        prev = cons
+    results = simple_process.process(graph, [{ first.id: [{'input': 1}] } ])
+    counter = 1
+    for output in results:
+        tools.eq_({(prev.id, 'output'):[counter]}, output)
+        counter += 1
+    tools.eq_(2, counter)
