@@ -113,6 +113,18 @@ def _hasInput(graph, node, input_name):
                 return True
     return False
              
+def _get_roots(graph):
+    roots = set()
+    for node in graph.nodes():
+        is_root = True
+        pe = node.getContainedObject()
+        for edge in graph[node].values():
+            if pe == edge['DIRECTION'][1]:
+                is_root = False
+                break
+        if is_root: roots.add(pe)
+    return roots
+
 def order(graph, subgraph=None):
     ''' 
     Returns a list of the PEs in the given subgraph, ordered by dependencies.
@@ -259,8 +271,10 @@ def process(graph, inputs={}, provideAllInputs=False, resultconnections=[]):
     oldgraph = graph
     graph = copy.deepcopy(graph)
     newids = {}
+    # keep a mapping of old objects to new objects in the graph copy
     for node in graph.graph.nodes():
         newids[node.getContainedObject().id] = node
+        newids[node.getContainedObject().name] = node
     graph.flatten()
     components = nx.connected_components(graph.graph)
     
@@ -273,25 +287,13 @@ def process(graph, inputs={}, provideAllInputs=False, resultconnections=[]):
             copy_node = newids[pe]
         mappedInputs[copy_node] = inp
     
-    # mappedInputs = []
-    # for block in inputs:
-    #     mappedInp = {}
-    #     for node in graph.graph.nodes():
-    #         pe = node.getContainedObject()
-    #         for input_name in block:
-    #             if input_name in pe.inputconnections.keys() and not _hasInput(graph, node, input_name):
-    #                 try:
-    #                     mappedInp[node].append( { input_name : block[input_name] } )
-    #                 except KeyError:
-    #                     mappedInp[node] = [ { input_name : block[input_name] } ]
-    #     mappedInputs.append(mappedInp)
-        
     results = {}
     for comp in components:
         ordered = order(graph, comp)
         # print "Processing component: %s" % [ node.obj.name for node in ordered ]
         compResults = _processConnected(graph, ordered, mappedInputs, provideAllInputs, resultconnections)
-        results.update(compResults)
+        if compResults:
+            results.update(compResults)
     return results
     
 from dispel4py.core import GenericPE
@@ -342,26 +344,26 @@ if __name__ == "__main__":
     graph.flatten()
     
     # run only once if no input data
-    inputs = [{}]
+    inputs = {}
     if args.file:
         try:
             with open(args.file) as inputfile:
                 inputs = json.loads(inputfile.read())
-            if not type(inputs) == list:
-                inputs = [inputs]
             print "Processing input file %s" % args.file
         except:
             print 'Failed to read input file %s' % args.file
             sys.exit(1)
     elif args.data:
-        inputs = json.loads(args.data)
+        inputs = json.loads(args.data)  
     elif args.iter:
-        inputs = [ {} for i in range(args.iter) ]
+        inputs = {}
+        for pe in _get_roots(graph.graph):
+            inputs[pe] = [ {} for i in range(args.iter) ]
         print "Processing %s iteration(s)" % args.iter
     else:
         print 'Processing 1 iteration.'
         
     print 'Starting simple processing.'    
-    print 'Inputs: %s' % inputs
+    print 'Inputs: %s' % { pe.id:data for pe, data in inputs.iteritems() }
     results = process(graph, inputs)
     print 'Results: %s' % results
