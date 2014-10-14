@@ -270,12 +270,12 @@ def process(graph, inputs={}, provideAllInputs=False, resultconnections=[]):
     '''
     oldgraph = graph
     graph = copy.deepcopy(graph)
+    graph.flatten()
     newids = {}
-    # keep a mapping of old objects to new objects in the graph copy
+    # keep a mapping of PE ids to new objects in the graph copy
     for node in graph.graph.nodes():
         newids[node.getContainedObject().id] = node
         newids[node.getContainedObject().name] = node
-    graph.flatten()
     components = nx.connected_components(graph.graph)
     
     mappedInputs = {}
