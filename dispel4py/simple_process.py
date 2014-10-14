@@ -204,23 +204,22 @@ def _processInput(nodes, connections, resultconnections, inputData={}):
 
 def _processConnected(graph, nodes, inputs, provideAllInputs, resultconnections):
     # print 'Process connected : %s' % inputs
-    results = []
+    results = None
     if not inputs:
         _preprocess(nodes)
         _postprocess(nodes)
     else:
         connections, roots = _initProcessingElements(graph, nodes)
         _preprocess(nodes)
-        for inp in inputs:
-            if not provideAllInputs:
-                for node in roots:
-                    # if the node is root of the graph and doesn't have inputs
-                    # we pass an empty input to make it process once
-                    if not node in inp:
-                        inp[node] = [{}]
+        if not provideAllInputs:
+            for node in roots:
+                # if the node is root of the graph and doesn't have inputs
+                # we pass an empty input to make it process once
+                if not node in inputs:
+                    inputs[node] = [{}]
             # print 'Processing connected : input = %s' % inp
-            output = _processInput(nodes, connections, resultconnections, inp)
-            results.append(output)
+        results = _processInput(nodes, connections, resultconnections, inputs)
+        # results.append(output)
         _postprocess(nodes)
     return results
 
@@ -245,7 +244,7 @@ def processComposite(graph, inputs=[{}], resultconnections=[]):
 def postprocessComposite(graph):
     _postprocess(graph.graph.nodes())
 
-def process(graph, inputs=[{}], provideAllInputs=False, resultconnections=[]):
+def process(graph, inputs={}, provideAllInputs=False, resultconnections=[]):
     '''
     Processes the given inputs in the graph.
     Any data produced by unconnected outputs are returned.
@@ -265,17 +264,14 @@ def process(graph, inputs=[{}], provideAllInputs=False, resultconnections=[]):
     graph.flatten()
     components = nx.connected_components(graph.graph)
     
-    mappedInputs = []
-    for block in inputs:
-        mapped_block = {}
-        mappedInputs.append(mapped_block)
-        for pe, inp in block.iteritems():
-            try:
-                copy_node = newids[pe.id]
-            except:
-                # pe is the id itself
-                copy_node = newids[pe]
-            mapped_block[copy_node] = inp
+    mappedInputs = {}
+    for pe, inp in inputs.iteritems():
+        try:
+            copy_node = newids[pe.id]
+        except:
+            # pe is the id itself
+            copy_node = newids[pe]
+        mappedInputs[copy_node] = inp
     
     # mappedInputs = []
     # for block in inputs:
@@ -290,13 +286,12 @@ def process(graph, inputs=[{}], provideAllInputs=False, resultconnections=[]):
     #                     mappedInp[node] = [ { input_name : block[input_name] } ]
     #     mappedInputs.append(mappedInp)
         
-    results = [ {} for i in inputs ]
+    results = {}
     for comp in components:
         ordered = order(graph, comp)
         # print "Processing component: %s" % [ node.obj.name for node in ordered ]
         compResults = _processConnected(graph, ordered, mappedInputs, provideAllInputs, resultconnections)
-        for cr, r in zip(compResults, results):
-            r.update(cr)
+        results.update(compResults)
     return results
     
 from dispel4py.core import GenericPE
