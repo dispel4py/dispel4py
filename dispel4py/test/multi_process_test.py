@@ -44,3 +44,12 @@ def testTwoPipelines():
     graph.connect(prod1, 'output', cons1, 'input')
     graph.connect(prod2, 'output', cons2, 'input')
     multiprocess(graph, 2, [{}, {}, {}, {}, {}])
+
+def testTee():
+    graph = WorkflowGraph()
+    prod = TestProducer()
+    cons1 = TestOneInOneOut()
+    cons2 = TestOneInOneOut()
+    graph.connect(prod, 'output', cons1, 'input')
+    graph.connect(prod, 'output', cons2, 'input')
+    multiprocess(graph, 3, [{}, {}, {}])

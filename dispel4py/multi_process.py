@@ -220,8 +220,6 @@ def multiprocess(workflow, numProcesses, inputs=[{}], simple=False):
                 numInputs[dest] += len(source_processes)
             if source == pe:
                 allconnections = edge[2]['ALL_CONNECTIONS']
-                for cp in process_pes[pe].values():
-                    outconnections[cp][source_output] = []
                 for (source_output, dest_input) in allconnections:
                     communication = _getCommunication(source, dest, dest_input, process_pes, input_queues)
                     for cp in communication:
