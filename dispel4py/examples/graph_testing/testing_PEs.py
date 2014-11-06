@@ -33,7 +33,7 @@ class TestProducer(GenericPE):
                 self.outputconnections['output%s' % i] = { NAME : 'output%s' % i, TYPE: ['number'] } 
         self.counter = 0
         self.outputnames = list(self.outputconnections.keys())
-    def process(self, inputs):
+    def _process(self, inputs):
         self.counter += 1
         result = {}
         for output in self.outputnames:
