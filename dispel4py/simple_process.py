@@ -361,6 +361,8 @@ if __name__ == "__main__":
             inputs[pe] = [ {} for i in range(args.iter) ]
         print "Processing %s iteration(s)" % args.iter
     else:
+        for pe in _get_roots(graph.graph):
+            inputs[pe] = [ {} ]
         print 'Processing 1 iteration.'
         
     print 'Starting simple processing.'    

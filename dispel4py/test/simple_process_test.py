@@ -103,3 +103,10 @@ def testSimplePE():
     graph.add(test)
     results = simple_process.process(graph, { test.id: [{'input': 1}] } )
     tools.eq_({(test.id, 'output'):[1]}, results)
+    
+def testOnePE():
+    graph = WorkflowGraph()
+    prod = TestProducer()
+    graph.add(prod)
+    results = simple_process.process(graph, { prod: [{}] })
+    tools.eq_({(prod.id, 'output'):[1]}, results)
