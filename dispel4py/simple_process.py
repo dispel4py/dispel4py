@@ -366,6 +366,9 @@ if __name__ == "__main__":
         print 'Processing 1 iteration.'
         
     print 'Starting simple processing.'    
-    print 'Inputs: %s' % { pe.id:data for pe, data in inputs.iteritems() }
+    try:
+        print 'Inputs: %s' % { pe.id:data for pe, data in inputs.iteritems() }
+    except:
+        print 'Inputs: %s' % { pe:data for pe, data in inputs.iteritems() }
     results = process(graph, inputs)
     print 'Results: %s' % results
