@@ -4,8 +4,32 @@ comm=MPI.COMM_WORLD
 rank=comm.Get_rank()
 size=comm.Get_size()
 
-from processor import GenericWrapper, simpleLogger, STATUS_TERMINATED
+from processor import GenericWrapper, simpleLogger, STATUS_TERMINATED, STATUS_ACTIVE    
+import processor
 import types
+
+def process(workflow, inputs={}):
+    success, sources, processes = processor._assign_processes(workflow, size)
+    if success:
+        inputmappings, outputmappings = processor._connect(workflow, processes)
+    else:
+        print 'Not enough processes for execution of graph'
+        return
+    for node in workflow.graph.nodes():
+        pe = node.getContainedObject()
+        if rank in processes[pe.id]:
+            provided_inputs = None
+            try:
+                provided_inputs = inputs[pe]
+            except KeyError:
+                try:
+                    provided_inputs = inputs[pe.id]
+                except KeyError:
+                    pass
+            wrapper = MPIWrapper(pe, provided_inputs)
+            wrapper.targets = outputmappings[rank]
+            wrapper.sources = inputmappings[rank]
+            wrapper.process()
 
 class MPIWrapper(GenericWrapper):
     
@@ -41,7 +65,8 @@ class MPIWrapper(GenericWrapper):
             output = { inputName : data }
             dest = communication.getDestination(output)
             for i in dest:
-                request=comm.isend(output, dest=i)
+                self.pe.log('Sending %s to %s' % (output, i))
+                request=comm.isend(output, tag=STATUS_ACTIVE, dest=i)
                 status = MPI.Status()
                 request.Wait(status)
                 
