@@ -10,6 +10,17 @@ STATUS_TERMINATED = 12
 def simpleLogger(self, msg):
     print("%s (rank %s): %s" % (self.id, self.rank, msg))
 
+def get_inputs(pe, inputs):
+    provided_inputs = None
+    try:
+        provided_inputs = inputs[pe]
+    except KeyError:
+        try:
+            provided_inputs = inputs[pe.id]
+        except:
+            pass
+    return provided_inputs    
+
 class GenericWrapper(object):
 
     def __init__(self, pe):
@@ -169,38 +180,3 @@ def _connect(workflow, processes):
         inputmappings.update(inc)
         outputmappings.update(outc)
     return inputmappings, outputmappings
-
-class MultiProcessingWrapper(GenericWrapper):
-    
-    def __init__(self, rank, pe, provided_inputs=None):
-        GenericWrapper.__init__(self, pe)
-        self.pe.log = types.MethodType(simpleLogger, pe)
-        self.pe.rank = rank
-        self.provided_inputs = provided_inputs
-
-    def _read(self):
-        result = super(MultiProcessingWrapper, self)._read()
-        if result is not None:
-            return result
-        # read from input queue
-        return self.input_queue.get()
-
-    def _write(self, name, data):
-        try:
-            targets = self.targets[name]
-        except KeyError:
-            # no targets
-            return
-        for (inputName, communication) in targets:
-            output = { inputName : data }
-            dest = communication.getDestination(output)
-            for i in dest:
-                self.pe.log('Writing out %s' % output)
-                self.output_queues[i].put((output, STATUS_ACTIVE))
-                
-    def _terminate(self):
-        for output, targets in self.targets.iteritems():
-            for (inputName, communication) in targets:
-                for i in communication.destinations:
-                    self.pe.log('Terminating consumer %s' % i)
-                    self.output_queues[i].put((None, STATUS_TERMINATED))

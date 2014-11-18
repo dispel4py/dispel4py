@@ -18,14 +18,7 @@ def process(workflow, inputs={}):
     for node in workflow.graph.nodes():
         pe = node.getContainedObject()
         if rank in processes[pe.id]:
-            provided_inputs = None
-            try:
-                provided_inputs = inputs[pe]
-            except KeyError:
-                try:
-                    provided_inputs = inputs[pe.id]
-                except KeyError:
-                    pass
+            provided_inputs = processor.get_inputs(pe, inputs)
             wrapper = MPIWrapper(pe, provided_inputs)
             wrapper.targets = outputmappings[rank]
             wrapper.sources = inputmappings[rank]
