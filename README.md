@@ -28,7 +28,7 @@ Installation
 
 The easiest way to install dispel4py is via pip (https://pypi.python.org/pypi/pip):
 
-`sudo pip install git+git://github.com/akrause2014/dispel4py.git#egg=dispel4py`
+`sudo pip install git+git://github.com/akrause2014/dispel4py.git@master`
 
 Alternatively, download the ZIP or clone this repository to your desktop and add it to the PYTHON_PATH.
 
@@ -43,6 +43,12 @@ Documentation
 The wiki documentation explains how to install and test Dispel4Py: https://github.com/akrause2014/dispel4py/wiki
 
 Dispel4Py user documentation: http://www2.epcc.ed.ac.uk/~amrey/VERCE/Dispel4Py/
+
+Travis CI
+---------
+
+[![Build Status](https://travis-ci.org/akrause2014/dispel4py.svg)](https://travis-ci.org/akrause2014/dispel4py)
+https://travis-ci.org/akrause2014/dispel4py
 
 
 ![Logo](http://www2.epcc.ed.ac.uk/~amrey/VERCE/Dispel4Py/_static/DISPEL4PY_web_trans.png)
