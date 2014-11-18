@@ -369,6 +369,7 @@ if __name__ == "__main__":
     try:
         print 'Inputs: %s' % { pe.id:data for pe, data in inputs.iteritems() }
     except:
+        # pe is the id of the PE (if input comes from a JSON file)
         print 'Inputs: %s' % { pe:data for pe, data in inputs.iteritems() }
     results = process(graph, inputs)
     print 'Results: %s' % results
