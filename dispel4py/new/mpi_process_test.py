@@ -11,25 +11,11 @@ rank=comm.Get_rank()
 size=comm.Get_size()
 
 prod = TestProducer()
-cons = TestOneInOneOut()
-# if rank == 0:
-#     communication = processor.ShuffleCommunication(0, [0], [1])
-#     prod_wrapper = MPIWrapper(prod, [ { 'input' : 1 } ] )
-#     prod_wrapper.targets = { 'output' : [ ('input', communication)] }
-#     prod_wrapper.process()
-# if rank == 1:
-#     cons_wrapper = MPIWrapper(cons)
-#     cons_wrapper.process()
+cons1 = TestOneInOneOut()
+cons2 = TestOneInOneOut()
     
 graph = WorkflowGraph()
-graph.connect(prod, 'output', cons, 'input')
-
-if rank == 0:
-    success, sources, processes = processor._assign_processes(graph, size)
-    print sources
-    print processes
-    inputmappings, outputmappings = processor._connect(graph, processes)
-    print inputmappings
-    print outputmappings
+graph.connect(prod, 'output', cons1, 'input')
+graph.connect(cons1, 'output', cons2, 'input')
 
 process(graph, { prod : [ { 'input' : 1 }, { 'input' : 2 }, { 'input' : 3 }  ] } )

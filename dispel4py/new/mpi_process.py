@@ -9,12 +9,25 @@ import processor
 import types
 
 def process(workflow, inputs={}):
-    success, sources, processes = processor._assign_processes(workflow, size)
-    if success:
-        inputmappings, outputmappings = processor._connect(workflow, processes)
-    else:
-        print 'Not enough processes for execution of graph'
+    processes={}
+    inputmappings = {}
+    outputmappings = {}
+    success=True
+    if rank == 0:
+        try:
+            processes, inputmappings, outputmappings = processor.assign_and_connect(workflow, size)
+            print 'Processes: %s' % processes
+        except:
+            print 'Not enough processes for execution of graph'
+            success=False
+    success=comm.bcast(success,root=0)
+    if not success:
         return
+        
+    processes=comm.bcast(processes,root=0)
+    inputmappings=comm.bcast(inputmappings,root=0)
+    outputmappings=comm.bcast(outputmappings,root=0)
+    
     for node in workflow.graph.nodes():
         pe = node.getContainedObject()
         if rank in processes[pe.id]:
@@ -26,27 +39,41 @@ def process(workflow, inputs={}):
 
 class MPIWrapper(GenericWrapper):
     
-    TAG_CONTROL = 1
-    TAG_DATA = 2
-        
     def __init__(self, pe, provided_inputs=None):
         GenericWrapper.__init__(self, pe)
         self.pe.log = types.MethodType(simpleLogger, pe)
         self.pe.rank = rank
         self.provided_inputs = provided_inputs
+        self.terminated = 0
 
+    @property
+    def sources(self):
+        return self._sources
+
+    @sources.setter
+    def sources(self, sources):
+        # count number of inputs when setting the sources
+        num_inputs = 0
+        for i in sources.values(): num_inputs += len(i)
+        self._num_sources = num_inputs
+        self._sources = sources
+        
     def _read(self):
         result = super(MPIWrapper, self)._read()
         if result is not None:
             return result
-
+            
         status = MPI.Status()
         msg=comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
-        while status.Get_tag() == MPIWrapper.TAG_CONTROL:
-            self.status = msg
-            msg=comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
-        else:
-            return msg, status.Get_tag()
+        tag = status.Get_tag()
+        while tag == STATUS_TERMINATED:
+            self.terminated += 1
+            if self.terminated >= self._num_sources:
+                break
+            else:
+               msg=comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
+               tag = status.Get_tag()
+        return msg, tag
 
     def _write(self, name, data):
         try:
