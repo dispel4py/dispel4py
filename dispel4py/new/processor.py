@@ -6,6 +6,7 @@ from dispel4py.core import GROUPING
 STATUS_ACTIVE = 10
 STATUS_INACTIVE = 11
 STATUS_TERMINATED = 12
+STATUS = { 10: 'ACTIVE', 11: 'INACTIVE', 12: 'TERMINATED'}
 
 def simpleLogger(self, msg):
     print("%s (rank %s): %s" % (self.id, self.rank, msg))
@@ -26,13 +27,26 @@ class GenericWrapper(object):
     def __init__(self, pe):
         self.pe = pe
         self.targets = {}
+        self._sources = {}
+
+    @property
+    def sources(self):
+        return self._sources
+
+    @sources.setter
+    def sources(self, sources):
+        # count and store number of inputs when setting the sources
+        num_inputs = 0
+        for i in sources.values(): num_inputs += len(i)
+        self._num_sources = num_inputs
+        self._sources = sources
 
     def process(self):
         self.pe.preprocess()
         result = self._read()
         inputs, status = result
+        self.pe.log('Read result: %s, status=%s' % (inputs, STATUS[status]))
         while status != STATUS_TERMINATED:
-            self.pe.log('Read result: %s, status=%s' % (inputs, status))
             if inputs is not None:
                 outputs = self.pe.process(inputs)
                 self.pe.log('Produced output: %s'% outputs)
@@ -40,6 +54,7 @@ class GenericWrapper(object):
                     for key, value in outputs.iteritems():
                         self._write(key, value)
             inputs, status = self._read()
+            self.pe.log('Read result: %s, status=%s' % (inputs, STATUS[status]))
         self.pe.postprocess()
         self._terminate()
         
@@ -180,3 +195,13 @@ def _connect(workflow, processes):
         inputmappings.update(inc)
         outputmappings.update(outc)
     return inputmappings, outputmappings
+
+def assign_and_connect(workflow, size):
+    graph = workflow.graph
+    success, sources, processes = _assign_processes(workflow, size)
+    if success:
+        inputmappings, outputmappings = _connect(workflow, processes)
+        return processes, inputmappings, outputmappings
+    else:
+        return None
+    

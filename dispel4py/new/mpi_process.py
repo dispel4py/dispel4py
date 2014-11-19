@@ -46,18 +46,6 @@ class MPIWrapper(GenericWrapper):
         self.provided_inputs = provided_inputs
         self.terminated = 0
 
-    @property
-    def sources(self):
-        return self._sources
-
-    @sources.setter
-    def sources(self, sources):
-        # count number of inputs when setting the sources
-        num_inputs = 0
-        for i in sources.values(): num_inputs += len(i)
-        self._num_sources = num_inputs
-        self._sources = sources
-        
     def _read(self):
         result = super(MPIWrapper, self)._read()
         if result is not None:
