@@ -8,18 +8,15 @@ def _processWorker(wrapper):
     wrapper.process()
 
 def process(workflow, size, inputs={}):
-    graph = workflow.graph
-
-    success, sources, processes = processor._assign_processes(workflow, size)
-    if success:
-        inputmappings, outputmappings = processor._connect(workflow, processes)
-    else:
+    try:
+        processes, inputmappings, outputmappings = processor.assign_and_connect(workflow, size)
+        print 'Processes: %s' % processes
+    except:
         print 'Not enough processes for execution of graph'
         return
-
     process_pes = {}
     queues = {}
-    for node in graph.nodes():
+    for node in workflow.graph.nodes():
         pe = node.getContainedObject()
         provided_inputs = processor.get_inputs(pe, inputs)
         for proc in processes[pe.id]:
@@ -32,6 +29,7 @@ def process(workflow, size, inputs={}):
             wrapper.input_queue.name = 'Queue_%s_%s' % (cp.id, cp.rank)
             queues[proc] = wrapper.input_queue
             wrapper.targets = outputmappings[proc]
+            wrapper.sources = inputmappings[proc]
     for proc in process_pes:
         wrapper = process_pes[proc]
         wrapper.output_queues = {}
@@ -59,13 +57,22 @@ class MultiProcessingWrapper(GenericWrapper):
         self.pe.log = types.MethodType(simpleLogger, pe)
         self.pe.rank = rank
         self.provided_inputs = provided_inputs
+        self.terminated = 0
 
     def _read(self):
         result = super(MultiProcessingWrapper, self)._read()
         if result is not None:
             return result
         # read from input queue
-        return self.input_queue.get()
+        data, status = self.input_queue.get()
+        print 'read %s' % str((data, status))
+        while status == STATUS_TERMINATED:
+            self.terminated += 1
+            if self.terminated >= self._num_sources:
+                return data, status
+            else:
+                data, status = self.input_queue.get()
+        return data, status
 
     def _write(self, name, data):
         try:

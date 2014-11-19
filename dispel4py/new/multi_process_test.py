@@ -29,7 +29,9 @@ from multi_process import process
 from dispel4py.workflow_graph import WorkflowGraph
 
 prod = TestProducer()
-cons = TestOneInOneOut()
+cons1 = TestOneInOneOut()
+cons2 = TestOneInOneOut()
 graph = WorkflowGraph()
-graph.connect(prod, 'output', cons, 'input')
-process(graph, size=2, inputs={ prod : [ { 'input' : 1 }, { 'input' : 2 }, { 'input' : 3 }  ] } )
+graph.connect(prod, 'output', cons1, 'input')
+graph.connect(cons1, 'output', cons2, 'input')
+process(graph, size=5, inputs={ prod : [ { 'input' : 1 }, { 'input' : 2 }, { 'input' : 3 }  ] } )
