@@ -11,7 +11,10 @@ def get_dependencies(proc, inputmappings):
     dep = []
     for input_name, sources in inputmappings[proc].iteritems():
         for s in sources:
-            dep += get_dependencies(s, inputmappings)
+            sdep = get_dependencies(s, inputmappings)
+            for n in sdep:
+                if n not in dep:
+                    dep.append(n)
             dep.append(s)
     return dep
 
@@ -43,6 +46,7 @@ def process(workflow, inputs={}):
     wrapper.targets = {}
     wrapper.sources = {}
     wrapper.process()
+    return wrapper.outputs
     
 class SimpleProcessingWrapper(GenericWrapper):
     
@@ -108,11 +112,11 @@ class SimpleProcessingPE(GenericPE):
                                         all_inputs[p] = [ { input_name : result[output_name] } ]
                         except KeyError:
                             # no destinations so this is a result of the PE
-                            value = { output_name : result[output_name] }
+                            if pe.id not in results: results[pe.id] = {}
                             try:
-                                results[pe.id].append(value)
+                                results[pe.id][output_name].append(result[output_name])
                             except KeyError:
-                                results[pe.id] = [ value ]
+                                results[pe.id][output_name] = [ result[output_name] ]
         return results
                 
 class SimpleWriter(object):
