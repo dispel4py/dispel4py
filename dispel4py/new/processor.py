@@ -65,6 +65,9 @@ class GenericWrapper(object):
                 return self.provided_inputs.pop(0), STATUS_ACTIVE
             else:
                 return None, STATUS_TERMINATED
+                
+    def _terminate(self):
+        None
         
 class ShuffleCommunication(object):
     def __init__(self, rank, sources, destinations):
