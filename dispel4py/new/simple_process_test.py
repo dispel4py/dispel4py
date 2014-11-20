@@ -27,7 +27,7 @@ Using nose (https://nose.readthedocs.org/en/latest/) run as follows::
 
 from dispel4py.examples.graph_testing.testing_PEs import TestProducer, TestOneInOneOut, TestTwoInOneOut
 
-from simple_process import process
+import simple_process
 from dispel4py.workflow_graph import WorkflowGraph
 
 from nose import tools
@@ -39,7 +39,7 @@ def testPipeline():
     graph = WorkflowGraph()
     graph.connect(prod, 'output', cons1, 'input')
     graph.connect(cons1, 'output', cons2, 'input')
-    results = process(graph, inputs={ prod : [ {}, {}, {}, {}, {} ] } )
+    results = simple_process.process_and_return(graph, inputs={ prod : [ {}, {}, {}, {}, {} ] } )
     tools.eq_({ cons2.id : { 'output' : [1, 2, 3, 4, 5] } }, results)
     
 def testSquare():
@@ -52,7 +52,7 @@ def testSquare():
     graph.connect(prod, 'output1', cons2, 'input')
     graph.connect(cons1, 'output', last, 'input0')
     graph.connect(cons2, 'output', last, 'input1')
-    results = process(graph, { prod : [{}]} )
+    results = simple_process.process_and_return(graph, { prod : [{}]} )
     tools.eq_({last.id : { 'output' :['1', '1']} }, results)
 
 def testTee():
@@ -63,5 +63,5 @@ def testTee():
     cons2 = TestOneInOneOut()
     graph.connect(prod, 'output', cons1, 'input')
     graph.connect(prod, 'output', cons2, 'input')
-    results = process(graph, {prod: [{}, {}, {}, {}, {}]})
+    results = simple_process.process_and_return(graph, {prod: [{}, {}, {}, {}, {}]})
     tools.eq_({ cons1.id : {'output': [1, 2, 3, 4, 5]}, cons2.id: {'output' : [1, 2, 3, 4, 5]} }, results)

@@ -1,5 +1,6 @@
 import copy
 import multiprocessing
+import traceback
 import types
 from processor import GenericWrapper, STATUS_ACTIVE, STATUS_TERMINATED, simpleLogger
 import processor
@@ -7,17 +8,35 @@ import processor
 def _processWorker(wrapper):
     wrapper.process()
 
-def process(workflow, size, inputs={}):
-    try:
-        processes, inputmappings, outputmappings = processor.assign_and_connect(workflow, size)
-        print 'Processes: %s' % processes
-    except:
-        print 'Not enough processes for execution of graph'
-        return
+def process(workflow, inputs, args):
+    size = args.num
+    if not size:
+        return 'dispel4py.multi_process: error: missing required argument -n num_processes'
+    success = True
+    nodes = [ node.getContainedObject() for node in workflow.graph.nodes() ]
+    if not args.simple:
+        try:
+            processes, inputmappings, outputmappings = processor.assign_and_connect(workflow, size)
+            print 'Processes: %s' % processes
+            # print 'Inputs: %s' % inputs
+        except:
+            success = False
+            
+    if args.simple or not success:
+        workflow.partitions = processor.get_partitions(workflow)
+        print 'Partitions: %s' % ', '.join(('[%s]' % ', '.join((pe.id for pe in part)) for part in workflow.partitions))
+        ubergraph = processor.create_partitioned(workflow)
+        try:
+            processes, inputmappings, outputmappings = processor.assign_and_connect(ubergraph, size)
+            inputs=processor.map_inputs_to_partitions(ubergraph, inputs)
+            success = True
+            nodes = [ node.getContainedObject() for node in ubergraph.graph.nodes() ]
+        except:
+            return 'dispel4py.multi_process: Not enough processes for execution of graph'
+
     process_pes = {}
     queues = {}
-    for node in workflow.graph.nodes():
-        pe = node.getContainedObject()
+    for pe in nodes:
         provided_inputs = processor.get_inputs(pe, inputs)
         for proc in processes[pe.id]:
             cp = copy.deepcopy(pe)
@@ -65,7 +84,6 @@ class MultiProcessingWrapper(GenericWrapper):
             return result
         # read from input queue
         data, status = self.input_queue.get()
-        print 'read %s' % str((data, status))
         while status == STATUS_TERMINATED:
             self.terminated += 1
             if self.terminated >= self._num_sources:

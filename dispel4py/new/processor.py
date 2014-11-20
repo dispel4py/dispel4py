@@ -6,7 +6,8 @@ from dispel4py.core import GROUPING
 STATUS_ACTIVE = 10
 STATUS_INACTIVE = 11
 STATUS_TERMINATED = 12
-STATUS = { 10: 'ACTIVE', 11: 'INACTIVE', 12: 'TERMINATED'}
+# mapping for name to value
+STATUS = { STATUS_ACTIVE: 'ACTIVE', STATUS_INACTIVE: 'INACTIVE', STATUS_TERMINATED: 'TERMINATED'}
 
 def simpleLogger(self, msg):
     print("%s (rank %s): %s" % (self.id, self.rank, msg))
@@ -73,6 +74,7 @@ class ShuffleCommunication(object):
     def __init__(self, rank, sources, destinations):
         self.destinations=destinations
         self.currentIndex = (sources.index(rank) % len(self.destinations)) -1
+        self.name = None
     def getDestination(self, data):
         self.currentIndex = (self.currentIndex+1)%len(self.destinations)
         return [self.destinations[self.currentIndex]]
@@ -82,6 +84,7 @@ class GroupByCommunication(object):
         self.groupby = groupby
         self.destinations=destinations
         self.input_name = input_name
+        self.name = groupby
     def getDestination(self,data):
         output = tuple([data[self.input_name][x] for x in self.groupby])
         dest_index=abs(make_hash(output))%len(self.destinations)
@@ -90,12 +93,14 @@ class GroupByCommunication(object):
 class AllToOneCommunication(object):
     def __init__(self, destinations):
         self.destinations=destinations
+        self.name = 'global'
     def getDestination(self,data):
         return [self.destinations[0]]
         
 class OneToAllCommunication(object):
     def __init__(self, destinations):
         self.destinations=destinations
+        self.name = 'all'
     def getDestination(self,data):
         return self.destinations
 
@@ -133,7 +138,7 @@ def _assign_processes(workflow, size):
     if totalProcesses > size:
         success = False
         # we need at least one process for each node in the graph
-        print 'Graph is too large for job size: %s > %s.' % (totalProcesses, size)
+        print 'Graph is larger than job size: %s > %s.' % (totalProcesses, size)
     else:    
         node_counter = 0
         for node in graph.nodes():
@@ -200,11 +205,287 @@ def _connect(workflow, processes):
     return inputmappings, outputmappings
 
 def assign_and_connect(workflow, size):
-    graph = workflow.graph
     success, sources, processes = _assign_processes(workflow, size)
     if success:
         inputmappings, outputmappings = _connect(workflow, processes)
         return processes, inputmappings, outputmappings
     else:
         return None
+
+import copy
+
+from dispel4py.workflow_graph import WorkflowGraph
+
+def get_partitions(workflow):
+    try:
+        partitions = workflow.partitions
+    except AttributeError: 
+        sourcePartition = []
+        otherPartition = []
+        graph = workflow.graph
+        for node in graph.nodes():
+            pe = node.getContainedObject()
+            if not _getConnectedInputs(node, graph):
+                sourcePartition.append(pe)
+            else:
+                otherPartition.append(pe)
+        partitions = [sourcePartition, otherPartition]
+        workflow.partitions = partitions
+    return partitions
+
+def create_partitioned(workflow_all):
+    processes_all, inputmappings_all, outputmappings_all = assign_and_connect(workflow_all, len(workflow_all.graph.nodes()))
+    proc_to_pe_all = { value[0] : key for key, value in processes_all.iteritems() }
+    partitions = get_partitions(workflow_all)
+    external_connections = []
+    pe_to_partition = {}
+    partition_pes = []
+    for i in range(len(partitions)):
+        for pe in partitions[i]: 
+            pe_to_partition[pe.id] = i
+    index = -1
+    for part in partitions:
+        index += 1
+        partition_id = index
+        partition_external_connections = []
+        component_ids = [ pe.id for pe in part ]
+        workflow = copy.deepcopy(workflow_all)
+        graph = workflow.graph
+        for node in graph.nodes():
+            if node.getContainedObject().id not in component_ids:
+                graph.remove_node(node)
+        processes, inputmappings, outputmappings = assign_and_connect(workflow, len(graph.nodes()))
+        proc_to_pe = {}
+        for node in workflow.graph.nodes():
+            pe = node.getContainedObject()
+            proc_to_pe[processes[pe.id][0]] = pe
+        for node in graph.nodes():
+            pe = node.getContainedObject()
+            pe.rank = index 
+            proc = processes[pe.id][0]
+            proc_all = processes_all[pe.id][0]
+            for output_name in outputmappings_all[proc_all]:
+                for dest_input, comm_all in outputmappings_all[proc_all][output_name]:
+                    try:
+                        # internal output - we don't need to do anything
+                        d = outputmappings[proc][output_name]
+                    except:
+                        # external output
+                        dest = proc_to_pe_all[comm_all.destinations[0]]
+                        external_connections.append(
+                            (comm_all, 
+                            partition_id, pe.id, output_name, 
+                            pe_to_partition[dest], dest, dest_input))
+                            
+        ordered = part
+        partition_pe = SimpleProcessingPE(inputmappings, outputmappings, proc_to_pe)
+        partition_pe.partition_id = partition_id
+        partition_pe.map_inputs = _map_inputs_to_pes
+        partition_pe.map_outputs = _map_outputs_from_pes
+        partition_pes.append(partition_pe)
+    # print 'EXTERNAL CONNECTIONS : %s' % external_connections
+    ubergraph = WorkflowGraph()
+    ubergraph.pe_to_partition = pe_to_partition
+    ubergraph.partition_pes = partition_pes
+    for comm, source_partition, source_id, source_output, dest_partition, dest_id, dest_input in external_connections:
+        partition_pes[source_partition]._add_output('%s_%s' % (source_id, source_output))
+        partition_pes[dest_partition]._add_input('%s_%s' % (dest_id, dest_input), grouping=comm.name)
+        ubergraph.connect(partition_pes[source_partition], '%s_%s' % (source_id, source_output),
+                          partition_pes[dest_partition], '%s_%s' % (dest_id, dest_input))
+    return ubergraph
+
+def map_inputs_to_partitions(ubergraph, inputs):
+    mapped_input = {}
+    for pe in inputs:
+        try:
+            partition_id = ubergraph.pe_to_partition[pe]
+        except:
+            partition_id = ubergraph.pe_to_partition[pe.id]
+        mapped_pe = ubergraph.partition_pes[partition_id]
+        mapped_input[mapped_pe] = inputs[pe]
+    return mapped_input
     
+
+def _map_inputs_to_pes(data):
+    result = {}
+    for i in data:
+        pe_id, input_name = i.split('_')
+        mapped_data = [{ input_name : block } for block in data[i] ]
+        try:
+            result[pe_id].update(mapped_data)
+        except KeyError:
+            result[pe_id] = mapped_data
+    return result
+
+def _map_outputs_from_pes(data):
+    result = {}
+    for pe_id in data:
+        for i in data[pe_id]:
+            result['%s_%s' % (pe_id, i)] = data[pe_id][i]
+    return result
+
+def _no_map(data):
+    return data
+
+from dispel4py.core import GenericPE
+
+def _get_dependencies(proc, inputmappings):
+    dep = []
+    for input_name, sources in inputmappings[proc].iteritems():
+        for s in sources:
+            sdep = _get_dependencies(s, inputmappings)
+            for n in sdep:
+                if n not in dep:
+                    dep.append(n)
+            dep.append(s)
+    return dep
+    
+def _order_by_dependency(inputmappings, outputmappings):
+    ordered = []
+    for proc in outputmappings:
+        if not outputmappings[proc]:
+            dep = _get_dependencies(proc, inputmappings)
+            for n in ordered:
+                try:
+                    dep.remove(n)
+                except:
+                    # never mind if the element wasn't in the list
+                    pass
+            ordered += dep
+            ordered.append(proc)
+    return ordered
+
+class SimpleProcessingPE(GenericPE):
+    '''
+    A PE that processes a subgraph of PEs in sequence.
+    '''
+    def __init__(self, input_mappings, output_mappings, proc_to_pe):
+        GenericPE.__init__(self)
+        # work out the order of PEs
+        self.ordered = _order_by_dependency(input_mappings, output_mappings)
+        self.input_mappings = input_mappings
+        self.output_mappings = output_mappings
+        self.proc_to_pe = proc_to_pe
+        self.result_mappings = None
+        self.map_inputs = _no_map
+        self.map_outputs = _no_map
+    def _preprocess(self):
+        for proc in self.ordered:
+            pe = self.proc_to_pe[proc]
+            pe.log = types.MethodType(simpleLogger, pe)
+            pe.preprocess()
+    def _postprocess(self):
+        for proc in self.ordered:
+            pe = self.proc_to_pe[proc]
+            pe.postprocess()
+    def _process(self, inputs):
+        all_inputs = {}
+        results = {}
+        inputs = self.map_inputs(inputs)
+        for proc in self.ordered:
+            pe = self.proc_to_pe[proc]
+            output_mappings = self.output_mappings[proc]
+            provided_inputs = get_inputs(pe, inputs)
+            try:
+                provided_inputs.append(all_inputs[proc])
+            except:
+                try:
+                    provided_inputs = all_inputs[proc]
+                except:
+                    pass
+            if provided_inputs is None and not self.input_mappings[proc]:
+                provided_inputs = [{}]
+            for data in provided_inputs:
+                # pe.log('Processing input: %s' % data)
+                result = pe.process(data)
+                # pe.log('Produced result: %s' % result)
+                if result is not None:
+                    for output_name in result:
+                        try:
+                            destinations = output_mappings[output_name]
+                            for input_name, comm in destinations:
+                                for p in comm.destinations:
+                                    try:
+                                        all_inputs[p].append({ input_name : result[output_name] })
+                                    except:
+                                        all_inputs[p] = [ { input_name : result[output_name] } ]
+                        except KeyError:
+                            # no destinations for this output
+                            # if there are no named result outputs the data is added to the results of the PE
+                            if self.result_mappings is None:
+                                self._add_to_results(pe, results, result, output_name)
+                        # now check if the output is in the named results
+                        # (in case of a Tee) then data gets written to the PE results as well
+                        try:
+                            if output_name in self.result_mappings[pe.id]:
+                                self._add_to_results(pe, results, results, output_name)
+                        except:
+                            pass
+        results = self.map_outputs(results)
+        return results
+        
+    def _add_to_results(self, pe, results, result, output_name):
+        if pe.id not in results: results[pe.id] = {}
+        try:
+            results[pe.id][output_name].append(result[output_name])
+        except KeyError:
+            results[pe.id][output_name] = [ result[output_name] ]
+            
+            
+if __name__ == "__main__":
+    import argparse
+    from dispel4py.utils import loadGraph
+    
+    parser = argparse.ArgumentParser(description='Submit a dispel4py graph for processing.')
+    parser.add_argument('platform', help='execution platform (MPI, multiprocessing, simple)')
+    parser.add_argument('module', help='module that creates a dispel4py graph (python module or file name)')
+    parser.add_argument('-a', '--attr', metavar='attribute', help='name of graph variable in the module')
+    parser.add_argument('-f', '--file', metavar='inputfile', help='file containing the input dataset in JSON format')
+    parser.add_argument('-d', '--data', metavar='inputdata', help='input dataset in JSON format')
+    parser.add_argument('-i', '--iter', metavar='iterations', type=int, help='number of iterations', default=1)
+    parser.add_argument('-s', '--simple', help='force simple processing', action='store_true')
+    parser.add_argument('-n', '--num', metavar='num_processes', type=int, help='number of processes to run')
+    args = parser.parse_args()
+    
+    graph = loadGraph(args.module, args.attr)
+    graph.flatten()
+
+    # run only once if no input data
+    inputs = {}
+    if args.file:
+        try:
+            with open(args.file) as inputfile:
+                inputs = json.loads(inputfile.read())
+            print "Processing input file %s" % args.file
+        except:
+            print 'Failed to read input file %s' % args.file
+            sys.exit(1)
+    elif args.data:
+        inputs = json.loads(args.data)  
+    else:
+        if args.iter == 1:
+            print 'Processing 1 iteration.'
+        else:
+            print 'Processing %s iterations.' % args.iter
+        roots = set()
+        for node in graph.graph.nodes():
+            is_root = True
+            pe = node.getContainedObject()
+            for edge in graph.graph[node].values():
+                if pe == edge['DIRECTION'][1]:
+                    is_root = False
+                    break
+            if is_root: 
+                inputs[pe] = [ {} for i in range(args.iter) ]
+
+    process = loadGraph(args.platform, 'process')
+    # if args.simple:
+    #     ubergraph = processor.create_partitioned(graph)
+    #     processes, inputmappings, outputmappings = processor.assign_and_connect(ubergraph, args.num)
+    #     mapped_inputs=map_inputs_to_partitions(ubergraph, inputs)
+    #     process(ubergraph, size=args.num, inputs = mapped_inputs)
+    # else:
+    error_message = process(graph, inputs=inputs, args=args)
+    if error_message:
+        parser.print_usage()
+        print error_message

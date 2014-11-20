@@ -8,28 +8,47 @@ from processor import GenericWrapper, simpleLogger, STATUS_TERMINATED, STATUS_AC
 import processor
 import types
 
-def process(workflow, inputs={}):
+
+def process(workflow, inputs, args):
     processes={}
     inputmappings = {}
     outputmappings = {}
     success=True
+    nodes = [ node.getContainedObject() for node in workflow.graph.nodes() ]
     if rank == 0:
         try:
             processes, inputmappings, outputmappings = processor.assign_and_connect(workflow, size)
-            print 'Processes: %s' % processes
         except:
-            print 'Not enough processes for execution of graph'
             success=False
+            
     success=comm.bcast(success,root=0)
+    if args.simple or not success:
+        ubergraph = processor.create_partitioned(workflow)
+        if rank == 0:
+            print 'Partitions: %s' % ', '.join(('[%s]' % ', '.join((pe.id for pe in part)) for part in workflow.partitions))
+        try:
+            processes, inputmappings, outputmappings = processor.assign_and_connect(ubergraph, size)
+            inputs=processor.map_inputs_to_partitions(ubergraph, inputs)
+            success = True
+            nodes = [ node.getContainedObject() for node in ubergraph.graph.nodes() ]
+        except:
+            print 'dispel4py.mpi_process: Not enough processes for execution of graph'
+            success = False
+        
+    success=comm.bcast(success,root=0)
+    
     if not success:
         return
-        
+
     processes=comm.bcast(processes,root=0)
     inputmappings=comm.bcast(inputmappings,root=0)
     outputmappings=comm.bcast(outputmappings,root=0)
     
-    for node in workflow.graph.nodes():
-        pe = node.getContainedObject()
+    if rank == 0:
+        print 'Processes: %s' % processes
+        # print 'Inputs: %s' % inputs
+
+    for pe in nodes:
         if rank in processes[pe.id]:
             provided_inputs = processor.get_inputs(pe, inputs)
             wrapper = MPIWrapper(pe, provided_inputs)
