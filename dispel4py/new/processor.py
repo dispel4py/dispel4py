@@ -256,7 +256,7 @@ def create_partitioned(workflow_all):
                 graph.remove_node(node)
         processes, inputmappings, outputmappings = assign_and_connect(workflow, len(graph.nodes()))
         proc_to_pe = {}
-        for node in workflow.graph.nodes():
+        for node in graph.nodes():
             pe = node.getContainedObject()
             proc_to_pe[processes[pe.id][0]] = pe
         for node in graph.nodes():
@@ -279,6 +279,7 @@ def create_partitioned(workflow_all):
                             
         ordered = part
         partition_pe = SimpleProcessingPE(inputmappings, outputmappings, proc_to_pe)
+        partition_pe.workflow = workflow
         partition_pe.partition_id = partition_id
         partition_pe.map_inputs = _map_inputs_to_pes
         partition_pe.map_outputs = _map_outputs_from_pes
@@ -479,12 +480,6 @@ if __name__ == "__main__":
                 inputs[pe] = [ {} for i in range(args.iter) ]
 
     process = loadGraph(args.platform, 'process')
-    # if args.simple:
-    #     ubergraph = processor.create_partitioned(graph)
-    #     processes, inputmappings, outputmappings = processor.assign_and_connect(ubergraph, args.num)
-    #     mapped_inputs=map_inputs_to_partitions(ubergraph, inputs)
-    #     process(ubergraph, size=args.num, inputs = mapped_inputs)
-    # else:
     error_message = process(graph, inputs=inputs, args=args)
     if error_message:
         parser.print_usage()
