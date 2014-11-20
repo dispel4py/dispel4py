@@ -18,6 +18,7 @@ def process_and_return(workflow, inputs, resultmappings=None):
         proc_to_pe[processes[pe.id][0]] = pe
     
     simple = SimpleProcessingPE(inputmappings, outputmappings, proc_to_pe)
+    simple.id = 'SimplePE'
     simple.result_mappings = resultmappings
     wrapper = SimpleProcessingWrapper(simple, [inputs])
     wrapper.targets = {}
@@ -26,7 +27,9 @@ def process_and_return(workflow, inputs, resultmappings=None):
     return wrapper.outputs
     
 def process(workflow, inputs, args, resultmappings=None):
-    process_and_return(workflow, inputs, resultmappings)
+    print 'Inputs: %s' % { pe.id: data for pe, data in inputs.iteritems() }
+    results = process_and_return(workflow, inputs, resultmappings)
+    print 'Outputs: %s' % results
     
 class SimpleProcessingWrapper(GenericWrapper):
     

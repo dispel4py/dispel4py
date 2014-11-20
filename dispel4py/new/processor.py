@@ -443,12 +443,16 @@ if __name__ == "__main__":
     
     from dispel4py.utils import load_graph
     
-    main_base = os.path.dirname(__file__)
-    config_file = os.path.join(main_base, "mappings.jsn")
     config = {}
-    with open(config_file, 'r') as f:
-        config = json.load(f)
-    
+    try:
+        main_base = os.path.dirname(__file__)
+        config_file = os.path.join(main_base, "mappings.jsn")
+        with open(config_file, 'r') as f:
+            config = json.load(f)
+    except:
+        # ignore if there's no mappings configuration
+        pass
+
     parser = argparse.ArgumentParser(description='Submit a dispel4py graph for processing.')
     parser.add_argument('module', help='module that creates a dispel4py graph (python module or file name)')
     parser.add_argument('-t', '--target', help='target execution platform', required=True)
