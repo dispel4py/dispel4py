@@ -288,7 +288,9 @@ def create_partitioned(workflow_all):
     ubergraph = WorkflowGraph()
     ubergraph.pe_to_partition = pe_to_partition
     ubergraph.partition_pes = partition_pes
-    for comm, source_partition, source_id, source_output, dest_partition, dest_id, dest_input in external_connections:
+    # sorting the external connections so that the nodes get added in the same order 
+    # if doing this in multiple processes in parallel this is important
+    for comm, source_partition, source_id, source_output, dest_partition, dest_id, dest_input in sorted(external_connections):
         partition_pes[source_partition]._add_output('%s_%s' % (source_id, source_output))
         partition_pes[dest_partition]._add_input('%s_%s' % (dest_id, dest_input), grouping=comm.name)
         ubergraph.connect(partition_pes[source_partition], '%s_%s' % (source_id, source_output),
@@ -435,11 +437,21 @@ class SimpleProcessingPE(GenericPE):
             
 if __name__ == "__main__":
     import argparse
-    from dispel4py.utils import loadGraph
+    from importlib import import_module
+    import json
+    import os
+    
+    from dispel4py.utils import load_graph
+    
+    main_base = os.path.dirname(__file__)
+    config_file = os.path.join(main_base, "mappings.jsn")
+    config = {}
+    with open(config_file, 'r') as f:
+        config = json.load(f)
     
     parser = argparse.ArgumentParser(description='Submit a dispel4py graph for processing.')
-    parser.add_argument('platform', help='execution platform (MPI, multiprocessing, simple)')
     parser.add_argument('module', help='module that creates a dispel4py graph (python module or file name)')
+    parser.add_argument('-t', '--target', help='target execution platform', required=True)
     parser.add_argument('-a', '--attr', metavar='attribute', help='name of graph variable in the module')
     parser.add_argument('-f', '--file', metavar='inputfile', help='file containing the input dataset in JSON format')
     parser.add_argument('-d', '--data', metavar='inputdata', help='input dataset in JSON format')
@@ -448,7 +460,7 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--num', metavar='num_processes', type=int, help='number of processes to run')
     args = parser.parse_args()
     
-    graph = loadGraph(args.module, args.attr)
+    graph = load_graph(args.module, args.attr)
     graph.flatten()
 
     # run only once if no input data
@@ -479,7 +491,13 @@ if __name__ == "__main__":
             if is_root: 
                 inputs[pe] = [ {} for i in range(args.iter) ]
 
-    process = loadGraph(args.platform, 'process')
+    try:
+        # see if platform is in the mappings file as a simple name
+        target = config[args.target]
+    except KeyError:
+        # it is a proper module name - fingers crossed...
+        target = args.target
+    process = getattr(import_module(target), 'process')
     error_message = process(graph, inputs=inputs, args=args)
     if error_message:
         parser.print_usage()
