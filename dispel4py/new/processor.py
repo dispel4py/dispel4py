@@ -10,7 +10,10 @@ STATUS_TERMINATED = 12
 STATUS = { STATUS_ACTIVE: 'ACTIVE', STATUS_INACTIVE: 'INACTIVE', STATUS_TERMINATED: 'TERMINATED'}
 
 def simpleLogger(self, msg):
-    print("%s (rank %s): %s" % (self.id, self.rank, msg))
+    try:
+        print "%s (rank %s): %s" % (self.id, self.rank, msg)
+    except:
+        print "%s: %s" % (self.id, msg)
 
 def get_inputs(pe, inputs):
     provided_inputs = None
@@ -375,6 +378,8 @@ class SimpleProcessingPE(GenericPE):
     def _preprocess(self):
         for proc in self.ordered:
             pe = self.proc_to_pe[proc]
+            pe.writer = SimpleWriter(self, pe, self.output_mappings[proc], self.result_mappings)
+            pe._write = types.MethodType(_simple_write, pe)
             pe.log = types.MethodType(simpleLogger, pe)
             pe.preprocess()
     def _postprocess(self):
@@ -390,13 +395,15 @@ class SimpleProcessingPE(GenericPE):
             output_mappings = self.output_mappings[proc]
             provided_inputs = get_inputs(pe, inputs)
             try:
-                provided_inputs.append(all_inputs[proc])
-            except:
+                other_inputs = all_inputs[proc]
                 try:
-                    provided_inputs = all_inputs[proc]
+                    provided_inputs.append(other_inputs)
                 except:
-                    pass
+                    provided_inputs = other_inputs
+            except:
+               pass
             if provided_inputs is None and not self.input_mappings[proc]:
+                # run at least once for a source of the graph
                 provided_inputs = [{}]
             for data in provided_inputs:
                 # pe.log('Processing input: %s' % data)
@@ -404,29 +411,17 @@ class SimpleProcessingPE(GenericPE):
                 # pe.log('Produced result: %s' % result)
                 if result is not None:
                     for output_name in result:
-                        try:
-                            destinations = output_mappings[output_name]
-                            for input_name, comm in destinations:
-                                for p in comm.destinations:
-                                    try:
-                                        all_inputs[p].append({ input_name : result[output_name] })
-                                    except:
-                                        all_inputs[p] = [ { input_name : result[output_name] } ]
-                        except KeyError:
-                            # no destinations for this output
-                            # if there are no named result outputs the data is added to the results of the PE
-                            if self.result_mappings is None:
-                                self._add_to_results(pe, results, result, output_name)
-                        # now check if the output is in the named results
-                        # (in case of a Tee) then data gets written to the PE results as well
-                        try:
-                            if output_name in self.result_mappings[pe.id]:
-                                self._add_to_results(pe, results, results, output_name)
-                        except:
-                            pass
+                        pe.write(output_name, result[output_name])
+            for p, input_data in pe.writer.all_inputs.iteritems():
+                try:
+                    all_inputs[p].extend(input_data)
+                except:
+                    all_inputs[p] = input_data
+            if pe.writer.results:
+                results[pe.id]=pe.writer.results
         results = self.map_outputs(results)
         return results
-        
+
     def _add_to_results(self, pe, results, result, output_name):
         if pe.id not in results: results[pe.id] = {}
         try:
@@ -434,7 +429,46 @@ class SimpleProcessingPE(GenericPE):
         except KeyError:
             results[pe.id][output_name] = [ result[output_name] ]
             
-            
+def _simple_write(self, name, data):
+    self.writer.write(name, data)
+
+class SimpleWriter(object):
+    def __init__(self, wrapper, pe, output_mappings, result_mappings=None):
+        self.wrapper=wrapper
+        self.pe=pe
+        self.output_mappings = output_mappings
+        self.result_mappings = result_mappings
+        self.all_inputs = {}
+        self.results = {}
+    def write(self, output_name, data):
+        try:
+            destinations = self.output_mappings[output_name]
+            for input_name, comm in destinations:
+                for p in comm.destinations:
+                    input_data = { input_name : data }
+                    try:
+                        self.all_inputs[p].append(input_data)
+                    except:
+                        self.all_inputs[p] = [ input_data ]
+        except KeyError:
+            # no destinations for this output
+            # if there are no named result outputs the data is added to the results of the PE
+            if self.result_mappings is None:
+                try:
+                    self.results[output_name].append(data)
+                except KeyError:
+                    self.results[output_name] = [ data ]
+        # now check if the output is in the named results
+        # (in case of a Tee) then data gets written to the PE results as well
+        try:
+            if output_name in self.result_mappings[self.pe.id]:
+                try:
+                    self.results[output_name].append(data)
+                except KeyError:
+                    self.results[output_name] = [ data ]
+        except:
+            pass
+        
 if __name__ == "__main__":
     import argparse
     from importlib import import_module

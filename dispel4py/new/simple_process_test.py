@@ -25,7 +25,7 @@ Using nose (https://nose.readthedocs.org/en/latest/) run as follows::
     OK
 '''
 
-from dispel4py.examples.graph_testing.testing_PEs import TestProducer, TestOneInOneOut, TestTwoInOneOut
+from dispel4py.examples.graph_testing.testing_PEs import TestProducer, TestOneInOneOut, TestOneInOneOutWriter, TestTwoInOneOut
 
 import simple_process
 from dispel4py.workflow_graph import WorkflowGraph
@@ -65,3 +65,12 @@ def testTee():
     graph.connect(prod, 'output', cons2, 'input')
     results = simple_process.process_and_return(graph, {prod: [{}, {}, {}, {}, {}]})
     tools.eq_({ cons1.id : {'output': [1, 2, 3, 4, 5]}, cons2.id: {'output' : [1, 2, 3, 4, 5]} }, results)
+
+def testWriter():
+    graph = WorkflowGraph()
+    prod = TestProducer()
+    prev = prod
+    cons1 = TestOneInOneOutWriter()
+    graph.connect(prod, 'output', cons1, 'input')
+    results = simple_process.process_and_return(graph, {prod: [{}, {}, {}, {}, {}]})
+    tools.eq_({ cons1.id : {'output': [1, 2, 3, 4, 5]} }, results)
