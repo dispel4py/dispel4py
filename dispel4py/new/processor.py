@@ -305,14 +305,12 @@ def create_partitioned(workflow_all):
     # sort the external connections so that nodes are added in the same order
     # if doing this in multiple processes in parallel this is important
     for comm, source_partition, source_id, source_output, dest_partition, dest_id, dest_input in sorted(external_connections):
-        partition_pes[source_partition]._add_output(
-            '%s_%s' % (source_id, source_output))
-        partition_pes[dest_partition]._add_input(
-            '%s_%s' % (dest_id, dest_input), grouping=comm.name)
-        ubergraph.connect(partition_pes[source_partition],
-                          '%s_%s' % (source_id, source_output),
+        partition_pes[source_partition]._add_output((source_id, source_output))
+        partition_pes[dest_partition]._add_input((dest_id, dest_input), grouping=comm.name)
+        ubergraph.connect(partition_pes[source_partition], 
+                          (source_id, source_output),
                           partition_pes[dest_partition],
-                          '%s_%s' % (dest_id, dest_input))
+                          (dest_id, dest_input))
     return ubergraph
 
 
@@ -331,7 +329,7 @@ def map_inputs_to_partitions(ubergraph, inputs):
 def _map_inputs_to_pes(data):
     result = {}
     for i in data:
-        pe_id, input_name = i.split('_')
+        pe_id, input_name = i
         mapped_data = [{input_name: block} for block in data[i]]
         try:
             result[pe_id].update(mapped_data)
@@ -344,7 +342,7 @@ def _map_outputs_from_pes(data):
     result = {}
     for pe_id in data:
         for i in data[pe_id]:
-            result['%s_%s' % (pe_id, i)] = data[pe_id][i]
+            result[(pe_id, i)] = data[pe_id][i]
     return result
 
 
