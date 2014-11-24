@@ -26,7 +26,7 @@ Using nose (https://nose.readthedocs.org/en/latest/) run as follows::
 '''
 
 from dispel4py.workflow_graph import WorkflowGraph
-from dispel4py.GenericPE import GenericPE, NAME
+from dispel4py.core import GenericPE, NAME
 from dispel4py import simple_process
 
 from dispel4py.examples.graph_testing.testing_PEs import TestProducer, TestOneInOneOut, TestTwoInOneOut
