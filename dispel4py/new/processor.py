@@ -2,6 +2,7 @@ import sys
 import traceback
 import types
 from dispel4py.core import GROUPING
+from dispel4py.utils import make_hash
 
 STATUS_ACTIVE = 10
 STATUS_INACTIVE = 11
@@ -30,6 +31,7 @@ def get_inputs(pe, inputs):
             pass
     return provided_inputs
 
+
 class GenericWrapper(object):
 
     def __init__(self, pe):
@@ -47,7 +49,8 @@ class GenericWrapper(object):
     def sources(self, sources):
         # count and store number of inputs when setting the sources
         num_inputs = 0
-        for i in sources.values(): num_inputs += len(i)
+        for i in sources.values():
+            num_inputs += len(i)
         self._num_sources = num_inputs
         self._sources = sources
 
@@ -59,7 +62,7 @@ class GenericWrapper(object):
         while status != STATUS_TERMINATED:
             if inputs is not None:
                 outputs = self.pe.process(inputs)
-                self.pe.log('Produced output: %s'% outputs)
+                self.pe.log('Produced output: %s' % outputs)
                 if outputs is not None:
                     for key, value in outputs.iteritems():
                         self._write(key, value)
@@ -67,7 +70,7 @@ class GenericWrapper(object):
             self.pe.log('Read result: %s, status=%s' % (inputs, STATUS[status]))
         self.pe.postprocess()
         self._terminate()
-        
+
     def _read(self):
         # check the provided inputs
         if self.provided_inputs is not None:
@@ -75,70 +78,82 @@ class GenericWrapper(object):
                 return self.provided_inputs.pop(0), STATUS_ACTIVE
             else:
                 return None, STATUS_TERMINATED
-                
+
     def _terminate(self):
         None
-        
+
+
 def _wrapper_write(self, name, data):
     self.wrapper._write(name, data)
-        
+
+
 class ShuffleCommunication(object):
     def __init__(self, rank, sources, destinations):
-        self.destinations=destinations
-        self.currentIndex = (sources.index(rank) % len(self.destinations)) -1
+        self.destinations = destinations
+        self.currentIndex = (sources.index(rank) % len(self.destinations)) - 1
         self.name = None
+
     def getDestination(self, data):
-        self.currentIndex = (self.currentIndex+1)%len(self.destinations)
+        self.currentIndex = (self.currentIndex+1) % len(self.destinations)
         return [self.destinations[self.currentIndex]]
+
 
 class GroupByCommunication(object):
     def __init__(self, destinations, input_name, groupby):
         self.groupby = groupby
-        self.destinations=destinations
+        self.destinations = destinations
         self.input_name = input_name
         self.name = groupby
-    def getDestination(self,data):
+
+    def getDestination(self, data):
         output = tuple([data[self.input_name][x] for x in self.groupby])
-        dest_index=abs(make_hash(output))%len(self.destinations)
+        dest_index = abs(make_hash(output)) % len(self.destinations)
         return [self.destinations[dest_index]]
+
 
 class AllToOneCommunication(object):
     def __init__(self, destinations):
-        self.destinations=destinations
+        self.destinations = destinations
         self.name = 'global'
-    def getDestination(self,data):
+
+    def getDestination(self, data):
         return [self.destinations[0]]
-        
+
+
 class OneToAllCommunication(object):
     def __init__(self, destinations):
-        self.destinations=destinations
+        self.destinations = destinations
         self.name = 'all'
-    def getDestination(self,data):
+
+    def getDestination(self, data):
         return self.destinations
+
 
 def _getConnectedInputs(node, graph):
     names = []
     for edge in graph.edges(node, data=True):
         direction = edge[2]['DIRECTION']
-        dest = direction[1] 
+        dest = direction[1]
         dest_input = edge[2]['TO_CONNECTION']
         if dest == node.getContainedObject():
             names.append(dest_input)
     return names
 
+
 def _getNumProcesses(size, numSources, numProcesses, totalProcesses):
     div = max(1, totalProcesses-numSources)
-    return int(numProcesses * (size - numSources)/div)  
-    
+    return int(numProcesses * (size - numSources)/div)
+
+
 def _assign_processes(workflow, size):
     graph = workflow.graph
-    processes={}
-    success=True
+    processes = {}
+    success = True
     totalProcesses = 0
     numSources = 0
     sources = []
     for node in graph.nodes():
-        pe=node.getContainedObject()
+        pe = node.getContainedObject()
         # if pe.inputconnections:
         if _getConnectedInputs(node, graph):
             totalProcesses = totalProcesses + pe.numprocesses
@@ -146,19 +161,20 @@ def _assign_processes(workflow, size):
             sources.append(pe.id)
             totalProcesses += 1
             numSources += 1
-    
+
     if totalProcesses > size:
         success = False
         # we need at least one process for each node in the graph
         print 'Graph is larger than job size: %s > %s.' % (totalProcesses, size)
-    else:    
+    else:
         node_counter = 0
         for node in graph.nodes():
-            pe=node.getContainedObject()
+            pe = node.getContainedObject()
             prcs = 1 if pe.id in sources else _getNumProcesses(size, numSources, pe.numprocesses, totalProcesses)
-            processes[pe.id]=range(node_counter, node_counter+prcs)
+            processes[pe.id] = range(node_counter, node_counter+prcs)
             node_counter = node_counter + prcs
     return success, sources, processes
+
 
 def _getCommunication(rank, source_processes, dest, dest_input, dest_processes):
     communication = ShuffleCommunication(rank, source_processes, dest_processes)
@@ -175,18 +191,19 @@ def _getCommunication(rank, source_processes, dest, dest_input, dest_processes):
         print("No input '%s' defined for PE '%s'" % (dest_input, dest.id))
         raise
     return communication
-    
+
+
 def _create_connections(graph, node, processes):
-    pe=node.getContainedObject()
-    inputmappings = { i : {} for i in processes[pe.id] }
-    outputmappings = { i : {} for i in processes[pe.id] }
+    pe = node.getContainedObject()
+    inputmappings = {i: {} for i in processes[pe.id]}
+    outputmappings = {i: {} for i in processes[pe.id]}
     for edge in graph.edges(node, data=True):
         direction = edge[2]['DIRECTION']
         source = direction[0]
         source_output = edge[2]['FROM_CONNECTION']
         dest = direction[1]
-        dest_processes=processes[dest.id]
-        source_processes=processes[source.id]
+        dest_processes = processes[dest.id]
+        source_processes = processes[source.id]
         dest_input = edge[2]['TO_CONNECTION']
         allconnections = edge[2]['ALL_CONNECTIONS']
         if dest == pe:
@@ -206,15 +223,17 @@ def _create_connections(graph, node, processes):
                         outputmappings[i][source_output] = [(dest_input, communication)]
     return inputmappings, outputmappings
 
+
 def _connect(workflow, processes):
     graph = workflow.graph
-    outputmappings = {} 
+    outputmappings = {}
     inputmappings = {}
     for node in graph.nodes():
         inc, outc = _create_connections(graph, node, processes)
         inputmappings.update(inc)
         outputmappings.update(outc)
     return inputmappings, outputmappings
+
 
 def assign_and_connect(workflow, size):
     success, sources, processes = _assign_processes(workflow, size)
@@ -228,10 +247,11 @@ import copy
 
 from dispel4py.workflow_graph import WorkflowGraph
 
+
 def get_partitions(workflow):
     try:
         partitions = workflow.partitions
-    except AttributeError: 
+    except AttributeError:
         sourcePartition = []
         otherPartition = []
         graph = workflow.graph
@@ -245,43 +265,43 @@ def get_partitions(workflow):
         workflow.partitions = partitions
     return partitions
 
+
 def create_partitioned(workflow_all):
     processes_all, inputmappings_all, outputmappings_all = assign_and_connect(workflow_all, len(workflow_all.graph.nodes()))
-    proc_to_pe_all = { value[0] : key for key, value in processes_all.iteritems() }
+    proc_to_pe_all = {v[0]: k for k, v in processes_all.iteritems()}
     partitions = get_partitions(workflow_all)
     external_connections = []
     pe_to_partition = {}
     partition_pes = []
     for i in range(len(partitions)):
-        for pe in partitions[i]: 
+        for pe in partitions[i]:
             pe_to_partition[pe.id] = i
     for index in range(len(partitions)):
         result_mappings = {}
         part = partitions[index]
         partition_id = index
-        partition_external_connections = []
-        component_ids = [ pe.id for pe in part ]
+        component_ids = [pe.id for pe in part]
         workflow = copy.deepcopy(workflow_all)
         graph = workflow.graph
         for node in graph.nodes():
             if node.getContainedObject().id not in component_ids:
                 graph.remove_node(node)
-        processes, inputmappings, outputmappings = assign_and_connect(workflow, len(graph.nodes()))
+        processes, inputmappings, outputmappings = \
+            assign_and_connect(workflow, len(graph.nodes()))
         proc_to_pe = {}
         for node in graph.nodes():
             pe = node.getContainedObject()
             proc_to_pe[processes[pe.id][0]] = pe
         for node in graph.nodes():
             pe = node.getContainedObject()
-            pe.rank = index 
-            proc = processes[pe.id][0]
+            pe.rank = index
             proc_all = processes_all[pe.id][0]
             for output_name in outputmappings_all[proc_all]:
                 for dest_input, comm_all in outputmappings_all[proc_all][output_name]:
                     dest = proc_to_pe_all[comm_all.destinations[0]]
                     if not dest in processes:
                         # it's an external connection
-                        external_connections.append((comm_all, 
+                        external_connections.append((comm_all,
                             partition_id, pe.id, output_name, 
                             pe_to_partition[dest], dest, dest_input))
                         try:
@@ -304,10 +324,11 @@ def create_partitioned(workflow_all):
     ubergraph.partition_pes = partition_pes
     # sort the external connections so that nodes are added in the same order
     # if doing this in multiple processes in parallel this is important
-    for comm, source_partition, source_id, source_output, dest_partition, dest_id, dest_input in sorted(external_connections):
+    for comm, source_partition, source_id, source_output, \
+        dest_partition, dest_id, dest_input in sorted(external_connections):
         partition_pes[source_partition]._add_output((source_id, source_output))
         partition_pes[dest_partition]._add_input((dest_id, dest_input), grouping=comm.name)
-        ubergraph.connect(partition_pes[source_partition], 
+        ubergraph.connect(partition_pes[source_partition],
                           (source_id, source_output),
                           partition_pes[dest_partition],
                           (dest_id, dest_input))
@@ -524,7 +545,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Submit a dispel4py graph for processing.')
     parser.add_argument('module', help='module that creates a dispel4py graph '
-                        + '(python module or file name)')
+                        '(python module or file name)')
     parser.add_argument('-t', '--target',
                         help='target execution platform', required=True)
     parser.add_argument('-a', '--attr', metavar='attribute',
