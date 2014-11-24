@@ -15,21 +15,22 @@ def process(workflow, inputs, args):
     outputmappings = {}
     success=True
     nodes = [ node.getContainedObject() for node in workflow.graph.nodes() ]
-    if rank == 0:
+    if rank == 0 and not args.simple:
         try:
             processes, inputmappings, outputmappings = processor.assign_and_connect(workflow, size)
         except:
             success=False
-            
     success=comm.bcast(success,root=0)
+        
     if args.simple or not success:
         ubergraph = processor.create_partitioned(workflow)
         nodes = [ node.getContainedObject() for node in ubergraph.graph.nodes() ]
-        if rank == 0:
+        # if rank == 0:
+        if True:
             print 'Partitions: %s' % ', '.join(('[%s]' % ', '.join((pe.id for pe in part)) for part in workflow.partitions))
             for node in ubergraph.graph.nodes():
                 wrapperPE = node.getContainedObject()
-                print('%s contains %s' % (wrapperPE.id, [n.getContainedObject().id for n in wrapperPE.workflow.graph.nodes()]))
+                print('rank %s: %s contains %s' % (rank, wrapperPE.id, [n.getContainedObject().id for n in wrapperPE.workflow.graph.nodes()]))
 
             try:
                 processes, inputmappings, outputmappings = processor.assign_and_connect(ubergraph, size)

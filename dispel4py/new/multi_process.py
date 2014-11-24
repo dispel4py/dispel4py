@@ -2,21 +2,26 @@ import copy
 import multiprocessing
 import traceback
 import types
-from processor import GenericWrapper, STATUS_ACTIVE, STATUS_TERMINATED, simpleLogger
+from processor import GenericWrapper, simpleLogger
+from processor import STATUS_ACTIVE, STATUS_TERMINATED
 import processor
+
 
 def _processWorker(wrapper):
     wrapper.process()
 
+
 def process(workflow, inputs, args):
     size = args.num
     if not size:
-        return 'dispel4py.multi_process: error: missing required argument -n num_processes'
+        return 'dispel4py.multi_process: ' \
+               'error: missing required argument -n num_processes'
     success = True
-    nodes = [ node.getContainedObject() for node in workflow.graph.nodes() ]
+    nodes = [node.getContainedObject() for node in workflow.graph.nodes()]
     if not args.simple:
         try:
-            processes, inputmappings, outputmappings = processor.assign_and_connect(workflow, size)
+            result = processor.assign_and_connect(workflow, size)
+            processes, inputmappings, outputmappings = result
             print 'Processes: %s' % processes
             # print 'Inputs: %s' % inputs
         except:
@@ -31,11 +36,13 @@ def process(workflow, inputs, args):
 
         try:
             processes, inputmappings, outputmappings = processor.assign_and_connect(ubergraph, size)
-            inputs=processor.map_inputs_to_partitions(ubergraph, inputs)
+            inputs = processor.map_inputs_to_partitions(ubergraph, inputs)
             success = True
-            nodes = [ node.getContainedObject() for node in ubergraph.graph.nodes() ]
+            nodes = [node.getContainedObject()
+                     for node in ubergraph.graph.nodes()]
         except:
-            return 'dispel4py.multi_process: Not enough processes for execution of graph'
+            return 'dispel4py.multi_process: ' \
+                   'Not enough processes for execution of graph'
 
     process_pes = {}
     queues = {}
@@ -67,13 +74,13 @@ def process(workflow, inputs, args):
 
     for j in jobs:
         j.start()
-        
+
     for j in jobs:
         j.join()
-    
+
 
 class MultiProcessingWrapper(GenericWrapper):
-    
+
     def __init__(self, rank, pe, provided_inputs=None):
         GenericWrapper.__init__(self, pe)
         self.pe.log = types.MethodType(simpleLogger, pe)
@@ -102,12 +109,12 @@ class MultiProcessingWrapper(GenericWrapper):
             # no targets
             return
         for (inputName, communication) in targets:
-            output = { inputName : data }
+            output = {inputName: data}
             dest = communication.getDestination(output)
             for i in dest:
                 self.pe.log('Writing out %s' % output)
                 self.output_queues[i].put((output, STATUS_ACTIVE))
-                
+
     def _terminate(self):
         for output, targets in self.targets.iteritems():
             for (inputName, communication) in targets:
