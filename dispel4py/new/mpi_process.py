@@ -25,8 +25,8 @@ def process(workflow, inputs, args):
     if args.simple or not success:
         ubergraph = processor.create_partitioned(workflow)
         nodes = [ node.getContainedObject() for node in ubergraph.graph.nodes() ]
-        # if rank == 0:
-        if True:
+        if rank == 0:
+        # if True:
             print 'Partitions: %s' % ', '.join(('[%s]' % ', '.join((pe.id for pe in part)) for part in workflow.partitions))
             for node in ubergraph.graph.nodes():
                 wrapperPE = node.getContainedObject()

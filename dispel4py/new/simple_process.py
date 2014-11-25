@@ -8,7 +8,11 @@ def simpleLogger(self, msg):
     print("%s: %s" % (self.id, msg))
 
 def process_and_return(workflow, inputs, resultmappings=None):
-    processes, inputmappings, outputmappings = processor.assign_and_connect(workflow, len(workflow.graph.nodes()))
+    numnodes = 0
+    for node in workflow.graph.nodes():
+        numnodes += 1
+        node.getContainedObject().numprocesses = 1
+    processes, inputmappings, outputmappings = processor.assign_and_connect(workflow, numnodes)
     # print 'Processes: %s' % processes
     # print inputmappings
     # print outputmappings

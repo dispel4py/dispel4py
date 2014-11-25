@@ -563,6 +563,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     graph = load_graph(args.module, args.attr)
+    if graph is None:
+        sys.exit(1)
     graph.flatten()
 
     # run only once if no input data
