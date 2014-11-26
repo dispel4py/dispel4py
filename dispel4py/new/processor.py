@@ -21,15 +21,18 @@ def simpleLogger(self, msg):
 
 
 def get_inputs(pe, inputs):
-    provided_inputs = None
     try:
-        provided_inputs = inputs[pe]
+        return inputs[pe]
     except KeyError:
-        try:
-            provided_inputs = inputs[pe.id]
-        except:
-            pass
-    return provided_inputs
+        pass
+    try:
+        return inputs[pe.name]
+    except:
+        pass
+    try:
+        return inputs[pe.id]
+    except:
+        pass
 
 
 class GenericWriter(object):

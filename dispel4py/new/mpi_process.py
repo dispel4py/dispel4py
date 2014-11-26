@@ -26,15 +26,15 @@ def process(workflow, inputs, args):
         ubergraph = processor.create_partitioned(workflow)
         nodes = [ node.getContainedObject() for node in ubergraph.graph.nodes() ]
         if rank == 0:
-        # if True:
             print 'Partitions: %s' % ', '.join(('[%s]' % ', '.join((pe.id for pe in part)) for part in workflow.partitions))
             for node in ubergraph.graph.nodes():
                 wrapperPE = node.getContainedObject()
-                print('rank %s: %s contains %s' % (rank, wrapperPE.id, [n.getContainedObject().id for n in wrapperPE.workflow.graph.nodes()]))
+                print('%s contains %s' % (wrapperPE.id, [n.getContainedObject().id for n in wrapperPE.workflow.graph.nodes()]))
 
             try:
                 processes, inputmappings, outputmappings = processor.assign_and_connect(ubergraph, size)
                 inputs=processor.map_inputs_to_partitions(ubergraph, inputs)
+                inputs = { pe.id : v for pe, v in inputs.iteritems() }
                 success = True
             except:
                 print 'dispel4py.mpi_process: Not enough processes for execution of graph'
@@ -48,6 +48,7 @@ def process(workflow, inputs, args):
     processes=comm.bcast(processes,root=0)
     inputmappings=comm.bcast(inputmappings,root=0)
     outputmappings=comm.bcast(outputmappings,root=0)
+    inputs=comm.bcast(inputs,root=0)
     
     if rank == 0:
         print 'Processes: %s' % processes
