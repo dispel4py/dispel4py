@@ -32,12 +32,22 @@ def get_inputs(pe, inputs):
     return provided_inputs
 
 
+class GenericWriter(object):
+    def __init__(self, wrapper, name):
+        self.wrapper = wrapper
+        self.name = name
+        
+    def write(self, data):
+        self.wrapper._write(self.name, data)
+
+
 class GenericWrapper(object):
 
     def __init__(self, pe):
         self.pe = pe
         self.pe.wrapper = self
-        self.pe._write = types.MethodType(_wrapper_write, self.pe)
+        for o in self.pe.outputconnections:
+            self.pe.outputconnections[o]['writer'] = GenericWriter(self, o)
         self.targets = {}
         self._sources = {}
 
@@ -55,6 +65,7 @@ class GenericWrapper(object):
         self._sources = sources
 
     def process(self):
+        num_iterations = 0
         self.pe.preprocess()
         result = self._read()
         inputs, status = result
@@ -62,6 +73,7 @@ class GenericWrapper(object):
         while status != STATUS_TERMINATED:
             if inputs is not None:
                 outputs = self.pe.process(inputs)
+                num_iterations += 1
                 self.pe.log('Produced output: %s' % outputs)
                 if outputs is not None:
                     for key, value in outputs.iteritems():
@@ -70,6 +82,7 @@ class GenericWrapper(object):
             self.pe.log('Read result: %s, status=%s' % (inputs, STATUS[status]))
         self.pe.postprocess()
         self._terminate()
+        self.pe.log('Computed %s data iterations.' % num_iterations)
 
     def _read(self):
         # check the provided inputs
