@@ -33,8 +33,7 @@ def process(workflow, inputs, args):
 
             try:
                 processes, inputmappings, outputmappings = processor.assign_and_connect(ubergraph, size)
-                inputs=processor.map_inputs_to_partitions(ubergraph, inputs)
-                inputs = { pe.id : v for pe, v in inputs.iteritems() }
+                inputs = processor.map_inputs_to_partitions(ubergraph, inputs)
                 success = True
             except:
                 print 'dispel4py.mpi_process: Not enough processes for execution of graph'
@@ -45,6 +44,7 @@ def process(workflow, inputs, args):
     if not success:
         return
 
+    inputs = { pe.id : v for pe, v in inputs.iteritems() }
     processes=comm.bcast(processes,root=0)
     inputmappings=comm.bcast(inputmappings,root=0)
     outputmappings=comm.bcast(outputmappings,root=0)
