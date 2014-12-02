@@ -93,12 +93,13 @@ class MPIWrapper(GenericWrapper):
             targets = self.targets[name]
         except KeyError:
             # no targets
+            # self.pe.log('Produced output: %s' % {name: data})
             return
         for (inputName, communication) in targets:
             output = { inputName : data }
             dest = communication.getDestination(output)
             for i in dest:
-                self.pe.log('Sending %s to %s' % (output, i))
+                # self.pe.log('Sending %s to %s' % (output, i))
                 request=comm.isend(output, tag=STATUS_ACTIVE, dest=i)
                 status = MPI.Status()
                 request.Wait(status)
@@ -107,5 +108,5 @@ class MPIWrapper(GenericWrapper):
         for output, targets in self.targets.iteritems():
             for (inputName, communication) in targets:
                 for i in communication.destinations:
-                    self.pe.log('Terminating consumer %s' % i)
+                    # self.pe.log('Terminating consumer %s' % i)
                     request=comm.isend(None, tag=STATUS_TERMINATED, dest=i)
