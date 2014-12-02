@@ -1,5 +1,5 @@
 # Copyright (c) The University of Edinburgh 2014
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -17,7 +17,7 @@ Tests for simple sequential processing engine.
 
 Using nose (https://nose.readthedocs.org/en/latest/) run as follows::
 
-    $ nosetests dispel4py/test/simple_process_test.py 
+    $ nosetests dispel4py/test/simple_process_test.py
     ...
     ----------------------------------------------------------------------
     Ran 3 tests in 0.006s
@@ -26,12 +26,13 @@ Using nose (https://nose.readthedocs.org/en/latest/) run as follows::
 '''
 
 from dispel4py.workflow_graph import WorkflowGraph
-from dispel4py.core import GenericPE, NAME
 from dispel4py import simple_process
 
-from dispel4py.examples.graph_testing.testing_PEs import TestProducer, TestOneInOneOut, TestTwoInOneOut
+from dispel4py.examples.graph_testing.testing_PEs \
+    import TestProducer, TestOneInOneOut, TestTwoInOneOut
 
 from nose import tools
+
 
 def testPipeline():
     graph = WorkflowGraph()
@@ -41,9 +42,10 @@ def testPipeline():
         cons = TestOneInOneOut()
         graph.connect(prev, 'output', cons, 'input')
         prev = cons
-    results = simple_process.process(graph, { prod: [{}, {}, {}, {}, {}] })
-    tools.eq_({(prev.id, 'output'):[1, 2, 3, 4, 5]}, results)
-    
+    results = simple_process.process(graph, {prod: [{}, {}, {}, {}, {}]})
+    tools.eq_({(prev.id, 'output'): [1, 2, 3, 4, 5]}, results)
+
+
 def testSquare():
     graph = WorkflowGraph()
     prod = TestProducer(2)
@@ -54,20 +56,22 @@ def testSquare():
     graph.connect(prod, 'output1', cons2, 'input')
     graph.connect(cons1, 'output', last, 'input0')
     graph.connect(cons2, 'output', last, 'input1')
-    results = simple_process.process(graph, { prod : [{}]} )
-    tools.eq_({(last.id, 'output'):['1', '1']}, results)
-        
+    results = simple_process.process(graph, {prod: [{}]})
+    tools.eq_({(last.id, 'output'): ['1', '1']}, results)
+
+
 def testTee():
     graph = WorkflowGraph()
     prod = TestProducer()
-    prev = prod
     cons1 = TestOneInOneOut()
     cons2 = TestOneInOneOut()
     graph.connect(prod, 'output', cons1, 'input')
     graph.connect(prod, 'output', cons2, 'input')
     results = simple_process.process(graph, {prod: [{}, {}, {}, {}, {}]})
-    tools.eq_({(cons1.id, 'output'): [1, 2, 3, 4, 5], (cons2.id, 'output'): [1, 2, 3, 4, 5]}, results)
-    
+    tools.eq_({(cons1.id, 'output'): [1, 2, 3, 4, 5],
+              (cons2.id, 'output'): [1, 2, 3, 4, 5]}, results)
+
+
 def testPipelineWithInput():
     graph = WorkflowGraph()
     first = TestOneInOneOut()
@@ -76,9 +80,11 @@ def testPipelineWithInput():
         cons = TestOneInOneOut()
         graph.connect(prev, 'output', cons, 'input')
         prev = cons
-    results = simple_process.process(graph, { first: [{'input': 1}, {'input': 2}, {'input': 3}] })
-    tools.eq_({(prev.id, 'output'):[1, 2, 3]}, results)
-    
+    inputs = {first: [{'input': 1}, {'input': 2}, {'input': 3}]}
+    results = simple_process.process(graph, inputs)
+    tools.eq_({(prev.id, 'output'): [1, 2, 3]}, results)
+
+
 def testPipelineWithInputId():
     graph = WorkflowGraph()
     first = TestOneInOneOut()
@@ -89,21 +95,8 @@ def testPipelineWithInputId():
         prev = cons
     results = simple_process.process(graph, { first.id: [{'input': 1}] } )
     tools.eq_({(prev.id, 'output'):[1]}, results)
-    
-def testSimplePE():
-    graph = WorkflowGraph()
-    class TestPE(GenericPE):
-        def __init__(self):
-            GenericPE.__init__(self)
-            self._add_input('input')
-            self._add_output('output')
-        def _process(self, data):
-            return { 'output' : data['input'] }
-    test = TestPE()
-    graph.add(test)
-    results = simple_process.process(graph, { test.id: [{'input': 1}] } )
-    tools.eq_({(test.id, 'output'):[1]}, results)
-    
+
+
 def testOnePE():
     graph = WorkflowGraph()
     prod = TestProducer()

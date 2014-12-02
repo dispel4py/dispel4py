@@ -128,12 +128,14 @@ def loadGraphFromFile(module_name, path, attr=None):
     attr = findWorkflowGraph(mod, attr)
     return attr
 
+
 def loadGraphFromSource(module_name, source, attr=None):
     mod = new_module(module_name)
     exec source in mod.__dict__
     attr = findWorkflowGraph(mod, attr)
     return attr
-    
+
+
 def loadGraph(module_name, attr=None):
     '''
     Loads a graph from the given module.
@@ -141,30 +143,39 @@ def loadGraph(module_name, attr=None):
     mod = import_module(module_name)
     graph = findWorkflowGraph(mod, attr)
     return graph
-    
+
+
 def load_graph(graph_source, attr=None):
     # try to load from a module
     try:
         return loadGraph(graph_source, attr)
-    except:
+    except ImportError:
+        # it's not a module
+        print 'No module "%s"' % graph_source
         pass
+    except Exception as e:
+        print 'Error loading graph: %s' % e
         
     # maybe it's a file?
     try:
         return loadGraphFromFile('temp', graph_source, attr)
-    except:
+    except IOError:
+        # it's not a file
         pass
+    except Exception as e:
+        print 'Error loading graph: %s' % e
     
     # or the source code as a string
     try:
         return loadGraphFromSource('temp', graph_source, attr)
-    except:
+    except Exception as e:
+        print 'Error loading graph: %s' % e
         pass
 
     # we don't know what it is
     print 'Failed to load graph from %s' % graph_source
-        
-    
+
+
 from sys import getsizeof
 from itertools import chain
 from collections import deque
