@@ -1,55 +1,63 @@
 from mpi4py import MPI
-        
-comm=MPI.COMM_WORLD
-rank=comm.Get_rank()
-size=comm.Get_size()
 
-from processor import GenericWrapper, simpleLogger, STATUS_TERMINATED, STATUS_ACTIVE    
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
+
+from processor import GenericWrapper, simpleLogger
+from processor import STATUS_TERMINATED, STATUS_ACTIVE
 import processor
 import types
 
 
 def process(workflow, inputs, args):
-    processes={}
+    processes = {}
     inputmappings = {}
     outputmappings = {}
-    success=True
-    nodes = [ node.getContainedObject() for node in workflow.graph.nodes() ]
+    success = True
+    nodes = [node.getContainedObject() for node in workflow.graph.nodes()]
     if rank == 0 and not args.simple:
         try:
-            processes, inputmappings, outputmappings = processor.assign_and_connect(workflow, size)
+            processes, inputmappings, outputmappings =\
+                processor.assign_and_connect(workflow, size)
         except:
-            success=False
-    success=comm.bcast(success,root=0)
-        
+            success = False
+    success = comm.bcast(success, root=0)
+
     if args.simple or not success:
         ubergraph = processor.create_partitioned(workflow)
-        nodes = [ node.getContainedObject() for node in ubergraph.graph.nodes() ]
+        nodes = [node.getContainedObject() for node in ubergraph.graph.nodes()]
         if rank == 0:
-            print 'Partitions: %s' % ', '.join(('[%s]' % ', '.join((pe.id for pe in part)) for part in workflow.partitions))
+            print 'Partitions: %s' % ', '.join(
+                ('[%s]' % ', '.join((pe.id for pe in part))
+                    for part in workflow.partitions))
             for node in ubergraph.graph.nodes():
                 wrapperPE = node.getContainedObject()
-                print('%s contains %s' % (wrapperPE.id, [n.getContainedObject().id for n in wrapperPE.workflow.graph.nodes()]))
+                ns = [n.getContainedObject().id
+                      for n in wrapperPE.workflow.graph.nodes()]
+                print('%s contains %s' % (wrapperPE.id, ns))
 
             try:
-                processes, inputmappings, outputmappings = processor.assign_and_connect(ubergraph, size)
+                processes, inputmappings, outputmappings = \
+                    processor.assign_and_connect(ubergraph, size)
                 inputs = processor.map_inputs_to_partitions(ubergraph, inputs)
                 success = True
             except:
-                print 'dispel4py.mpi_process: Not enough processes for execution of graph'
+                print 'dispel4py.mpi_process: '\
+                      'Not enough processes for execution of graph'
                 success = False
-        
-    success=comm.bcast(success,root=0)
-    
+
+    success = comm.bcast(success, root=0)
+
     if not success:
         return
 
-    inputs = { pe.id : v for pe, v in inputs.iteritems() }
-    processes=comm.bcast(processes,root=0)
-    inputmappings=comm.bcast(inputmappings,root=0)
-    outputmappings=comm.bcast(outputmappings,root=0)
-    inputs=comm.bcast(inputs,root=0)
-    
+    inputs = {pe.id: v for pe, v in inputs.iteritems()}
+    processes = comm.bcast(processes, root=0)
+    inputmappings = comm.bcast(inputmappings, root=0)
+    outputmappings = comm.bcast(outputmappings, root=0)
+    inputs = comm.bcast(inputs, root=0)
+
     if rank == 0:
         print 'Processes: %s' % processes
         # print 'Inputs: %s' % inputs
@@ -70,20 +78,20 @@ from threading import Thread
 def receive(wrapper):
     while wrapper.terminated < wrapper._num_sources:
         status = MPI.Status()
-        msg=comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
+        msg = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
         tag = status.Get_tag()
         # print 'Received %s, %s' % (msg, tag)
         if tag == STATUS_TERMINATED:
             wrapper.terminated += 1
         else:
             wrapper.input_data.put((msg, tag))
-        # self.wrapper.pe.log('Queue size: %s' % self.wrapper.input_data.qsize())
+        # self.wrapper.pe.log('Queue size: %s'%self.wrapper.input_data.qsize())
     # put the final terminate block into the queue
     wrapper.input_data.put((None, STATUS_TERMINATED))
 
 
 class MPIWrapper(GenericWrapper):
-    
+
     def __init__(self, pe, provided_inputs=None):
         GenericWrapper.__init__(self, pe)
         self.pe.log = types.MethodType(simpleLogger, pe)
@@ -91,11 +99,9 @@ class MPIWrapper(GenericWrapper):
         self.provided_inputs = provided_inputs
         self.terminated = 0
         self.input_data = Queue.Queue()
-        self.readrate = []
-        self.readtime = None
-    
+
     def process(self):
-        self.reader = Thread(target=receive, args = (self,))
+        self.reader = Thread(target=receive, args=(self,))
         self.reader.start()
         super(MPIWrapper, self).process()
 
@@ -113,18 +119,18 @@ class MPIWrapper(GenericWrapper):
             # self.pe.log('Produced output: %s' % {name: data})
             return
         for (inputName, communication) in targets:
-            output = { inputName : data }
+            output = {inputName: data}
             dest = communication.getDestination(output)
             for i in dest:
                 # self.pe.log('Sending %s to %s' % (output, i))
-                request=comm.isend(output, tag=STATUS_ACTIVE, dest=i)
+                request = comm.isend(output, tag=STATUS_ACTIVE, dest=i)
                 status = MPI.Status()
                 request.Wait(status)
-                
+
     def _terminate(self):
         self.reader.join()
         for output, targets in self.targets.iteritems():
             for (inputName, communication) in targets:
                 for i in communication.destinations:
                     # self.pe.log('Terminating consumer %s' % i)
-                    request=comm.isend(None, tag=STATUS_TERMINATED, dest=i)
+                    comm.isend(None, tag=STATUS_TERMINATED, dest=i)
