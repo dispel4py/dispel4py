@@ -85,7 +85,10 @@ class GenericWrapper(object):
             # self.pe.log('Read result: %s, status=%s' % (inputs, STATUS[status]))
         self.pe.postprocess()
         self._terminate()
-        self.pe.log('Processed %s iterations.' % num_iterations)
+        if num_iterations == 1:
+            self.pe.log('Processed 1 iteration.')
+        else:
+            self.pe.log('Processed %s iterations.' % num_iterations)
 
     def _read(self):
         # check the provided inputs
@@ -94,6 +97,9 @@ class GenericWrapper(object):
                 return self.provided_inputs.pop(0), STATUS_ACTIVE
             else:
                 return None, STATUS_TERMINATED
+
+    def _write(self, name, data):
+        None
 
     def _terminate(self):
         None

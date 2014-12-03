@@ -64,6 +64,22 @@ class TestOneInOneOut(GenericPE):
         # self.log('Processing inputs %s' % inputs)
         return { 'output' : inputs['input'] }
 
+import time
+
+class TestDelayOneInOneOut(GenericPE):
+    '''
+    This PE copies the input to an output. 
+    '''
+    def __init__(self, delay=1):
+        GenericPE.__init__(self)
+        self.inputconnections = { 'input' : { NAME : 'input' } }
+        self.outputconnections = { 'output' : { NAME : 'output', TYPE: ['number'] } }
+        self.delay = delay
+    def process(self, inputs):
+        # self.log('Processing inputs %s' % inputs)
+        time.sleep(self.delay)
+        return { 'output' : inputs['input'] }
+
 class TestOneInOneOutWriter(GenericPE):
     '''
     This PE copies the input to an output, but it uses the write method.
