@@ -45,7 +45,10 @@ def process_and_return(workflow, inputs, resultmappings=None):
     return wrapper.outputs
     
 def process(workflow, inputs, args, resultmappings=None):
-    print 'Inputs: %s' % { pe.id: data for pe, data in inputs.iteritems() }
+    try:
+        print 'Inputs: %s' % { pe.id: data for pe, data in inputs.iteritems() }
+    except:
+        print 'Inputs: %s' % { pe: data for pe, data in inputs.iteritems() }
     results = process_and_return(workflow, inputs, resultmappings)
     print 'Outputs: %s' % results
     
