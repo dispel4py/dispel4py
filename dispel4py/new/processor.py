@@ -376,10 +376,16 @@ def map_inputs_to_partitions(ubergraph, inputs):
     for pe in inputs:
         try:
             partition_id = ubergraph.pe_to_partition[pe]
+            pe_id = pe
         except:
             partition_id = ubergraph.pe_to_partition[pe.id]
+            pe_id = pe.id
         mapped_pe = ubergraph.partition_pes[partition_id]
-        mapped_input[mapped_pe] = inputs[pe]
+        mapped_pe_input = []
+        for i in inputs[pe]:
+            mapped_data = {(pe_id, name): [data] for name, data in i.iteritems()}
+            mapped_pe_input.append(mapped_data)
+        mapped_input[mapped_pe] = mapped_pe_input
     return mapped_input
 
 
@@ -409,6 +415,15 @@ def _no_map(data):
 
 from dispel4py.core import GenericPE
 
+
+def _is_root(node, workflow):
+    result = True
+    pe = node.getContainedObject()
+    for edge in workflow.graph[node].values():
+        if pe == edge['DIRECTION'][1]:
+            result = False
+            break
+    return result
 
 def _get_dependencies(proc, inputmappings):
     dep = []
@@ -622,14 +637,22 @@ if __name__ == "__main__":
             print 'Processing %s iterations.' % args.iter
         roots = set()
         for node in graph.graph.nodes():
-            is_root = True
-            pe = node.getContainedObject()
-            for edge in graph.graph[node].values():
-                if pe == edge['DIRECTION'][1]:
-                    is_root = False
-                    break
-            if is_root:
-                inputs[pe] = [{} for i in range(args.iter)]
+            if _is_root(node, graph):
+                inputs[node.getContainedObject()] = [{} for i in range(args.iter)]
+    
+    # map input names to ids if necessary
+    for node in graph.graph.nodes():
+        pe = node.getContainedObject()
+        try:
+            d = inputs.pop(pe)
+            inputs[pe.id] = d
+        except:
+            pass
+        try:
+            d = inputs.pop(pe.name)
+            inputs[pe.id] = d
+        except:
+            pass
 
     try:
         # see if platform is in the mappings file as a simple name

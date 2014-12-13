@@ -47,7 +47,8 @@ class BasePE(GenericPE):
             self.inputconnections[name] = { NAME : name }
         for name in outputs:
             self.outputconnections[name] = { NAME : name }
-                            
+
+
 class IterativePE(BasePE):
     '''
     An iterative PE that has one input and one output stream. 
@@ -76,7 +77,8 @@ class IterativePE(BasePE):
         :returns: an output data block or None
         '''
         return None
-        
+
+
 class ConsumerPE(BasePE):
     INPUT_NAME = 'input'
     def __init__(self):
