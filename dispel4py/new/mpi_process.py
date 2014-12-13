@@ -21,7 +21,7 @@ size=comm.Get_size()
 from processor import GenericWrapper, simpleLogger, STATUS_TERMINATED, STATUS_ACTIVE    
 import processor
 import types
-
+import traceback
 
 def process(workflow, inputs, args):
     processes={}
@@ -35,7 +35,7 @@ def process(workflow, inputs, args):
         except:
             success=False
     success=comm.bcast(success,root=0)
-        
+
     if args.simple or not success:
         ubergraph = processor.create_partitioned(workflow)
         nodes = [ node.getContainedObject() for node in ubergraph.graph.nodes() ]
@@ -44,21 +44,24 @@ def process(workflow, inputs, args):
             for node in ubergraph.graph.nodes():
                 wrapperPE = node.getContainedObject()
                 print('%s contains %s' % (wrapperPE.id, [n.getContainedObject().id for n in wrapperPE.workflow.graph.nodes()]))
-
             try:
                 processes, inputmappings, outputmappings = processor.assign_and_connect(ubergraph, size)
                 inputs = processor.map_inputs_to_partitions(ubergraph, inputs)
                 success = True
             except:
+                # print traceback.format_exc()
                 print 'dispel4py.mpi_process: Not enough processes for execution of graph'
                 success = False
-        
+
     success=comm.bcast(success,root=0)
-    
+
     if not success:
         return
 
-    inputs = { pe.id : v for pe, v in inputs.iteritems() }
+    try:
+        inputs = { pe.id : v for pe, v in inputs.iteritems() }
+    except AttributeError:
+        pass
     processes=comm.bcast(processes,root=0)
     inputmappings=comm.bcast(inputmappings,root=0)
     outputmappings=comm.bcast(outputmappings,root=0)
