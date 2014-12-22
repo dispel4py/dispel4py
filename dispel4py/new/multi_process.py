@@ -36,8 +36,6 @@ def process(workflow, inputs, args):
         try:
             result = processor.assign_and_connect(workflow, size)
             processes, inputmappings, outputmappings = result
-            print 'Processes: %s' % processes
-            # print 'Inputs: %s' % inputs
         except:
             success = False
             
@@ -58,6 +56,9 @@ def process(workflow, inputs, args):
             return 'dispel4py.multi_process: ' \
                    'Not enough processes for execution of graph'
 
+    print 'Processes: %s' % processes
+    # print 'Inputs: %s' % inputs
+    
     process_pes = {}
     queues = {}
     for pe in nodes:
@@ -117,6 +118,7 @@ class MultiProcessingWrapper(GenericWrapper):
         return data, status
 
     def _write(self, name, data):
+        # self.pe.log('Writing %s to %s' % (data, name))
         try:
             targets = self.targets[name]
         except KeyError:
@@ -126,7 +128,7 @@ class MultiProcessingWrapper(GenericWrapper):
             output = {inputName: data}
             dest = communication.getDestination(output)
             for i in dest:
-                self.pe.log('Writing out %s' % output)
+                # self.pe.log('Writing out %s' % output)
                 self.output_queues[i].put((output, STATUS_ACTIVE))
 
     def _terminate(self):

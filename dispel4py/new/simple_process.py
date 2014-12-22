@@ -42,7 +42,17 @@ def process_and_return(workflow, inputs, resultmappings=None):
     wrapper.targets = {}
     wrapper.sources = {}
     wrapper.process()
-    return wrapper.outputs
+    
+    # now collect output data into a single list for each PE
+    outputs = {}
+    for (pe_id, output_name), data in wrapper.outputs.iteritems():
+        if pe_id not in outputs:
+            outputs[pe_id] = {}
+        try:
+            outputs[pe_id][output_name] += data 
+        except KeyError:
+            outputs[pe_id][output_name] = data
+    return outputs
     
 def process(workflow, inputs, args=None, resultmappings=None):
     try:
@@ -68,17 +78,8 @@ class SimpleProcessingWrapper(GenericWrapper):
             return None, processor.STATUS_TERMINATED
 
     def _write(self, name, data):
-        self.outputs[name] = data        
-                
-class SimpleWriter(object):
-    def __init__(self, pe, output, output_mappings):
-        self.pe = pe
-        self.output = output
-        self.output_mappings = output_mappings
-    def write(self, result):
-        for output_name in result:
-            destinations = self.output_mappings[output_name]
-            for input_name, comm in destinations:
-                for p in comm.destinations:
-                    self.output[p] = result[output_name]
-     
+        # self.pe.log('Writing %s to %s' % (data, name))
+        try:
+            self.outputs[name].extend(data)
+        except KeyError:
+            self.outputs[name] = data

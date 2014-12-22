@@ -111,6 +111,16 @@ class TestTwoInOneOut(GenericPE):
             return { 'output' : result }
 
 
+class TestMultiProducer(GenericPE):
+    def __init__(self, num_output=10):
+        GenericPE.__init__(self)
+        self._add_output('output')
+        self.num_output = num_output
+    def _process(self, inputs):
+        for i in range(self.num_output):
+            self.write('output', i)
+
+
 class RandomFilter(GenericPE):
     '''
     This PE randomly filters (in case "false")  the input, and produce the same output (in case "true").   

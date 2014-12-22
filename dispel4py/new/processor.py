@@ -347,6 +347,14 @@ def create_partitioned(workflow_all):
         partition_pe = SimpleProcessingPE(inputmappings,
                                           outputmappings,
                                           proc_to_pe)
+
+        # use number of processes if specified in graph
+        try:
+            partition_pe.numprocesses = workflow_all.numprocesses[partition_id]
+        except:
+            # use default assignment of processes
+            pass
+            
         partition_pe.workflow = workflow
         partition_pe.partition_id = partition_id
         if result_mappings:
@@ -522,22 +530,14 @@ class SimpleProcessingPE(GenericPE):
         results = self.map_outputs(results)
         return results
 
-    def _add_to_results(self, pe, results, result, output_name):
-        if pe.id not in results:
-            results[pe.id] = {}
-        try:
-            results[pe.id][output_name].append(result[output_name])
-        except KeyError:
-            results[pe.id][output_name] = [result[output_name]]
-
 
 def _simple_write(self, name, data):
     self.writer.write(name, data)
 
 
 class SimpleWriter(object):
-    def __init__(self, wrapper, pe, output_mappings, result_mappings=None):
-        self.wrapper = wrapper
+    def __init__(self, simple_pe, pe, output_mappings, result_mappings=None):
+        self.simple_pe = simple_pe
         self.pe = pe
         self.output_mappings = output_mappings
         self.result_mappings = result_mappings
@@ -560,18 +560,20 @@ class SimpleWriter(object):
             # if there are no named result outputs
             # the data is added to the results of the PE
             if self.result_mappings is None:
-                try:
-                    self.results[output_name].append(data)
-                except KeyError:
-                    self.results[output_name] = [data]
+                self.simple_pe.wrapper._write((self.pe.id, output_name), [data])
+            #     try:
+            #         self.results[output_name].append(data)
+            #     except KeyError:
+            #         self.results[output_name] = [data]
         # now check if the output is in the named results
         # (in case of a Tee) then data gets written to the PE results as well
         try:
             if output_name in self.result_mappings[self.pe.id]:
-                try:
-                    self.results[output_name].append(data)
-                except KeyError:
-                    self.results[output_name] = [data]
+                self.simple_pe.wrapper._write((self.pe.id, output_name), [data])
+                # try:
+                #     self.results[output_name].append(data)
+                # except KeyError:
+                #     self.results[output_name] = [data]
         except:
             pass
 
