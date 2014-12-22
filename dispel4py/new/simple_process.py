@@ -44,7 +44,7 @@ def process_and_return(workflow, inputs, resultmappings=None):
     wrapper.process()
     return wrapper.outputs
     
-def process(workflow, inputs, args, resultmappings=None):
+def process(workflow, inputs, args=None, resultmappings=None):
     try:
         print 'Inputs: %s' % { pe.id: data for pe, data in inputs.iteritems() }
     except:
