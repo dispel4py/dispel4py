@@ -22,6 +22,7 @@ from importlib import import_module
 from imp import load_source, new_module
 import __builtin__
 from types import ModuleType
+import traceback
 
 class DummyModule(ModuleType):
     def __getattr__(self, key):
@@ -147,33 +148,36 @@ def loadGraph(module_name, attr=None):
 
 def load_graph(graph_source, attr=None):
     # try to load from a module
+    error_message = ''
     try:
         return loadGraph(graph_source, attr)
     except ImportError:
         # it's not a module
-        print 'No module "%s"' % graph_source
+        error_message += 'No module "%s"\n' % graph_source
         pass
     except Exception as e:
-        print 'Error loading graph: %s' % e
+        error_message += 'Error loading graph module:\n%s' % traceback.format_exc()
+        pass
         
     # maybe it's a file?
     try:
         return loadGraphFromFile('temp', graph_source, attr)
     except IOError:
         # it's not a file
+        error_message += 'No file "%s"\n' % graph_source
         pass
     except Exception as e:
-        print 'Error loading graph: %s' % e
+        error_message += 'Error loading graph from file:\n%s' % traceback.format_exc()
     
     # or the source code as a string
     try:
         return loadGraphFromSource('temp', graph_source, attr)
     except Exception as e:
-        print 'Error loading graph: %s' % e
+        error_message += 'Error trying to parse as Python: %s'% e
         pass
 
     # we don't know what it is
-    print 'Failed to load graph from %s' % graph_source
+    print 'Failed to load graph from "%s":\n%s' % (graph_source, error_message)
 
 
 from sys import getsizeof
