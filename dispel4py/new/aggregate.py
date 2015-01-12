@@ -1,96 +1,148 @@
 from dispel4py.workflow_graph import WorkflowGraph
+from dispel4py.core import GenericPE
 
 
 class AggregatePE(GenericPE):
     INPUT_NAME = 'input'
     OUTPUT_NAME = 'output'
-    def __init__(self, index=0):
+    def __init__(self, indexes=[0]):
         GenericPE.__init__(self)
-        self.index = index
-        self.value = 0
+        self._add_input(self.INPUT_NAME)
+        self._add_output(self.OUTPUT_NAME)
+        self.indexes = indexes
+        self.value = [ 0 for i in indexes ]
     def _postprocess(self):
-        self.write(self.value)
+        self.write(AggregatePE.OUTPUT_NAME, self.value)
 
 
 class CountPE(AggregatePE):
-    def __init__(self):
-        AggregatePE.__init__(self)
+    def __init__(self, indexes=[0]):
+        AggregatePE.__init__(self, indexes)
     def _process(self, inputs):
-        self.count += 1
+        self.value = [ i+1 for i in self.indexes ]
 
 
 class MaxPE(AggregatePE):
-    def __init__(self):
-        AggregatePE.__init__(self)
+    def __init__(self, indexes=[0]):
+        AggregatePE.__init__(self, indexes)
     def _process(self, inputs):
-        v = inputs[AggregatePE.INPUT_NAME][self.index]
-        if (v > self.value):
-            self.value = v
+        v = inputs[AggregatePE.INPUT_NAME]
+        self.value = [ max(v[i], self.value[i]) for i in self.indexes]
 
 
 class MinPE(AggregatePE):
-    def __init__(self):
-        AggregatePE.__init__(self)
-        self.value = None
+    def __init__(self, indexes=[0]):
+        AggregatePE.__init__(self, indexes)
+        self.value = [ None for i in self.indexes ]
     def _process(self, inputs):
-        v = inputs[AggregatePE.INPUT_NAME][self.index]
-        if (self.value = None or v < self.value):
-            self.value = v
+        v = inputs[AggregatePE.INPUT_NAME]
+        for i in self.indexes:
+            self.value[i] = min(v[i], self.value[i]) if self.value[i] is not None else v[i]
 
 
 class SumPE(AggregatePE):
-    def __init__(self):
-        AggregatePE.__init__(self)
+    def __init__(self, indexes=[0]):
+        AggregatePE.__init__(self, indexes)
     def _process(self, inputs):
-        v = inputs[AggregatePE.INPUT_NAME][self.index]
-        self.value += v
+        v = inputs[AggregatePE.INPUT_NAME]
+        self.value = [ self.value[i]+v[i] for i in self.indexes]
 
 
-class AveragePE(AggregatePE):
-    def __init__(self):
-        AggregatePE.__init__(self)
-        self.sum = 0;
-        self.count = 0;
+class AverageParallelPE(GenericPE):
+    INPUT_NAME = 'input'
+    OUTPUT_NAME = 'output'
+    def __init__(self, index=0):
+        GenericPE.__init__(self)
+        self._add_input(self.INPUT_NAME)
+        self._add_output(self.OUTPUT_NAME)
+        self.index = 0
+        self.sum = 0
+        self.count = 0
     def _process(self, inputs):
-        v = inputs[AggregatePE.INPUT_NAME][self.index]
+        v = inputs[self.INPUT_NAME][self.index]
         self.sum += v
         self.count += 1
     def _postprocess(self):
-        self.write((self.sum/float(self.count), self.sum, self.count))
+        avg = float(self.sum)/self.count
+        self.write(self.OUTPUT_NAME, (avg, self.count, self.sum))
+
+
+class AverageReducePE(GenericPE):
+    INPUT_NAME = 'input'
+    OUTPUT_NAME = 'output'
+    def __init__(self):
+        GenericPE.__init__(self)
+        self._add_input(self.INPUT_NAME, grouping='global')
+        self._add_output(self.OUTPUT_NAME)
+        self.index = 0
+        self.sum = 0
+        self.count = 0
+    def _process(self, inputs):
+        v = inputs[self.INPUT_NAME]
+        self.sum += v[1]
+        self.count += v[2]
+    def _postprocess(self):
+        avg = float(self.sum)/self.count
+        self.write(self.OUTPUT_NAME, (avg, self.count, self.sum))
+
+
+class StdDevPE(AggregatePE):
+    def __init__(self):
+        AggregatePE.__init__(self)
+        self.sum = 0
+        self.sum_squared = 0
+        self.count = 0
+    def _process(self, inputs):
+        v = inputs[AggregatePE.INPUT_NAME][self.index]
+        self.sum += v
+        self.sum_squared += v*v
+        self.count += 1
+    def _postprocess(self):
+        std_dev = math.sqrt((self.count * self.sum_squared - self.sum * self.sum)/(self.count * (self.count - 1)))
+        self.write(AggregatePE.OUTPUT_NAME, (std_dev, self.count, self.sum, self.sum_squared))
 
 
 def parallel_aggregate(instPE, reducePE):
     composite = WorkflowGraph()
     reducePE.inputconnections[AggregatePE.INPUT_NAME]['grouping'] = 'global'
-    composite.connect(instCount, AggregatePE.OUTPUT_NAME, sumCount, AggregatePE.INPUT_NAME)
-    composite.inputmappings = { 'input' : (instCount, AggregatePE.INPUT_NAME) }
-    composite.outputmappings = { 'output' : (redCount, AggregatePE.OUTPUT_NAME) }
+    reducePE.numprocesses = 1
+    composite.connect(instPE, AggregatePE.OUTPUT_NAME, reducePE, AggregatePE.INPUT_NAME)
+    composite.inputmappings = { 'input' : (instPE, AggregatePE.INPUT_NAME) }
+    composite.outputmappings = { 'output' : (reducePE, AggregatePE.OUTPUT_NAME) }
     return composite
 
 
-def count():
+def countPE(indexes=[0]):
     '''
     Creates a counter composite PE that is parallelisable using a map-reduce pattern.
     The first part of the composite PE is a counter that counts all the inputs,
     the second part sums up the counts of the counter instances.
     '''
-    return parallel_aggregate(CountPE(), SumPE())
+    return parallel_aggregate(CountPE(indexes), SumPE(indexes))
 
 
-def sum():
+def sumPE(indexes=[0]):
     '''
     Creates a SUM composite PE that can be parallelised using a map-reduce pattern.
     '''
-    return parallel_aggregate(SumPE(), SumPE())
+    return parallel_aggregate(SumPE(indexes), SumPE(indexes))
 
 
-def min():
-    return parallel_aggregate(MinPE(), MinPE())
+def minPE(indexes=[0]):
+    return parallel_aggregate(MinPE(indexes), MinPE(indexes))
 
 
-def max():
-    return parallel_aggregate(MaxPE(), MaxPE())
+def maxPE(indexes=[0]):
+    return parallel_aggregate(MaxPE(indexes), MaxPE(indexes))
 
 
-def avg():
-    return parallel_aggregate(AveragePE(), AveragePE())
+def avgPE(index=0):
+    composite = WorkflowGraph()
+    parAvg = AverageParallelPE(index)
+    reduceAvg = AverageReducePE()
+    composite.connect(parAvg, parAvg.OUTPUT_NAME, reduceAvg, reduceAvg.INPUT_NAME)
+    composite.inputmappings = { 'input' : (parAvg, parAvg.INPUT_NAME) }
+    composite.outputmappings = { 'output' : (reduceAvg, reduceAvg.OUTPUT_NAME) }
+    return composite
+
+
