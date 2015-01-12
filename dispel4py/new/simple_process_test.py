@@ -17,10 +17,10 @@ Tests for simple sequential processing engine.
 
 Using nose (https://nose.readthedocs.org/en/latest/) run as follows::
 
-    $ nosetests dispel4py/new/simple_process_test.py 
-    ...
+    $ nosetests dispel4py/new/simple_process_test.py
+    ....
     ----------------------------------------------------------------------
-    Ran 3 tests in 0.006s
+    Ran 4 tests in 0.003s
 
     OK
 '''
