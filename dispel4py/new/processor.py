@@ -483,9 +483,35 @@ class SimpleProcessingPE(GenericPE):
             pe.preprocess()
 
     def _postprocess(self):
+        all_inputs = {}
+        results = {}
         for proc in self.ordered:
             pe = self.proc_to_pe[proc]
+            # if there was data produced in postprocessing 
+            # then we need to process that data in the PEs downstream
+            if proc in all_inputs:
+                for data in all_inputs[proc]:
+                    # pe.log('Processing input: %s' % data)
+                    result = pe.process(data)
+                    # pe.log('Produced result: %s' % result)
+                    if result is not None:
+                        for output_name in result:
+                            pe.write(output_name, result[output_name])
+            # once all the input data is processed this PE can finish
             pe.postprocess()
+            # PE might write data during postprocessing
+            for p, input_data in pe.writer.all_inputs.iteritems():
+                try:
+                    all_inputs[p].extend(input_data)
+                except:
+                    all_inputs[p] = input_data
+            if pe.writer.results:
+                results[pe] = pe.writer.results
+            pe.writer.all_inputs = {}
+            pe.writer.results = {}
+        results = self.map_outputs(results)
+        for key, value in results.iteritems():
+            self._write(key, value)
 
     def _process(self, inputs):
         all_inputs = {}
@@ -520,6 +546,7 @@ class SimpleProcessingPE(GenericPE):
                 if result is not None:
                     for output_name in result:
                         pe.write(output_name, result[output_name])
+            # pe.postprocess()
             for p, input_data in pe.writer.all_inputs.iteritems():
                 try:
                     all_inputs[p].extend(input_data)
@@ -527,6 +554,9 @@ class SimpleProcessingPE(GenericPE):
                     all_inputs[p] = input_data
             if pe.writer.results:
                 results[pe.id] = pe.writer.results
+            # discard data from the PE writer
+            pe.writer.all_inputs = {}
+            pe.writer.results = {}
         results = self.map_outputs(results)
         return results
 

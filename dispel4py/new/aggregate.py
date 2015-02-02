@@ -16,10 +16,10 @@ class AggregatePE(GenericPE):
 
 
 class CountPE(AggregatePE):
-    def __init__(self, indexes=[0]):
-        AggregatePE.__init__(self, indexes)
+    def __init__(self):
+        AggregatePE.__init__(self, [0])
     def _process(self, inputs):
-        self.value = [ i+1 for i in self.indexes ]
+        self.value = [ self.value[0]+1 ]
 
 
 class MaxPE(AggregatePE):
@@ -64,7 +64,7 @@ class AverageParallelPE(GenericPE):
         self.count += 1
     def _postprocess(self):
         avg = float(self.sum)/self.count
-        self.write(self.OUTPUT_NAME, (avg, self.count, self.sum))
+        self.write(self.OUTPUT_NAME, [avg, self.count, self.sum])
 
 
 class AverageReducePE(GenericPE):
@@ -79,27 +79,53 @@ class AverageReducePE(GenericPE):
         self.count = 0
     def _process(self, inputs):
         v = inputs[self.INPUT_NAME]
-        self.sum += v[1]
-        self.count += v[2]
+        self.count += v[1]
+        self.sum += v[2]
     def _postprocess(self):
-        avg = float(self.sum)/self.count
-        self.write(self.OUTPUT_NAME, (avg, self.count, self.sum))
+        if self.count != 0:
+            avg = float(self.sum)/self.count
+            self.write(self.OUTPUT_NAME, [avg, self.count, self.sum])
 
 
-class StdDevPE(AggregatePE):
-    def __init__(self):
-        AggregatePE.__init__(self)
+class StdDevPE(GenericPE):
+    INPUT_NAME = 'input'
+    OUTPUT_NAME = 'output'
+    def __init__(self, index=0):
+        GenericPE.__init__(self)
+        self._add_input(self.INPUT_NAME)
+        self._add_output(self.OUTPUT_NAME)
+        self.index = index
         self.sum = 0
         self.sum_squared = 0
         self.count = 0
     def _process(self, inputs):
-        v = inputs[AggregatePE.INPUT_NAME][self.index]
+        v = inputs[self.INPUT_NAME][self.index]
         self.sum += v
         self.sum_squared += v*v
         self.count += 1
     def _postprocess(self):
         std_dev = math.sqrt((self.count * self.sum_squared - self.sum * self.sum)/(self.count * (self.count - 1)))
-        self.write(AggregatePE.OUTPUT_NAME, (std_dev, self.count, self.sum, self.sum_squared))
+        self.write(self.OUTPUT_NAME, (std_dev, self.count, self.sum, self.sum_squared))
+
+
+class StdDevReducePE(GenericPE):
+    INPUT_NAME = 'input'
+    OUTPUT_NAME = 'output'
+    def __init__(self):
+        GenericPE.__init__(self)
+        self._add_input(self.INPUT_NAME, grouping='global')
+        self._add_output(self.OUTPUT_NAME)
+        self.sum = 0
+        self.sum_squared = 0
+        self.count = 0
+    def _process(self, inputs):
+        values = inputs[self.INPUT_NAME]
+        self.count += values[0]
+        self.sum += values[1]
+        self.sum_squared += values[2]
+    def _postprocess(self):
+        std_dev = math.sqrt((self.count * self.sum_squared - self.sum * self.sum)/(self.count * (self.count - 1)))
+        self.write(self.OUTPUT_NAME, (std_dev, self.count, self.sum, self.sum_squared))
 
 
 def parallel_aggregate(instPE, reducePE):
@@ -112,31 +138,34 @@ def parallel_aggregate(instPE, reducePE):
     return composite
 
 
-def countPE(indexes=[0]):
+def parallelCount():
     '''
     Creates a counter composite PE that is parallelisable using a map-reduce pattern.
     The first part of the composite PE is a counter that counts all the inputs,
     the second part sums up the counts of the counter instances.
+    The output of this PE is a single value that is the number of input items.
     '''
-    return parallel_aggregate(CountPE(indexes), SumPE(indexes))
+    pe_sum = SumPE([0])
+    pe_sum.name = 'CountReduce'
+    return parallel_aggregate(CountPE(), pe_sum)
 
 
-def sumPE(indexes=[0]):
+def parallelSum(indexes=[0]):
     '''
     Creates a SUM composite PE that can be parallelised using a map-reduce pattern.
     '''
     return parallel_aggregate(SumPE(indexes), SumPE(indexes))
 
 
-def minPE(indexes=[0]):
+def parallelMin(indexes=[0]):
     return parallel_aggregate(MinPE(indexes), MinPE(indexes))
 
 
-def maxPE(indexes=[0]):
+def parallelMax(indexes=[0]):
     return parallel_aggregate(MaxPE(indexes), MaxPE(indexes))
 
 
-def avgPE(index=0):
+def parallelAvg(index=0):
     composite = WorkflowGraph()
     parAvg = AverageParallelPE(index)
     reduceAvg = AverageReducePE()
@@ -146,3 +175,11 @@ def avgPE(index=0):
     return composite
 
 
+def parallelStdDev(index=0):
+    composite = WorkflowGraph()
+    parStdDev = StdDevPE(index)
+    reduceStdDev = StdDevReducePE()
+    composite.connect(parStdDev, parStdDev.OUTPUT_NAME, reduceStdDev, reduceStdDev.INPUT_NAME)
+    composite.inputmappings = { 'input' : (parStdDev, parStdDev.INPUT_NAME) }
+    composite.outputmappings = { 'output' : (reduceStdDev, reduceStdDev.OUTPUT_NAME) }
+    return composite

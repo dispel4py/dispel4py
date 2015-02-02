@@ -48,9 +48,9 @@ class NumberProducer(GenericPE):
         self.counter = 0
         self.numIterations = numIterations
     def process(self, inputs):
-        self.counter += 1
         for i in range(self.numIterations):
-            self.write('output', '%s:%s' % (self.counter, i))
+            self.write('output', [self.counter*i+i])
+        self.counter += 1
 
 class TestOneInOneOut(GenericPE):
     '''

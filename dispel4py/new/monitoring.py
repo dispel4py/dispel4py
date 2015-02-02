@@ -14,6 +14,19 @@
 
 import time
 
+class Timer(object):
+    def __init__(self, verbose=False):
+        self.verbose = verbose
+
+    def __enter__(self):
+        self.start = time.time()
+        return self
+
+    def __exit__(self, *args):
+        self.end = time.time()
+        self.secs = self.end - self.start
+
+
 class MonitoringWrapper(object):
     
     def __init__(self, baseObject):
@@ -39,20 +52,22 @@ class ReadTimingWrapper(MonitoringWrapper):
         return self.baseObject._read()
         
     def _terminate(self):
-        print "Average read rate : %s" % (sum(self.readrate)/float(len(self.readrate)))
+        self.log("Average read rate : %s" % (sum(self.readrate)/float(len(self.readrate))))
         self.baseObject._terminate()
     
 class ProcessTimingPE(MonitoringWrapper):
     
     def __init__(self, baseObject):
         MonitoringWrapper.__init__(self, baseObject)
-        self.times = []
+        self.times_total = 0
+        self.times_count = 0
         
     def process(self, inputs):
-        start = time.time()
-        result = self.baseObject.process(inputs)
-        self.times.append(time.time()-start)
+        with Timer() as t:
+            result = self.baseObject.process(inputs)
+        self.times_total += t.secs
+        self.times_count += 1
         return result
     
     def _postprocess(self):
-        self.log('Average processing time: %s' % (sum(self.times)/len(self.times)))
+        self.log('Average processing time: %s' % (self.times_total/self.times_count))
