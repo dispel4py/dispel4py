@@ -24,16 +24,20 @@ class OutputWriter(object):
         result = output if isinstance(output, list) else [output]
         try:
             storm.emit(result, stream=self.streamname)
-            storm.log("Dispel4Py ------> Emitted to stream %s." % (self.scriptname, self.streamname))
+            storm.log("Dispel4Py ------> %s: Emitted to stream %s." % (self.scriptname, self.streamname))
         except TypeError:
             # encode manually
             encoded = encode_types(result)
             storm.emit(encoded, stream=self.streamname)
-            storm.log("Dispel4Py ------> Emitted to stream %s." % (self.scriptname, self.streamname))
+            storm.log("Dispel4Py ------> %s: Emitted to stream %s." % (self.scriptname, self.streamname))
         
+import io
 import json
 import numpy
 import base64
+import pickle
+from obspy.core import read as obread
+from obspy.core.stream import Stream
 
 def encode_types(obj):
     # storm.log('encoding %s' % str(obj))
@@ -50,6 +54,21 @@ def encode_types(obj):
         new_obj = dict()
         for k, v in obj.iteritems():
             new_obj[k]=encode_types(v)
+    elif isinstance(obj, Stream):
+        buf = io.BytesIO()
+        obj.write(buf, "MSEED")
+        new_obj = {
+            '__dispel4py.type__' : 'obspy.Stream',
+            'data' : base64.b64encode(buf.getvalue())
+        }
+        responses = []
+        for tr in obj:
+            try:
+                responses.append(pickle.dumps(tr.stats.response))
+            except:
+                pass
+        if responses:
+            new_obj['response'] = responses
     elif isinstance(obj, numpy.ndarray):
         new_obj = { 
             '__dispel4py.type__' : 'numpy.ndarray', 
@@ -70,9 +89,18 @@ def decode_types(obj):
             new_obj.add(decode_types(i))
     elif isinstance(obj, dict):
         try:
-            if obj['__dispel4py.type__'] == 'numpy.ndarray':
+            objtype = obj['__dispel4py.type__']
+            if objtype == 'numpy.ndarray':
                 r = base64.decodestring(obj['data'])
                 return numpy.frombuffer(r, dtype=obj['dtype'])
+            elif objtype == 'obspy.Stream':
+                buf = io.BytesIO()
+                buf.write(base64.b64decode(obj['data']))
+                st = obread(buf)
+                if 'response' in obj:
+                    for tr, resp in zip(st, obj['response']):
+                        tr.stats.response = pickle.loads(resp)
+                return st
         except KeyError:
             pass
         # if it's just a normal dictionary then decode recursively

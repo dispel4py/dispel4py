@@ -58,7 +58,7 @@ from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol
 
 from dispel4py.storm.topology import buildTopology
-from dispel4py import registry
+#from dispel4py import registry
 from dispel4py.utils import loadGraph
 from dispel4py.workflow_graph import WorkflowGraph
 
@@ -71,7 +71,7 @@ def _mkdir_ifnotexists(path):
     except OSError:
         pass
 
-def createPackage(args, static_input):
+def createPackage(args, static_input, num_iterations):
     '''
     Creates a Storm submission package for the given dispel4py graph.
     
@@ -113,6 +113,7 @@ def createPackage(args, static_input):
     shutil.copy('dispel4py/storm/client.py', dispel4py_dir + '/storm/')
     shutil.copy('dispel4py/storm/storm_submission_client.py', tmpdir)
     shutil.copy('java/src/dispel4py/storm/ThriftSubmit.java', tmpdir + '/dispel4py/storm/')
+    shutil.copytree('storm', tmpdir + '/storm')
     
     sources = []
     for node in graph.graph.nodes():
@@ -127,12 +128,13 @@ def createPackage(args, static_input):
     print "Sources: %s" % [ pe.id for pe in sources ]
     for pe in sources:
         pe._static_input = static_input
+        pe._num_iterations = num_iterations
     
     # create the storm topology
     topology = buildTopology(graph)
 
     # cache PE dependencies imported from the registry to resources_dir
-    registry.createResources(resources_dir, registry.currentRegistry())
+    #registry.createResources(resources_dir, registry.currentRegistry())
 
     # write thrift representation of the topology to a file
     transportOut = TTransport.TMemoryBuffer()
@@ -151,7 +153,7 @@ def _getStormHome():
         print 'Error: Please provide the installation directory of Storm as environment variable STORM_HOME'
         sys.exit(1)
 
-def submit(args, inputs):
+def submit(args, inputs, num_iterations):
     '''
     Creates a Storm submission package and submits it to a remote cluster.
     
@@ -162,7 +164,7 @@ def submit(args, inputs):
     '''
     STORM_HOME = _getStormHome()
     topologyName = args.name
-    tmpdir = createPackage(args, inputs)
+    tmpdir = createPackage(args, inputs, num_iterations)
     print 'Created Storm submission package in %s' % tmpdir
     # javacmd = 'javac', '-cp', '.:%s/lib/*:%s/*' % (STORM_HOME, STORM_HOME), 'eu/dispel4py/storm/ThriftSubmit.java'
     # try:
@@ -183,7 +185,7 @@ def submit(args, inputs):
         shutil.rmtree(tmpdir)
         print 'Deleted %s' % tmpdir
         
-def runLocal(args, inputs):
+def runLocal(args, inputs, num_iterations):
     '''
     Creates a Storm submission package and executes it locally.
     Note that the Storm topology runs until the process is explicitly killed, for example by pressing Ctrl-C.
@@ -195,7 +197,7 @@ def runLocal(args, inputs):
     '''
     STORM_HOME = _getStormHome()
     topologyName = args.name
-    tmpdir = createPackage(args, inputs)
+    tmpdir = createPackage(args, inputs, num_iterations)
     print 'Created Storm submission package in %s' % tmpdir
     try:
         print 'Compiling java client'
@@ -223,7 +225,8 @@ def create(args):
     :param attr: name of graph attribute within the module - if None the first WorkflowGraph is used
     :param res: resource directory
     '''
-    tmpdir = createPackage(args)
+    inputs= '' 
+    tmpdir = createPackage(args, inputs)
     print 'Created Storm submission package in %s' % tmpdir    
 
 if __name__ == "__main__":
@@ -240,25 +243,27 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     inputs = None
+    num_iterations = None
     if args.file:
         try:
             with open(args.file) as inputfile:
                 inputs = json.loads(inputfile.read())
             print("Processing input file %s" % args.file)
+            if type(inputs) != list:
+                inputs = [inputs] 
         except:
             print traceback.format_exc()
             print('Cannot read input file %s' % args.file)
             sys.exit(1)
     elif args.iter > 0:
-        inputs = [ {} for i in range(args.iter) ]
+        #inputs = [ {} for i in range(args.iter) ]
         print("Processing %s iterations" % args.iter)
-    if type(inputs) != list:
-        inputs = [inputs]
+        num_iterations = args.iter
     
     if args.mode == 'local':
-        runLocal(args, inputs)
+        runLocal(args, inputs, num_iterations)
     elif args.mode == 'remote':
-        submit(args, inputs)
+        submit(args, inputs, num_iterations)
     elif args.mode == 'create':
         create(args)
     

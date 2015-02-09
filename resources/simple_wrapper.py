@@ -18,7 +18,7 @@ from importlib import import_module
 import pickle
 from output_writer import OutputWriter, encode_types, decode_types
 
-class SimpleWrapper(storm.Bolt):
+class SimpleWrapper(storm.BasicBolt):
 
     def initialize(self, conf, context):
         try:        

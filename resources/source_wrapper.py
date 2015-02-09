@@ -22,6 +22,7 @@ class SourceWrapper(storm.Spout):
 
     def initialize(self, conf, context):
         try:        
+            self.counter = 0
             self.modname = conf["dispel4py.module"]
             self.scriptname = conf["dispel4py.script"]
             
@@ -50,20 +51,25 @@ class SourceWrapper(storm.Spout):
         try:
             input_tuple = None
             try:
-                input_tuple = self.script._static_input.pop(0)
-            except AttributeError:
-                # there is no static input
-                pass
-            except IndexError:
-                # static input is empty - no more processing
-                return
+                if self.counter >= self.script._num_iterations:
+                    return
+            except:
+                try:
+                    input_tuple = self.script._static_input.pop(0)
+                except AttributeError:
+                    # there is no static input
+                    pass
+                except IndexError:
+                    # static input is empty - no more processing
+                    return
             outputs = self.script.process(input_tuple)
             if outputs is None:
                 return
             for streamname, output in outputs.iteritems():
                 result = output if isinstance(output, list) else [output]
-                storm.emit(result, stream=streamname)
+                storm.emit(result, stream=streamname, id=self.counter)
                 storm.log("Dispel4Py ------> %s: emitted tuple %s to stream %s" % (self.script.id, result, streamname))
+                self.counter += 1
         except:
             # logging the error but it should be passed to client somehow
             storm.log("Dispel4Py ------> %s: %s" % (self.scriptname, traceback.format_exc(), ))

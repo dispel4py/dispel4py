@@ -22,7 +22,7 @@ import pickle
 from storm import ttypes as tt
 
 from dispel4py.workflow_graph import WorkflowGraph, WorkflowNode
-from dispel4py import GenericPE
+from dispel4py.core import GenericPE, NAME, TYPE, GROUPING
 from dispel4py.storm.utils import stormLogger
 
 PE_WRAPPER = { 'source'   : 'source_wrapper.py',
@@ -65,9 +65,9 @@ def buildTopology(workflow):
         # find out the grouping of the input
         # shuffle grouping by default
         # this can be overridden by the PE implementation or when creating the topology
-        grouping = tt.Grouping(shuffle=tt.NullStruct())
-        if GenericPE.GROUPING in dest.inputconnections[dest_input]:
-            groupingtype = dest.inputconnections[dest_input][GenericPE.GROUPING]
+	grouping = tt.Grouping(shuffle=tt.NullStruct())
+        if GROUPING in dest.inputconnections[dest_input]:
+            groupingtype = dest.inputconnections[dest_input][GROUPING]
             if isinstance(groupingtype, list):
                 fields = []
                 try:

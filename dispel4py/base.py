@@ -92,7 +92,7 @@ class SimpleFunctionPE(IterativePE):
     INPUT_NAME = IterativePE.INPUT_NAME
     OUTPUT_NAME = IterativePE.OUTPUT_NAME
     
-    def __init__(self, compute_fn, params = {}):
+    def __init__(self, compute_fn = None, params = {}):
         IterativePE.__init__(self)
         self.name = 'PE_%s' % compute_fn.__name__
         self.compute_fn = compute_fn
@@ -118,16 +118,18 @@ def create_iterative_chain(functions, FunctionPE_class=SimpleFunctionPE, name_pr
 
     for fn_desc in functions:
         try:
-        	fn = fn_desc[0]
-        	params = fn_desc[1]
+            fn = fn_desc[0]
+            params = fn_desc[1]
         except TypeError:
             fn = fn_desc
             params = {}
         
-        print 'adding %s to chain' % fn.__name__
-        pe = FunctionPE_class(fn, params)
+        #print 'adding %s to chain' % fn.__name__
+        pe = FunctionPE_class()
+        pe.compute_fn = fn
+        pe.params = params
         pe.name = name_prefix + fn.__name__ + name_suffix
-    
+
         if prev:
             graph.connect(prev, IterativePE.OUTPUT_NAME, pe, IterativePE.INPUT_NAME)
         else:

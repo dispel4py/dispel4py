@@ -32,8 +32,8 @@ if __name__ == '__main__':
    topology.read(protocolIn)
 
    topology_name, host, port, uploaded_jar_location = sys.argv[1:]
-
-   conf = { 'topology.workers':3 }
+   
+   conf = { 'topology.workers':10 , 'topology.max.spout.pending':20}
    client = StormClient(host, port)
    try:
        print "Submitting topology '%s' to %s:%s ... " % (topology_name, host, port)    
