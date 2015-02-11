@@ -209,6 +209,7 @@ def _assign_processes(workflow, size):
             prcs = 1 if pe.id in sources else _getNumProcesses(size, numSources, pe.numprocesses, totalProcesses)
             processes[pe.id] = range(node_counter, node_counter+prcs)
             node_counter = node_counter + prcs
+    print processes
     return success, sources, processes
 
 
@@ -238,8 +239,8 @@ def _create_connections(graph, node, processes):
         source = direction[0]
         source_output = edge[2]['FROM_CONNECTION']
         dest = direction[1]
-        dest_processes = processes[dest.id]
-        source_processes = processes[source.id]
+        dest_processes = list(processes[dest.id])
+        source_processes = list(processes[source.id])
         dest_input = edge[2]['TO_CONNECTION']
         allconnections = edge[2]['ALL_CONNECTIONS']
         if dest == pe:
