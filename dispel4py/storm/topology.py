@@ -65,7 +65,7 @@ def buildTopology(workflow):
         # find out the grouping of the input
         # shuffle grouping by default
         # this can be overridden by the PE implementation or when creating the topology
-	grouping = tt.Grouping(shuffle=tt.NullStruct())
+        grouping = tt.Grouping(shuffle=tt.NullStruct())
         if GROUPING in dest.inputconnections[dest_input]:
             groupingtype = dest.inputconnections[dest_input][GROUPING]
             if isinstance(groupingtype, list):
