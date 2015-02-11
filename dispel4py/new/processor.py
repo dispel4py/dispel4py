@@ -209,7 +209,6 @@ def _assign_processes(workflow, size):
             prcs = 1 if pe.id in sources else _getNumProcesses(size, numSources, pe.numprocesses, totalProcesses)
             processes[pe.id] = range(node_counter, node_counter+prcs)
             node_counter = node_counter + prcs
-    print processes
     return success, sources, processes
 
 
