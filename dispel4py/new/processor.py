@@ -15,6 +15,8 @@
 import sys
 import traceback
 import types
+from numbers import Number
+
 from dispel4py.core import GROUPING
 from dispel4py.utils import make_hash
 
@@ -107,7 +109,10 @@ class GenericWrapper(object):
     def _read(self):
         # check the provided inputs
         if self.provided_inputs is not None:
-            if self.provided_inputs:
+            if isinstance(self.provided_inputs, (int, long)) and self.provided_inputs > 0:
+                self.provided_inputs -= 1
+                return {}, STATUS_ACTIVE
+            elif self.provided_inputs:
                 return self.provided_inputs.pop(0), STATUS_ACTIVE
             else:
                 return None, STATUS_TERMINATED
@@ -670,7 +675,7 @@ if __name__ == "__main__":
         roots = set()
         for node in graph.graph.nodes():
             if _is_root(node, graph):
-                inputs[node.getContainedObject()] = [{} for i in range(args.iter)]
+                inputs[node.getContainedObject()] = args.iter
     
     # map input names to ids if necessary
     for node in graph.graph.nodes():
