@@ -65,13 +65,15 @@ from dispel4py.workflow_graph import WorkflowGraph
 TOPOLOGY_THRIFT_FILE = 'topology.thrift'
 STORM_SUBMISSION_CLIENT = 'storm_submission_client.py'
 
+ROOT_DIR = os.path.abspath(os.path.join(os.path.join(os.path.join(__file__, os.pardir), os.pardir), os.pardir)) + '/'
+
 def _mkdir_ifnotexists(path):
     try:
         os.mkdir(path)
     except OSError:
         pass
 
-def createPackage(args, static_input, num_iterations):
+def createPackage(graph, args, static_input):
     '''
     Creates a Storm submission package for the given dispel4py graph.
     
@@ -80,40 +82,39 @@ def createPackage(args, static_input, num_iterations):
     :param res: resource directory - if None the default is "resources"
     :rtype: name of the temporary directory that contains the submission package
     '''
-    module_name = args.module
-    attr = args.attr
+    print ROOT_DIR
+    
     res = args.resources
     if res is None: res='resources'
     
-    graph=loadGraph(module_name, attr)            
-    # we don't want any nested subgraphs
-    graph.flatten()
-
     # create a temporary directory 
     tmpdir = tempfile.mkdtemp()
-    resources_dir = tmpdir + '/' + res
+    tmp_resources_dir = tmpdir + '/' + res
 
     # copy dependencies of PEs in the graph to resources in temp directory
-    shutil.copytree(res, resources_dir)
-    dispel4py_dir = resources_dir + '/dispel4py'
-    _mkdir_ifnotexists(dispel4py_dir)
-    _mkdir_ifnotexists(dispel4py_dir + '/storm')
-    shutil.copy('dispel4py/__init__.py', dispel4py_dir)
-    shutil.copy('dispel4py/core.py', dispel4py_dir)
-    shutil.copy('dispel4py/base.py', dispel4py_dir)
-    shutil.copy('dispel4py/__init__.py', dispel4py_dir + '/storm/')
-    shutil.copy('dispel4py/storm/utils.py', dispel4py_dir + '/storm/')
+    shutil.copytree(res, tmp_resources_dir)
+    tmp_dispel4py_dir = tmp_resources_dir + '/dispel4py'
+    _mkdir_ifnotexists(tmp_dispel4py_dir)
+    _mkdir_ifnotexists(tmp_dispel4py_dir + '/storm')
+    shutil.copy(ROOT_DIR + 'dispel4py/__init__.py', tmp_dispel4py_dir)
+    shutil.copy(ROOT_DIR + 'dispel4py/core.py', tmp_dispel4py_dir)
+    shutil.copy(ROOT_DIR + 'dispel4py/base.py', tmp_dispel4py_dir)
+    shutil.copy(ROOT_DIR + 'dispel4py/storm/__init__.py', tmp_dispel4py_dir + '/storm/')
+    shutil.copy(ROOT_DIR + 'dispel4py/storm/utils.py', tmp_dispel4py_dir + '/storm/')
 
     # copy client and dependencies for storm submission to the temp directory
     dispel4py_dir = tmpdir + '/dispel4py'
     _mkdir_ifnotexists(dispel4py_dir)
     _mkdir_ifnotexists(dispel4py_dir + '/storm')
-    shutil.copy('dispel4py/__init__.py', dispel4py_dir)
-    shutil.copy('dispel4py/__init__.py', dispel4py_dir + '/storm/')
-    shutil.copy('dispel4py/storm/client.py', dispel4py_dir + '/storm/')
-    shutil.copy('dispel4py/storm/storm_submission_client.py', tmpdir)
-    shutil.copy('java/src/dispel4py/storm/ThriftSubmit.java', tmpdir + '/dispel4py/storm/')
-    shutil.copytree('storm', tmpdir + '/storm')
+    shutil.copy(ROOT_DIR + 'dispel4py/__init__.py', dispel4py_dir)
+    shutil.copy(ROOT_DIR + 'dispel4py/__init__.py', dispel4py_dir + '/storm/')
+    shutil.copy(ROOT_DIR + 'dispel4py/storm/client.py', dispel4py_dir + '/storm/')
+    shutil.copy(ROOT_DIR + 'dispel4py/storm/storm_submission_client.py', tmpdir)
+    shutil.copy(ROOT_DIR + 'java/src/dispel4py/storm/ThriftSubmit.java', tmpdir + '/dispel4py/storm/')
+    try:
+        shutil.copytree(ROOT_DIR + 'storm', tmpdir + '/storm')
+    except:
+        pass
     
     sources = []
     for node in graph.graph.nodes():
@@ -128,7 +129,7 @@ def createPackage(args, static_input, num_iterations):
     print "Sources: %s" % [ pe.id for pe in sources ]
     for pe in sources:
         pe._static_input = static_input
-        pe._num_iterations = num_iterations
+        pe._num_iterations = args.iter
     
     # create the storm topology
     topology = buildTopology(graph)
@@ -153,7 +154,7 @@ def _getStormHome():
         print 'Error: Please provide the installation directory of Storm as environment variable STORM_HOME'
         sys.exit(1)
 
-def submit(args, inputs, num_iterations):
+def submit(workflow, args, inputs):
     '''
     Creates a Storm submission package and submits it to a remote cluster.
     
@@ -164,14 +165,8 @@ def submit(args, inputs, num_iterations):
     '''
     STORM_HOME = _getStormHome()
     topologyName = args.name
-    tmpdir = createPackage(args, inputs, num_iterations)
+    tmpdir = createPackage(workflow, args, inputs)
     print 'Created Storm submission package in %s' % tmpdir
-    # javacmd = 'javac', '-cp', '.:%s/lib/*:%s/*' % (STORM_HOME, STORM_HOME), 'eu/dispel4py/storm/ThriftSubmit.java'
-    # try:
-    #     proc = subprocess.Popen(javacmd, cwd=tmpdir)
-    #     proc.wait()
-    # except:
-    #     pass
     try:
         print "Submitting topology '%s' to Storm" % topologyName
         stormshell = '%s/bin/storm' % STORM_HOME, 'shell','resources/', 'python', 'storm_submission_client.py', topologyName
@@ -185,7 +180,7 @@ def submit(args, inputs, num_iterations):
         shutil.rmtree(tmpdir)
         print 'Deleted %s' % tmpdir
         
-def runLocal(args, inputs, num_iterations):
+def runLocal(workflow, args, inputs):
     '''
     Creates a Storm submission package and executes it locally.
     Note that the Storm topology runs until the process is explicitly killed, for example by pressing Ctrl-C.
@@ -197,7 +192,7 @@ def runLocal(args, inputs, num_iterations):
     '''
     STORM_HOME = _getStormHome()
     topologyName = args.name
-    tmpdir = createPackage(args, inputs, num_iterations)
+    tmpdir = createPackage(workflow, args, inputs)
     print 'Created Storm submission package in %s' % tmpdir
     try:
         print 'Compiling java client'
@@ -217,7 +212,7 @@ def runLocal(args, inputs, num_iterations):
             shutil.rmtree(tmpdir)
             print 'Deleted %s' % tmpdir
             
-def create(args):
+def create(workflow, args):
     '''
     Creates a Storm submission package and prints the temp directory containing the package.
     
@@ -226,44 +221,56 @@ def create(args):
     :param res: resource directory
     '''
     inputs= '' 
-    tmpdir = createPackage(args, inputs)
+    tmpdir = createPackage(workflow, args, inputs)
     print 'Created Storm submission package in %s' % tmpdir    
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Submit a dispel4py graph for processing to Storm. All dependencies must be available in the named resources directory or from the registry.')
-    parser.add_argument('module', help='module that creates a dispel4py graph')
+
+def process(workflow, inputs, args=None):
+    if args.mode == 'local':
+        runLocal(workflow, args, inputs)
+    elif args.mode == 'remote':
+        submit(workflow, args, inputs)
+    elif args.mode == 'create':
+        create(workflow, args)
+
+
+def parse_args(args, namespace):
+    parser = argparse.ArgumentParser(description='Submit a dispel4py graph for processing to Storm.')
     defaultName = getpass.getuser() + '_' + datetime.datetime.today().strftime('%Y%m%dT%H%M%S')
     parser.add_argument('name', nargs='?', default=defaultName, help='name of Storm topology to submit')
     parser.add_argument('-m', '--mode', help='execution mode', choices=['local', 'remote', 'create'], required=True)
     parser.add_argument('-r', '--resources', metavar='resourceDir', help='path to local modules used by the graph - default "./resources/" ')
-    parser.add_argument('-a', '--attr', metavar='attribute', help='name of graph variable in the module')
     parser.add_argument('-s', '--save', help='do not remove Storm resources after submission', action='store_true')
-    parser.add_argument('-f', '--file', metavar='inputfile', help='file containing the input dataset in JSON format')
-    parser.add_argument('-i', '--iter', metavar='iterations', type=int, help='number of iterations')
-    args = parser.parse_args()
-    
-    inputs = None
-    num_iterations = None
-    if args.file:
-        try:
-            with open(args.file) as inputfile:
-                inputs = json.loads(inputfile.read())
-            print("Processing input file %s" % args.file)
-            if type(inputs) != list:
-                inputs = [inputs] 
-        except:
-            print traceback.format_exc()
-            print('Cannot read input file %s' % args.file)
-            sys.exit(1)
-    elif args.iter > 0:
-        #inputs = [ {} for i in range(args.iter) ]
-        print("Processing %s iterations" % args.iter)
-        num_iterations = args.iter
-    
-    if args.mode == 'local':
-        runLocal(args, inputs, num_iterations)
-    elif args.mode == 'remote':
-        submit(args, inputs, num_iterations)
-    elif args.mode == 'create':
-        create(args)
-    
+    result = parser.parse_args(args, namespace)
+    return result
+
+
+# if __name__ == "__main__":
+#     parser = get_arg_parser()
+#     args = parser.parse_args()
+#
+#     inputs = None
+#     num_iterations = None
+#     if args.file:
+#         try:
+#             with open(args.file) as inputfile:
+#                 inputs = json.loads(inputfile.read())
+#             print("Processing input file %s" % args.file)
+#             if type(inputs) != list:
+#                 inputs = [inputs]
+#         except:
+#             print traceback.format_exc()
+#             print('Cannot read input file %s' % args.file)
+#             sys.exit(1)
+#     elif args.iter > 0:
+#         #inputs = [ {} for i in range(args.iter) ]
+#         print("Processing %s iterations" % args.iter)
+#         num_iterations = args.iter
+#
+#     if args.mode == 'local':
+#         runLocal(args, inputs, num_iterations)
+#     elif args.mode == 'remote':
+#         submit(args, inputs, num_iterations)
+#     elif args.mode == 'create':
+#         create(args)
+#

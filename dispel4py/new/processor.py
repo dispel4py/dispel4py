@@ -394,10 +394,13 @@ def map_inputs_to_partitions(ubergraph, inputs):
             partition_id = ubergraph.pe_to_partition[pe.id]
             pe_id = pe.id
         mapped_pe = ubergraph.partition_pes[partition_id]
-        mapped_pe_input = []
-        for i in inputs[pe]:
-            mapped_data = {(pe_id, name): [data] for name, data in i.iteritems()}
-            mapped_pe_input.append(mapped_data)
+        try:
+            mapped_pe_input = []
+            for i in inputs[pe]:
+                mapped_data = {(pe_id, name): [data] for name, data in i.iteritems()}
+                mapped_pe_input.append(mapped_data)
+        except TypeError:
+            mapped_pe_input = inputs[pe]
         mapped_input[mapped_pe] = mapped_pe_input
     return mapped_input
 
@@ -492,6 +495,10 @@ class SimpleProcessingPE(GenericPE):
         results = {}
         for proc in self.ordered:
             pe = self.proc_to_pe[proc]
+            pe.writer = SimpleWriter(self, pe,
+                                     self.output_mappings[proc],
+                                     self.result_mappings)
+            pe._write = types.MethodType(_simple_write, pe)
             # if there was data produced in postprocessing 
             # then we need to process that data in the PEs downstream
             if proc in all_inputs:
@@ -612,6 +619,23 @@ class SimpleWriter(object):
         except:
             pass
 
+
+def create_arg_parser():
+    parser = argparse.ArgumentParser(
+        description='Submit a dispel4py graph for processing.')
+    parser.add_argument('target', help='target execution platform')
+    parser.add_argument('module', help='module that creates a dispel4py graph '
+                        '(python module or file name)')
+    parser.add_argument('-a', '--attr', metavar='attribute',
+                        help='name of graph variable in the module')
+    parser.add_argument('-f', '--file', metavar='inputfile',
+                        help='file containing input dataset in JSON format')
+    parser.add_argument('-d', '--data', metavar='inputdata',
+                        help='input dataset in JSON format')
+    parser.add_argument('-i', '--iter', metavar='iterations', type=int,
+                        help='number of iterations', default=1)
+    return parser
+
 if __name__ == "__main__":
     import argparse
     from importlib import import_module
@@ -630,25 +654,9 @@ if __name__ == "__main__":
         # ignore if there's no mappings configuration
         pass
 
-    parser = argparse.ArgumentParser(
-        description='Submit a dispel4py graph for processing.')
-    parser.add_argument('module', help='module that creates a dispel4py graph '
-                        '(python module or file name)')
-    parser.add_argument('-t', '--target',
-                        help='target execution platform', required=True)
-    parser.add_argument('-a', '--attr', metavar='attribute',
-                        help='name of graph variable in the module')
-    parser.add_argument('-f', '--file', metavar='inputfile',
-                        help='file containing input dataset in JSON format')
-    parser.add_argument('-d', '--data', metavar='inputdata',
-                        help='input dataset in JSON format')
-    parser.add_argument('-i', '--iter', metavar='iterations', type=int,
-                        help='number of iterations', default=1)
-    parser.add_argument('-s', '--simple', help='force simple processing',
-                        action='store_true')
-    parser.add_argument('-n', '--num', metavar='num_processes',
-                        type=int, help='number of processes to run')
-    args = parser.parse_args()
+    parser = create_arg_parser()
+    args, remaining = parser.parse_known_args()
+    # args = parser.parse_args()
 
     graph = load_graph(args.module, args.attr)
     if graph is None:
@@ -697,6 +705,12 @@ if __name__ == "__main__":
     except KeyError:
         # it is a proper module name - fingers crossed...
         target = args.target
+    try:
+        parse_args = getattr(import_module(target), 'parse_args')
+        args = parse_args(remaining, args)
+    except:
+        # no other arguments required for target
+        pass
     process = getattr(import_module(target), 'process')
     error_message = process(graph, inputs=inputs, args=args)
     if error_message:

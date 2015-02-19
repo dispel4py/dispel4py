@@ -20,8 +20,20 @@ size=comm.Get_size()
 
 from processor import GenericWrapper, simpleLogger, STATUS_TERMINATED, STATUS_ACTIVE    
 import processor
+
+import argparse
 import types
 import traceback
+
+
+def parse_args(args, namespace):
+    parser = argparse.ArgumentParser(
+        description='Submit a dispel4py graph to MPI processes.')
+    parser.add_argument('-s', '--simple', help='force simple processing',
+                        action='store_true')
+    result = parser.parse_args(args, namespace)
+    return result
+
 
 def process(workflow, inputs, args):
     processes={}

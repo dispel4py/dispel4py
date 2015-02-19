@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import copy
 import multiprocessing
 import traceback
@@ -23,6 +24,17 @@ import processor
 
 def _processWorker(wrapper):
     wrapper.process()
+
+
+def parse_args(args, namespace):
+    parser = argparse.ArgumentParser(
+        description='Submit a dispel4py graph to multiprocessing.')
+    parser.add_argument('-s', '--simple', help='force simple processing',
+                        action='store_true')
+    parser.add_argument('-n', '--num', metavar='num_processes',
+                        type=int, help='number of processes to run')
+    result = parser.parse_args(args, namespace)
+    return result
 
 
 def process(workflow, inputs, args):
@@ -53,6 +65,7 @@ def process(workflow, inputs, args):
             nodes = [node.getContainedObject()
                      for node in ubergraph.graph.nodes()]
         except:
+            print traceback.format_exc()
             return 'dispel4py.multi_process: ' \
                    'Not enough processes for execution of graph'
 
