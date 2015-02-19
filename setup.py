@@ -33,7 +33,7 @@ setup(
     url = "https://github.com/akrause2014/dispel4py",
     packages=['dispel4py', 'dispel4py.new', 'dispel4py.seismo', 'dispel4py.storm', 'dispel4py.examples', 'dispel4py.examples.graph_testing'],
     long_description=read('README.md'),
-    install_requires=['networkx'], 
+    install_requires=['networkx', 'numpy'], 
     entry_points={
         'console_scripts': [
             'dispel4py = dispel4py.new.processor:main',

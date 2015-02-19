@@ -19,6 +19,7 @@ import types
 
 from dispel4py.core import GROUPING
 from dispel4py.utils import make_hash
+from dispel4py.new.mappings import config
 
 STATUS_ACTIVE = 10
 STATUS_INACTIVE = 11
@@ -642,16 +643,6 @@ def main():
     import os
 
     from dispel4py.utils import load_graph
-
-    config = {}
-    try:
-        main_base = os.path.dirname(__file__)
-        config_file = os.path.join(main_base, "mappings.jsn")
-        with open(config_file, 'r') as f:
-            config = json.load(f)
-    except:
-        # ignore if there's no mappings configuration
-        pass
 
     parser = create_arg_parser()
     args, remaining = parser.parse_known_args()
