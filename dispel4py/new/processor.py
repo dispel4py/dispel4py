@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import sys
 import traceback
 import types
-from numbers import Number
 
 from dispel4py.core import GROUPING
 from dispel4py.utils import make_hash
@@ -636,8 +636,7 @@ def create_arg_parser():
                         help='number of iterations', default=1)
     return parser
 
-if __name__ == "__main__":
-    import argparse
+def main():
     from importlib import import_module
     import json
     import os
@@ -716,3 +715,6 @@ if __name__ == "__main__":
     if error_message:
         parser.print_usage()
         print error_message
+
+if __name__ == "__main__":
+    main()
