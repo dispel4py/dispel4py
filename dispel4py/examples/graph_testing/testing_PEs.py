@@ -18,7 +18,7 @@ Example PEs for test workflows, implementing various patterns.
 '''
 
 from dispel4py.core import GenericPE, NAME, TYPE, GROUPING
-from numpy import random
+import random
 
 class TestProducer(GenericPE):
     '''
@@ -170,7 +170,7 @@ class RandomWordProducer(GenericPE):
     This PE produces a random word as an output. 
 
     '''
-    words = ["Dispel4Py", "Earthquake", "Computing", "Seismology", "Modelling", "Analysis", "Infrastructure"]
+    words = ["dispel4py", "computing", "mpi", "processing", "simple", "analysis", "data"]
     def __init__(self):
         GenericPE.__init__(self)
         out1 = {}
