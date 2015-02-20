@@ -545,23 +545,23 @@ class SimpleProcessingPE(GenericPE):
                     provided_inputs = other_inputs
             except:
                 pass
-            if provided_inputs is None:
-                if not pe.inputconnections:
-                    # run at least once for a source of the graph
-                    provided_inputs = [{}]
-                else:
-                    # no data
-                    provided_inputs = []
+                    
             if isinstance(provided_inputs, (int, long)):
-                provided_inputs = range(0, provided_inputs)
-            for data in provided_inputs:
-                # pe.log('Processing input: %s' % data)
-                result = pe.process(data)
-                # pe.log('Produced result: %s' % result)
-                if result is not None:
-                    for output_name in result:
-                        pe.write(output_name, result[output_name])
-            # pe.postprocess()
+                for i in xrange(0, provided_inputs):
+                    _process_data(pe, {})
+            else:
+                
+                if provided_inputs is None:
+                    if not pe.inputconnections:
+                        # run at least once for a source of the graph
+                        provided_inputs = [{}]
+                    else:
+                        # no data
+                        provided_inputs = []
+                
+                for data in provided_inputs:
+                    _process_data(pe, data)
+
             for p, input_data in pe.writer.all_inputs.iteritems():
                 try:
                     all_inputs[p].extend(input_data)
@@ -574,6 +574,15 @@ class SimpleProcessingPE(GenericPE):
             pe.writer.results = {}
         results = self.map_outputs(results)
         return results
+
+
+def _process_data(pe, data):
+    # pe.log('Processing input: %s' % data)
+    result = pe.process(data)
+    # pe.log('Produced result: %s' % result)
+    if result is not None:
+        for output_name in result:
+            pe.write(output_name, result[output_name])
 
 
 def _simple_write(self, name, data):
