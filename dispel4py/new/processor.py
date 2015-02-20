@@ -552,6 +552,8 @@ class SimpleProcessingPE(GenericPE):
                 else:
                     # no data
                     provided_inputs = []
+            if isinstance(provided_inputs, (int, long)):
+                provided_inputs = range(0, provided_inputs)
             for data in provided_inputs:
                 # pe.log('Processing input: %s' % data)
                 result = pe.process(data)
@@ -604,19 +606,11 @@ class SimpleWriter(object):
             # the data is added to the results of the PE
             if self.result_mappings is None:
                 self.simple_pe.wrapper._write((self.pe.id, output_name), [data])
-            #     try:
-            #         self.results[output_name].append(data)
-            #     except KeyError:
-            #         self.results[output_name] = [data]
         # now check if the output is in the named results
         # (in case of a Tee) then data gets written to the PE results as well
         try:
             if output_name in self.result_mappings[self.pe.id]:
                 self.simple_pe.wrapper._write((self.pe.id, output_name), [data])
-                # try:
-                #     self.results[output_name].append(data)
-                # except KeyError:
-                #     self.results[output_name] = [data]
         except:
             pass
 
