@@ -12,6 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+'''
+Enactment of dispel4py graphs. 
+This module contains methods that are used by different mappings.
+
+From the commandline, run the following command::
+
+    dispel4py <mapping> <module>  [-h] [-a attribute] [-f inputfile] [-i iterations] [...]
+    
+with parameters
+
+:mapping:   target mapping
+:module:    module that creates a Dispel4Py graph
+:-n num:    number of processes (required)
+:-a attr:   name of the graph attribute within the module (optional)
+:-f file:   file containing input data in JSON format (optional)
+:-i iter:   number of iterations to compute (default is 1)
+:-h:        print this help page
+
+Other parameters might be required by the target mapping, for example the number of processes
+if running in a parallel environment.
+
+'''
+
 import argparse
 import sys
 import traceback

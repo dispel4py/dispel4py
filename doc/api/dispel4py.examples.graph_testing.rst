@@ -4,6 +4,14 @@ dispel4py.examples.graph_testing package
 Submodules
 ----------
 
+dispel4py.examples.graph_testing.delayed_pipeline module
+--------------------------------------------------------
+
+.. automodule:: dispel4py.examples.graph_testing.delayed_pipeline
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 dispel4py.examples.graph_testing.group_by module
 ------------------------------------------------
 
@@ -44,6 +52,14 @@ dispel4py.examples.graph_testing.large_teecopy module
     :undoc-members:
     :show-inheritance:
 
+dispel4py.examples.graph_testing.multi_producer module
+------------------------------------------------------
+
+.. automodule:: dispel4py.examples.graph_testing.multi_producer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 dispel4py.examples.graph_testing.parallel_pipeline module
 ---------------------------------------------------------
 
@@ -72,6 +88,14 @@ dispel4py.examples.graph_testing.pipeline_test module
 -----------------------------------------------------
 
 .. automodule:: dispel4py.examples.graph_testing.pipeline_test
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+dispel4py.examples.graph_testing.producer_tee module
+----------------------------------------------------
+
+.. automodule:: dispel4py.examples.graph_testing.producer_tee
     :members:
     :undoc-members:
     :show-inheritance:

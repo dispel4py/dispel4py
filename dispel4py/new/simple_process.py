@@ -12,6 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+'''
+Simple sequential processor mapping for dispel4py graphs. 
+This processor determines the dependencies of each PE in the graph and executes them sequentially.  
+
+From the commandline, run the following command::
+
+    dispel4py simple <module> [-h] [-a attribute] [-f inputfile] [-i iterations]
+    
+with parameters
+ 
+:module: module that creates a Dispel4Py graph
+:-a attr:   name of the graph attribute within the module (optional)
+:-f file:   file containing input data in JSON format (optional)
+:-i iter:   number of iterations to compute (default is 1)
+:-h:      print this help page
+
+For example::
+
+    dispel4py simple dispel4py.examples.graph_testing.pipeline_test -i 5
+    
+    Processing 5 iterations.
+    Inputs: {'TestProducer0': 5}
+    SimplePE: Processed 1 iteration.
+    Outputs: {'TestOneInOneOut5': {'output': [1, 2, 3, 4, 5]}}
+    
+'''
+
 import types
 from dispel4py.core import GenericPE
 from processor import GenericWrapper, SimpleProcessingPE

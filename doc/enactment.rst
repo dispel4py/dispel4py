@@ -13,7 +13,7 @@ The processing elements of the graph are executed in sequence by a single proces
 
 To execute a Dispel4py graph by using the simple (sequential) mapping run the following::
 
-    $ python -m dispel4py.simple_process <module> [-f file containing the input dataset in JSON format] [-i number of iterations]
+    $ dispel4py simple <module> [-f file containing the input dataset in JSON format] [-i number of iterations]
 
 If the number of iterations is not indicated, the graph is executed once by default.
 If an input file is specified with ``-f`` then the parameter ``-i`` will be ignored.
@@ -26,7 +26,7 @@ The user can control the number of processes used by the mapping.
 
 To execute a Dispel4py graph by using the multiprocessing mapping run the following::
 
-    $ python -m dispel4py.multi_process -n <number of processes> <module> [-f file containing the input dataset in JSON format] [-i number of iterations] [-s]
+    $ dispel4py multi -n <number of processes> <module> [-f file containing the input dataset in JSON format] [-i number of iterations] [-s]
     
 If ``-s`` is specified the graph is partitioned to execute several PEs within one process.
 
@@ -44,14 +44,9 @@ For installing openmpi and mpi4py follow the next steps.
 
 Install openmpi::
 	
-    $ sudo por install openmpi
-    $ mkdir ~/src
-    $ cd ~/src
-    $ cd /Users/xxx/Downloads/openmpi-1.6.5.tar.gz .	 	
-    $ tar zxvf openmpi-1.6.5.tar.gz 
-    $ cd openmpi-1.6.5
+    $ cd openmpi-xxxx
     $ ./configure --prefix=/usr/local
-    $  make all  (This step take a while) 
+    $ make all  (This step may take a while) 
     $ sudo make install
  
 Important: 
@@ -69,7 +64,7 @@ Submitting Dispel4Py with MPI
 
 To execute a Dispel4py graph by using the MPI mapping run the following::
 
-    $ mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi module [-f file containing the input dataset in JSON format] [-i number of iterations/runs] [-s]
+    $ mpiexec -n <number mpi_processes> dispel4py mpi module [-f file containing the input dataset in JSON format] [-i number of iterations/runs] [-s]
 
 If the number of iterations is not indicated, the graph is executed once by default.
 If an input file is specified with ``-f`` then the parameter ``-i`` will be ignored.
@@ -78,7 +73,7 @@ The argument ``-s`` forces to run the graph in simple processing mode, which mea
 
 For example:: 
     
-    $ mpiexec -n 3 python -m dispel4py.worker_mpi test.graph_testing.grouping_onetoall 
+    $ mpiexec -n 3 dispel4py mpi dispel4py.examples.graph_testing.grouping_onetoall 
         
 
 Storm
@@ -96,18 +91,18 @@ Using the Storm submission client
 
 From the dispy directory launch the Storm submission client::
 
-    python -m dispel4py.storm.storm_submission -m {local,remote,create} [-r resourceDir] [-a attribute] [-s] module [name]
+    dispel4py storm -m {local,remote,create} [-r resourceDir] [-a attribute] [-s] module [topology_name]
 
 where ``module`` is the name of the python module (**without the file extension .py**) that creates a workflow graph. The parameter ``-m`` specifies the execution mode of the Storm topology:
     *local*
         Local mode, executes the graph on the local machine in Storm local mode. No installation is required. Usually used for testing before submitting a topology to a remote cluster.
     *remote*
-        Submits the graph as a Storm topology to a remote cluster. This assumes the Storm client is configured for the target cluster (usually in ``~/.storm/storm.yaml``)
+        Submits the graph as a Storm topology to a remote cluster (with the specified ``topology_name``). This assumes the Storm client is configured for the target cluster (usually in ``~/.storm/storm.yaml``)
     *create*
         Creates a Storm topology and resources in a temporary directory. 
 
 The graph attribute within the given module is discovered automatically or can be specified (if there is more than one graph defined, for example) by using ``-a`` with the name of the variable.
-The resulting topology is assigned the id ``name`` if provided, or an id is created automatically. 
+The resulting topology is assigned the id ``topology_name`` if provided, or an id is created automatically. 
 If using ``-s`` (save) the Storm topology and resources are not deleted when the topology has been submitted or completed execution in local mode. This is useful for debugging.
 
 Submitting Dispel4Py to a Storm cluster
@@ -123,7 +118,7 @@ Configure the host name of the Storm cluster in ``~/.storm/storm.yaml`` as descr
 
 To submit the topology to the remote cluster::
 
-	$ python -m dispel4py.storm.storm_submission mytestgraph MyTopologyTest01 -m remote
+	$ dispel4py storm mytestgraph MyTopologyTest01 -m remote
 
 Here, ``mytestgraph`` is the name of the Python module that creates the Dispel4Py graph, and ``MyTopologyTest01`` is the name that is assigned to the topology on the cluster. The name is optional and a random UUID will be assigned if it is not provided.
 
@@ -140,7 +135,7 @@ Testing the Storm topology in local mode
 
 To test the topology in local mode, call the Storm submission client with local mode, for example::
 
-    $ python -m dispel4py.storm.storm_submission mytestgraph -m local
+    $ dispel4py storm mytestgraph -m local
 
 Note that the topology runs forever and does not shut down by itself. It can be cancelled with Ctrl-C on the commandline or by killing the JVM process.
 

@@ -12,6 +12,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+'''
+Enactment of dispel4py graphs with MPI. 
+
+From the commandline, run the following command::
+
+    dispel4py mpi <module>  [-h] [-a attribute] [-f inputfile] [-i iterations]
+    
+with parameters
+ 
+:module:    module that creates a Dispel4Py graph
+:-a attr:   name of the graph attribute within the module (optional)
+:-f file:   file containing input data in JSON format (optional)
+:-i iter:   number of iterations to compute (default is 1)
+:-h:        print this help page
+
+For example::
+
+    mpiexec -n 6 dispel4py mpi dispel4py.examples.graph_testing.pipeline_test -i 5 
+    Processing 5 iterations.
+    Processing 5 iterations.
+    Processing 5 iterations.
+    Processing 5 iterations.
+    Processing 5 iterations.
+    Processing 5 iterations.
+    Processes: {'TestProducer0': [5], 'TestOneInOneOut5': [2], 'TestOneInOneOut4': [4], 'TestOneInOneOut3': [3], 'TestOneInOneOut2': [1], 'TestOneInOneOut1': [0]}
+    TestOneInOneOut1 (rank 0): Processed 5 iterations.
+    TestOneInOneOut2 (rank 1): Processed 5 iterations.
+    TestOneInOneOut3 (rank 3): Processed 5 iterations.
+    TestProducer0 (rank 5): Processed 5 iterations.
+    TestOneInOneOut4 (rank 4): Processed 5 iterations.
+    TestOneInOneOut5 (rank 2): Processed 5 iterations.
+'''
+
 from mpi4py import MPI
         
 comm=MPI.COMM_WORLD

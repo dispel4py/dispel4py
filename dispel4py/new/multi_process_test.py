@@ -12,6 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+'''
+Tests for multiprocessing mapping.
+
+Using nose (https://nose.readthedocs.org/en/latest/) run as follows::
+
+    $ nosetests dispel4py/new/multi_process_test.py
+    ...
+    ----------------------------------------------------------------------
+    Ran 3 tests in 0.042s
+
+    OK
+'''
 import argparse
 
 from dispel4py.examples.graph_testing.testing_PEs import TestProducer, TestOneInOneOut, TestTwoInOneOut
@@ -59,9 +71,9 @@ def testTee():
     args.num = 3
     process(graph, inputs={prod: [{}, {}, {}, {}, {}]}, args=args)
 
-print '='*20 + 'PIPELINE' + '='*20 
-testPipeline()
-print '='*20 + 'SQUARE  ' + '='*20 
-testSquare()
-print '='*20 + 'TEE     ' + '='*20 
-testTee()
+#print '='*20 + 'PIPELINE' + '='*20 
+#testPipeline()
+#print '='*20 + 'SQUARE  ' + '='*20 
+#testSquare()
+#print '='*20 + 'TEE     ' + '='*20 
+#testTee()

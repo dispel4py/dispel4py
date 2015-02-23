@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from dispel4py.provenance import ProvenancePE, OUTPUT_DATA, INPUT_NAME
-from dispel4py.GenericPE import NAME, TYPE
+from dispel4py.core import NAME, TYPE
 import uuid
 import traceback
 try:

@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
 
     dispel4py.examples.graph_testing
+    dispel4py.examples.seismo
 
 Module contents
 ---------------

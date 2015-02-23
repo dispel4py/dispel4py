@@ -20,6 +20,14 @@ dispel4py.seismo.seismo module
     :undoc-members:
     :show-inheritance:
 
+dispel4py.seismo.simple module
+------------------------------
+
+.. automodule:: dispel4py.seismo.simple
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

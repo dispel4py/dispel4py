@@ -7,25 +7,25 @@ Subpackages
 .. toctree::
 
     dispel4py.examples
+    dispel4py.new
     dispel4py.seismo
     dispel4py.storm
-    dispel4py.test
 
 Submodules
 ----------
 
-dispel4py.core module
---------------------------
+dispel4py.base module
+---------------------
 
-.. automodule:: dispel4py.core
+.. automodule:: dispel4py.base
     :members:
     :undoc-members:
     :show-inheritance:
 
-dispel4py.base module
---------------------------
+dispel4py.core module
+---------------------
 
-.. automodule:: dispel4py.base
+.. automodule:: dispel4py.core
     :members:
     :undoc-members:
     :show-inheritance:
@@ -77,15 +77,6 @@ dispel4py.visualisation module
     :members:
     :undoc-members:
     :show-inheritance:
-
-dispel4py.worker_mpi module
----------------------------
-
-.. automodule:: dispel4py.worker_mpi
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 
 dispel4py.workflow_graph module
 -------------------------------

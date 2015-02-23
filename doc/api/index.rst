@@ -22,13 +22,12 @@ Dispel4Py API documentation
    :nosignatures:
    :toctree: .
 
-   dispel4py.simple_process
-   dispel4py.multi_process
-   dispel4py.partition
-   dispel4py.worker_mpi
+   dispel4py.new.simple_process
+   dispel4py.new.multi_process
+   dispel4py.new.mpi_process
+   dispel4py.new.processor
    dispel4py.storm.storm_submission
    dispel4py.storm.topology
-
 
 .. rubric:: Examples and tests
 
@@ -49,9 +48,9 @@ Dispel4Py API documentation
     dispel4py.examples.graph_testing.word_count
     dispel4py.examples.graph_testing.word_count_filter
     dispel4py.examples.graph_testing.testing_PEs
-    dispel4py.test.simple_process_test
-    dispel4py.test.multi_process_test
-    dispel4py.test.worker_mpi_test
+    dispel4py.new.simple_process_test
+    dispel4py.new.multi_process_test
+    dispel4py.new.aggregate
     
 
 Indices and tables

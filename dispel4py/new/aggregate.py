@@ -1,3 +1,8 @@
+'''
+Processing elements that implement aggregation functions (AVG, SUM, COUNT, MIN, MAX).
+These are composite PEs that are automatically parallelised if the mapping supports this.
+'''
+
 from dispel4py.workflow_graph import WorkflowGraph
 from dispel4py.core import GenericPE
 
@@ -158,14 +163,23 @@ def parallelSum(indexes=[0]):
 
 
 def parallelMin(indexes=[0]):
+    '''
+    Creates a MIN composite PE that can be parallelised using a map-reduce pattern.
+    '''
     return parallel_aggregate(MinPE(indexes), MinPE(indexes))
 
 
 def parallelMax(indexes=[0]):
+    '''
+    Creates a MAX composite PE that can be parallelised using a map-reduce pattern.
+    '''
     return parallel_aggregate(MaxPE(indexes), MaxPE(indexes))
 
 
 def parallelAvg(index=0):
+    '''
+    Creates an AVG composite PE that can be parallelised using a map-reduce pattern.
+    '''
     composite = WorkflowGraph()
     parAvg = AverageParallelPE(index)
     reduceAvg = AverageReducePE()
@@ -176,6 +190,9 @@ def parallelAvg(index=0):
 
 
 def parallelStdDev(index=0):
+    '''
+    Creates a STDDEV composite PE that can be parallelised using a map-reduce pattern.
+    '''
     composite = WorkflowGraph()
     parStdDev = StdDevPE(index)
     reduceStdDev = StdDevReducePE()
