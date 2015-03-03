@@ -20,6 +20,7 @@ Dispel4Py provides executable **mappings** to a number of enactment systems.
 * **sequential**: local mapping for testing during the development process.
 * **multiprocessing**: a Python implementation leveraging multiple processors on shared memory systems.
 
+
 Contents
 --------
 
@@ -28,7 +29,6 @@ Contents
    
    intro
    processing_elements
-   registry
    enactment
    tools
    api
@@ -40,4 +40,15 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+
+Acknowledgements
+----------------
+
+The current development of dispel4py is supported by the VERCE project, http://www.verce.eu (EU RI 283543) where it has been used for processing and correlating data streams from digital seismometer networks, for preparing data for modelling the forward propagation of seismic waves, the post-processing of simulation results and analysis of "misfit", the relationship between simulation and observation data streams.
+It builds on the work of previous projects, including: the EU ADMIRE project, http://www.admire-project.eu (EU ICT 215024), the EPSRC projects the e-Science Core Programme Senior Research Fellow (EP/D079829/1) and 
+the National e-Science Centre Research Platform, research.nesc.ac.uk, (EP/F057695/1), 
+the NERC EFFORT project, http://www.geos.ed.ac.uk/sidecar/geohazards/research-hubs/hazards/seismology/time-dependent-earthquake-hazard, (NE/H02297X/1) and the NERC Terra-correlator project, https://www.wiki.ed.ac.uk/display/Terra/Terra-correlator+wiki, (NE/L012979/1),  
+the NSF Open Science Data Cloud (OSDC) PIRE Project, http://pire.opensciencedatacloud.org, 
+and the Ministry of Education Malaysia grants (FRGS FP051-2013A and UMRG RP001F-13ICT).
 

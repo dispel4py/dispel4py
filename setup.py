@@ -24,13 +24,13 @@ def read(fname):
 
 setup(
     name = "dispel4py",
-    version = "0.0.1",
+    version = "1.0.1",
     author = "The University of Edinburgh",
     author_email = "a.krause@epcc.ed.ac.uk",
     description = ("Dispel4py is a Python library used to describe abstract workflows for distributed data-intensive applications."),
     license = "Apache 2",
-    keywords = "dispel4py dispel workflows processing elements",
-    url = "https://github.com/akrause2014/dispel4py",
+    keywords = "dispel4py dispel workflows processing elements data intensive",
+    url = "http://dispel4py.org",
     packages=['dispel4py', 'dispel4py.new', 'dispel4py.seismo', 'dispel4py.storm', 'dispel4py.examples', 'dispel4py.examples.graph_testing'],
     long_description=read('README.md'),
     install_requires=['networkx'], 
@@ -40,7 +40,7 @@ setup(
         ]
     },
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Topic :: Utilities",
         "License :: OSI Approved :: Apache 2 License",
     ],
