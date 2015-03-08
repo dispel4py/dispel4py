@@ -46,7 +46,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Dispel4Py'
+project = u'dispel4py'
 copyright = u'2014, The University of Edinburgh'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -109,7 +109,7 @@ html_theme = 'dispel4py_theme'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = { 'header_text' : 'Dispel4Py', 
+html_theme_options = { 'header_text' : 'dispel4py', 
                        'transparent_logo' : 'DISPEL4PY_mono_white_trans.png ' }
 
 # Add any paths that contain custom themes here, relative to this directory.
@@ -203,7 +203,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'Dispel4Py.tex', u'Dispel4Py Documentation',
+  ('index', 'dispel4py.tex', u'dispel4py Documentation',
    u'The University of Edinburgh', 'manual'),
 ]
 
@@ -233,7 +233,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'dispel4py', u'Dispel4Py Documentation',
+    ('index', 'dispel4py', u'dispel4py Documentation',
      [u'The University of Edinburgh'], 1)
 ]
 
@@ -247,8 +247,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Dispel4Py', u'Dispel4Py Documentation',
-   u'The University of Edinburgh', 'Dispel4Py', 'Describing workflows for data-intensive applications.',
+  ('index', 'dispel4py', u'dispel4py Documentation',
+   u'The University of Edinburgh', 'dispel4py', 'Developing workflows for data-intensive applications.',
    'Miscellaneous'),
 ]
 
