@@ -51,17 +51,15 @@ class SourceWrapper(storm.Spout):
         try:
             input_tuple = None
             try:
+                input_tuple = self.script._static_input.pop(0)
+            except AttributeError:
+                # there is no static input
                 if self.counter >= self.script._num_iterations:
                     return
-            except:
-                try:
-                    input_tuple = self.script._static_input.pop(0)
-                except AttributeError:
-                    # there is no static input
-                    pass
-                except IndexError:
-                    # static input is empty - no more processing
-                    return
+            except IndexError:
+                # static input is empty - no more processing
+                return
+            storm.log("Dispel4Py ------> %s: input %s" % (self.scriptname, input_tuple,))
             outputs = self.script.process(input_tuple)
             if outputs is None:
                 return

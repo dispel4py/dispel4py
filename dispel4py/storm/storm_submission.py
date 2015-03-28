@@ -99,6 +99,7 @@ def createPackage(graph, args, static_input):
     shutil.copy(ROOT_DIR + 'dispel4py/__init__.py', tmp_dispel4py_dir)
     shutil.copy(ROOT_DIR + 'dispel4py/core.py', tmp_dispel4py_dir)
     shutil.copy(ROOT_DIR + 'dispel4py/base.py', tmp_dispel4py_dir)
+    shutil.copy(ROOT_DIR + 'dispel4py/workflow_graph.py', tmp_dispel4py_dir)
     shutil.copy(ROOT_DIR + 'dispel4py/storm/__init__.py', tmp_dispel4py_dir + '/storm/')
     shutil.copy(ROOT_DIR + 'dispel4py/storm/utils.py', tmp_dispel4py_dir + '/storm/')
 
@@ -128,7 +129,7 @@ def createPackage(graph, args, static_input):
             sources.append(pe)
     print "Sources: %s" % [ pe.id for pe in sources ]
     for pe in sources:
-        pe._static_input = static_input
+        pe._static_input = static_input[pe.id]
         pe._num_iterations = args.iter
     
     # create the storm topology
