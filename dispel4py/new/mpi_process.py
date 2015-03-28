@@ -57,6 +57,7 @@ import processor
 import argparse
 import types
 import traceback
+from pickle import PickleError
 
 
 def parse_args(args, namespace):
@@ -161,10 +162,13 @@ class MPIWrapper(GenericWrapper):
             output = { inputName : data }
             dest = communication.getDestination(output)
             for i in dest:
-                # self.pe.log('Sending %s to %s' % (output, i))
-                request=comm.isend(output, tag=STATUS_ACTIVE, dest=i)
-                status = MPI.Status()
-                request.Wait(status)
+                try:
+                    self.pe.log('Sending %s to %s' % (output, i))
+                    request=comm.isend(output, tag=STATUS_ACTIVE, dest=i)
+                    status = MPI.Status()
+                    request.Wait(status)
+                except:
+                    self.pe.log('Failed to send data stream "%s" to rank %s: %s' % (name, i, traceback.format_exc()))
                 
     def _terminate(self):
         for output, targets in self.targets.iteritems():

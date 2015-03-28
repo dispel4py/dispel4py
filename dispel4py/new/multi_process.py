@@ -151,7 +151,14 @@ class MultiProcessingWrapper(GenericWrapper):
         if result is not None:
             return result
         # read from input queue
-        data, status = self.input_queue.get()
+        no_data = True
+        while no_data:
+            try:
+                data, status = self.input_queue.get()
+                no_data = False
+            except:
+                self.pe.log('Failed to read item from queue')
+                pass
         while status == STATUS_TERMINATED:
             self.terminated += 1
             if self.terminated >= self._num_sources:
