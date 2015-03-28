@@ -511,6 +511,10 @@ class SimpleProcessingPE(GenericPE):
     def _preprocess(self):
         for proc in self.ordered:
             pe = self.proc_to_pe[proc]
+            try:
+                pe.rank = self.rank
+            except:
+                pass
             pe.log = types.MethodType(simpleLogger, pe)
             pe.preprocess()
 
