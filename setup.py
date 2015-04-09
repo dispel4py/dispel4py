@@ -1,5 +1,5 @@
 # Copyright (c) The University of Edinburgh 2014
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -33,7 +33,7 @@ setup(
     url = "http://dispel4py.org",
     packages=['dispel4py', 'dispel4py.new', 'dispel4py.seismo', 'dispel4py.storm', 'dispel4py.examples', 'dispel4py.examples.graph_testing'],
     long_description=read('README.md'),
-    install_requires=['networkx'], 
+    install_requires=['networkx', 'flake8'],
     entry_points={
         'console_scripts': [
             'dispel4py = dispel4py.new.processor:main',
