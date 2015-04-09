@@ -1,5 +1,5 @@
 # Copyright (c) The University of Edinburgh 2014-2015
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,13 +13,13 @@
 # limitations under the License.
 
 '''
-Enactment of dispel4py graphs. 
+Enactment of dispel4py graphs.
 This module contains methods that are used by different mappings.
 
 From the commandline, run the following command::
 
     dispel4py <mapping> <module>  [-h] [-a attribute] [-f inputfile] [-i iterations] [...]
-    
+
 with parameters
 
 :mapping:   target mapping
@@ -79,7 +79,7 @@ class GenericWriter(object):
     def __init__(self, wrapper, name):
         self.wrapper = wrapper
         self.name = name
-        
+
     def write(self, data):
         self.wrapper._write(self.name, data)
 
@@ -367,7 +367,7 @@ def create_partitioned(workflow_all):
                     if not dest in processes:
                         # it's an external connection
                         external_connections.append((comm_all,
-                            partition_id, pe.id, output_name, 
+                            partition_id, pe.id, output_name,
                             pe_to_partition[dest], dest, dest_input))
                         try:
                             result_mappings[pe.id].append(output_name)
@@ -383,7 +383,7 @@ def create_partitioned(workflow_all):
         except:
             # use default assignment of processes
             pass
-            
+
         partition_pe.workflow = workflow
         partition_pe.partition_id = partition_id
         if result_mappings:
@@ -527,7 +527,7 @@ class SimpleProcessingPE(GenericPE):
                                      self.output_mappings[proc],
                                      self.result_mappings)
             pe._write = types.MethodType(_simple_write, pe)
-            # if there was data produced in postprocessing 
+            # if there was data produced in postprocessing
             # then we need to process that data in the PEs downstream
             if proc in all_inputs:
                 for data in all_inputs[proc]:
@@ -572,12 +572,12 @@ class SimpleProcessingPE(GenericPE):
                     provided_inputs = other_inputs
             except:
                 pass
-                    
+
             if isinstance(provided_inputs, (int, long)):
                 for i in xrange(0, provided_inputs):
                     _process_data(pe, {})
             else:
-                
+
                 if provided_inputs is None:
                     if not pe.inputconnections:
                         # run at least once for a source of the graph
@@ -585,7 +585,7 @@ class SimpleProcessingPE(GenericPE):
                     else:
                         # no data
                         provided_inputs = []
-                
+
                 for data in provided_inputs:
                     _process_data(pe, data)
 
@@ -686,12 +686,13 @@ def main():
     # run only once if no input data
     inputs = {}
     if args.file:
+        if not os.path.exists(args.file):
+            raise ValueError("File '%s' does not exists." % args.file)
         try:
             with open(args.file) as inputfile:
                 inputs = json.loads(inputfile.read())
-            print "Processing input file %s" % args.file
-        except:
-            print 'Failed to read input file %s' % args.file
+        except Exception as e:
+            print "Error reading JSON file '%s': %s" % (args.file, str(e))
             sys.exit(1)
     elif args.data:
         inputs = json.loads(args.data)
@@ -704,7 +705,7 @@ def main():
         for node in graph.graph.nodes():
             if _is_root(node, graph):
                 inputs[node.getContainedObject()] = args.iter
-    
+
     # map input names to ids if necessary
     for node in graph.graph.nodes():
         pe = node.getContainedObject()
