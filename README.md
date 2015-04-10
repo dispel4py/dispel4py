@@ -51,8 +51,8 @@ Dispel4Py user documentation: http://dispel4py.org/
 Travis CI
 ---------
 
-[![Build Status](https://travis-ci.org/akrause2014/dispel4py.svg)](https://travis-ci.org/akrause2014/dispel4py)
-https://travis-ci.org/akrause2014/dispel4py
+[![Build Status](https://travis-ci.org/dispel4py/dispel4py.svg)](https://travis-ci.org/dispel4py/dispel4py)
+https://travis-ci.org/dispel4py/dispel4py
 
 
 ![Logo](http://www2.epcc.ed.ac.uk/~amrey/VERCE/Dispel4Py/_static/DISPEL4PY_web_trans.png)
