@@ -37,6 +37,7 @@ number of processes if running in a parallel environment.
 '''
 
 import argparse
+import os
 import sys
 import types
 
@@ -705,12 +706,13 @@ def main():
     # run only once if no input data
     inputs = {}
     if args.file:
+        if not os.path.exists(args.file):
+            raise ValueError("File '%s' does not exists." % args.file)
         try:
             with open(args.file) as inputfile:
                 inputs = json.loads(inputfile.read())
-            print "Processing input file %s" % args.file
-        except:
-            print 'Failed to read input file %s' % args.file
+        except Exception as e:
+            print "Error reading JSON file '%s': %s" % (args.file, str(e))
             sys.exit(1)
     elif args.data:
         inputs = json.loads(args.data)
