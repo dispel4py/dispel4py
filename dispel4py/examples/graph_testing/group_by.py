@@ -1,5 +1,5 @@
 # Copyright (c) The University of Edinburgh 2014
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -19,6 +19,7 @@ This is a dispel4py graph that shows the group-by data pattern to count words.
 from dispel4py.examples.graph_testing import testing_PEs as t
 from dispel4py.workflow_graph import WorkflowGraph
 
+
 def testGrouping():
     '''
     Creates the test graph.
@@ -34,7 +35,7 @@ def testGrouping():
     graph.connect(cons2, 'output', cons3, 'input')
     graph.connect(cons3, 'output', count, 'input')
 
-    graph.partitions = [ [words], [cons1, cons2, cons3], [count] ]
+    graph.partitions = [[words], [cons1, cons2, cons3], [count]]
     return graph
 
 graph = testGrouping()
