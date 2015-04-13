@@ -1,5 +1,5 @@
-# Copyright (c) The University of Edinburgh 2014
-# 
+# Copyright (c) The University of Edinburgh 2014-2015
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -24,10 +24,12 @@ import __builtin__
 from types import ModuleType
 import traceback
 
+
 class DummyModule(ModuleType):
     def __getattr__(self, key):
         return None
     __all__ = []   # support wildcard imports
+
 
 def loadGraphIgnoreImports(module_name, graph_var):
     '''
@@ -47,14 +49,15 @@ def loadGraphIgnoreImports(module_name, graph_var):
     graph = getattr(mod, graph_var)
 
     __builtin__.__import__ = realimport
-    
+
     return graph
-    
+
+
 def loadSourceIgnoreImports(module_name, path, attr_name):
     '''
-    Import a module from the given source file at 'path' and return the named attribute 'attr_name'.
-    Any import errors are being ignored.
-    
+    Import a module from the given source file at 'path' and return the named
+    attribute 'attr_name'. Any import errors are being ignored.
+
     :param module_name: name of the module to load
     :param path: location of the source file
     :param attr_name: name of the attribute within the module
@@ -70,15 +73,17 @@ def loadSourceIgnoreImports(module_name, path, attr_name):
 
     mod = load_source(module_name, path)
     attr = getattr(mod, attr_name)
-    
+
     __builtin__.__import__ = realimport
-    
+
     return attr
+
 
 def loadSource(module_name, path, attr_name):
     '''
-    Import a module from the given source file at 'path' and return the named attribute 'attr_name'.
-    
+    Import a module from the given source file at 'path' and return
+    the named attribute 'attr_name'.
+
     :param module_name: name of the module to load
     :param path: location of the source file
     :param attr_name: name of the attribute within the module
@@ -87,10 +92,11 @@ def loadSource(module_name, path, attr_name):
     attr = getattr(mod, attr_name)
     return attr
 
+
 def loadIgnoreImports(module_name, attr_name, code):
     '''
     Import a module from source and return the specified attribute.
-    
+
     :param module_name: name of the module to load
     :param attr_name: name of the attribute within the module
     :param code: source code of the module
@@ -108,8 +114,9 @@ def loadIgnoreImports(module_name, attr_name, code):
     exec code in mod.__dict__
     attr = getattr(mod, attr_name)
     __builtin__.__import__ = realimport
-    
+
     return attr
+
 
 def findWorkflowGraph(mod, attr):
     if attr is not None:
@@ -120,10 +127,12 @@ def findWorkflowGraph(mod, attr):
         for i in dir(mod):
             attr = getattr(mod, i)
             if isinstance(attr, WorkflowGraph):
-                if not hasattr(attr, 'inputmappings') and not hasattr(attr, 'outputmappings'):
+                if not hasattr(attr, 'inputmappings')\
+                        and not hasattr(attr, 'outputmappings'):
                     graph = attr
     return graph
-    
+
+
 def loadGraphFromFile(module_name, path, attr=None):
     mod = load_source(module_name, path)
     attr = findWorkflowGraph(mod, attr)
@@ -156,9 +165,10 @@ def load_graph(graph_source, attr=None):
         error_message += 'No module "%s"\n' % graph_source
         pass
     except Exception as e:
-        error_message += 'Error loading graph module:\n%s' % traceback.format_exc()
+        error_message += \
+            'Error loading graph module:\n%s' % traceback.format_exc()
         pass
-        
+
     # maybe it's a file?
     try:
         return loadGraphFromFile('temp', graph_source, attr)
@@ -167,13 +177,14 @@ def load_graph(graph_source, attr=None):
         error_message += 'No file "%s"\n' % graph_source
         pass
     except Exception as e:
-        error_message += 'Error loading graph from file:\n%s' % traceback.format_exc()
-    
+        error_message += \
+            'Error loading graph from file:\n%s' % traceback.format_exc()
+
     # or the source code as a string
     try:
         return loadGraphFromSource('temp', graph_source, attr)
     except Exception as e:
-        error_message += 'Error trying to parse as Python: %s'% e
+        error_message += 'Error trying to parse as Python: %s' % e
         pass
 
     # we don't know what it is
@@ -183,13 +194,10 @@ def load_graph(graph_source, attr=None):
 from sys import getsizeof
 from itertools import chain
 from collections import deque
-try:
-    from reprlib import repr
-except ImportError:
-    pass
+
 
 def total_size(o, handlers={}, verbose=False):
-    """ 
+    """
     From: http://code.activestate.com/recipes/577504/
     Returns the approximate memory footprint an object and all of its contents.
 
@@ -202,19 +210,20 @@ def total_size(o, handlers={}, verbose=False):
 
     """
     dict_handler = lambda d: chain.from_iterable(d.items())
-    all_handlers = {tuple: iter,
-                    list: iter,
-                    deque: iter,
-                    dict: dict_handler,
-                    set: iter,
-                    frozenset: iter,
-                   }
-    all_handlers.update(handlers)     # user handlers take precedence
-    seen = set()                      # track which object id's have already been seen
-    default_size = getsizeof(0)       # estimate sizeof object without __sizeof__
+    all_handlers = {
+        tuple: iter,
+        list: iter,
+        deque: iter,
+        dict: dict_handler,
+        set: iter,
+        frozenset: iter,
+    }
+    all_handlers.update(handlers)
+    seen = set()
+    default_size = getsizeof(0)
 
     def sizeof(o):
-        if id(o) in seen:       # do not double count the same object
+        if id(o) in seen:
             return 0
         seen.add(id(o))
         s = getsizeof(o, default_size)
@@ -229,11 +238,12 @@ def total_size(o, handlers={}, verbose=False):
 
 import copy
 
+
 def make_hash(o):
-    
+
     """
-    Makes a hash from a dictionary, list, tuple or set to any level, that contains
-    only other hashable types (including any lists, tuples, sets, and
+    Makes a hash from a dictionary, list, tuple or set to any level, that
+    contains only other hashable types (including any lists, tuples, sets, and
     dictionaries).
     """
     if isinstance(o, (set, tuple, list)):
