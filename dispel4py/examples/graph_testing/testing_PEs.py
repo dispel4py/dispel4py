@@ -33,7 +33,7 @@ class TestProducer(GenericPE):
             self._add_output('output', tuple_type=['number'])
         else:
             for i in range(numOutputs):
-                self._add_output('output%s', tuple_type=['number'])
+                self._add_output('output%s' % i, tuple_type=['number'])
         self.counter = 0
         self.outputnames = list(self.outputconnections.keys())
 
