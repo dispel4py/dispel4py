@@ -1,5 +1,5 @@
-# Copyright (c) The University of Edinburgh 2014
-# 
+# Copyright (c) The University of Edinburgh 2014-2015
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -19,13 +19,14 @@ For example, to visualise a graph named 'pipeline'::
 
     from dispel4py.visualisation import display
     display(pipeline)
-    
+
 '''
 from dispel4py.workflow_graph import drawDot
 from IPython.core.display import display_png
+
 
 def display(graph):
     '''
     Visualises the input graph.
     '''
-    display_png(drawDot(graph), raw=True)    
+    display_png(drawDot(graph), raw=True)
