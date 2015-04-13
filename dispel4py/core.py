@@ -265,14 +265,14 @@ Example implementation::
         '''
         self._postprocess()
 
-    def write(self, name, data):
+    def write(self, name, data, **kwargs):
         '''
         Allows for preprocessing of data to be written to the output pipe.
         This method should be overridden by PE base classes.
         '''
         self._write(name, data)
 
-    def _write(self, name, data):
+    def _write(self, name, data, **kwargs):
         '''
         This writes the 'data' to the output pipe with name 'name' of this PE.
         '''
