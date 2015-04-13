@@ -28,5 +28,4 @@ install:
 
 script:
   - nosetests --tests dispel4py.test.simple_process_test
-  - nosetests --tests dispel4py.new.simple_process_test
   - nosetests -s --tests dispel4py.test.test_code_formatting
