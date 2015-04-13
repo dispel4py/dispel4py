@@ -1,5 +1,5 @@
 # Copyright (c) The University of Edinburgh 2014
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,14 +13,15 @@
 # limitations under the License.
 
 '''
-Enactment of dispel4py graphs using multiprocessing. 
+Enactment of dispel4py graphs using multiprocessing.
 
 From the commandline, run the following command::
 
-    dispel4py multi <module> -n num_processes [-h] [-a attribute] [-f inputfile] [-i iterations]
-    
+    dispel4py multi <module> -n num_processes [-h] [-a attribute]\
+                    [-f inputfile] [-i iterations]
+
 with parameters
- 
+
 :module:    module that creates a Dispel4Py graph
 :-n num:    number of processes (required)
 :-a attr:   name of the graph attribute within the module (optional)
@@ -32,7 +33,9 @@ For example::
 
     dispel4py multi dispel4py.examples.graph_testing.pipeline_test -i 5 -n 6
     Processing 5 iterations.
-    Processes: {'TestProducer0': [5], 'TestOneInOneOut5': [2], 'TestOneInOneOut4': [4], 'TestOneInOneOut3': [3], 'TestOneInOneOut2': [1], 'TestOneInOneOut1': [0]}
+    Processes: {'TestProducer0': [5], 'TestOneInOneOut5': [2],\
+                'TestOneInOneOut4': [4], 'TestOneInOneOut3': [3],\
+                'TestOneInOneOut2': [1], 'TestOneInOneOut1': [0]}
     TestProducer0 (rank 5): Processed 5 iterations.
     TestOneInOneOut1 (rank 0): Processed 5 iterations.
     TestOneInOneOut2 (rank 1): Processed 5 iterations.
@@ -80,16 +83,20 @@ def process(workflow, inputs, args):
             processes, inputmappings, outputmappings = result
         except:
             success = False
-            
+
     if args.simple or not success:
         ubergraph = processor.create_partitioned(workflow)
-        print 'Partitions: %s' % ', '.join(('[%s]' % ', '.join((pe.id for pe in part)) for part in workflow.partitions))
+        print 'Partitions: %s' % ', '.join(('[%s]' % ', '.join(
+            (pe.id for pe in part)) for part in workflow.partitions))
         for node in ubergraph.graph.nodes():
             wrapperPE = node.getContainedObject()
-            print('%s contains %s' % (wrapperPE.id, [n.getContainedObject().id for n in wrapperPE.workflow.graph.nodes()]))
+            pes = [n.getContainedObject().id for
+                   n in wrapperPE.workflow.graph.nodes()]
+            print('%s contains %s' % (wrapperPE.id, pes))
 
         try:
-            processes, inputmappings, outputmappings = processor.assign_and_connect(ubergraph, size)
+            processes, inputmappings, outputmappings = \
+                processor.assign_and_connect(ubergraph, size)
             inputs = processor.map_inputs_to_partitions(ubergraph, inputs)
             success = True
             nodes = [node.getContainedObject()
@@ -100,8 +107,7 @@ def process(workflow, inputs, args):
                    'Not enough processes for execution of graph'
 
     print 'Processes: %s' % processes
-    # print 'Inputs: %s' % inputs
-    
+
     process_pes = {}
     queues = {}
     for pe in nodes:
@@ -164,7 +170,11 @@ class MultiProcessingWrapper(GenericWrapper):
             if self.terminated >= self._num_sources:
                 return data, status
             else:
-                data, status = self.input_queue.get()
+                try:
+                    data, status = self.input_queue.get()
+                except:
+                    self.pe.log('Failed to read item from queue')
+                    pass
         return data, status
 
     def _write(self, name, data):
@@ -179,11 +189,13 @@ class MultiProcessingWrapper(GenericWrapper):
             dest = communication.getDestination(output)
             for i in dest:
                 # self.pe.log('Writing out %s' % output)
-                self.output_queues[i].put((output, STATUS_ACTIVE))
+                try:
+                    self.output_queues[i].put((output, STATUS_ACTIVE))
+                except:
+                    self.pe.log("Failed to write item to output '%s'" % name)
 
     def _terminate(self):
         for output, targets in self.targets.iteritems():
             for (inputName, communication) in targets:
                 for i in communication.destinations:
-                    self.pe.log('Terminating consumer %s' % i)
                     self.output_queues[i].put((None, STATUS_TERMINATED))
