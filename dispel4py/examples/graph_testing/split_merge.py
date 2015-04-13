@@ -1,5 +1,5 @@
-# Copyright (c) The University of Edinburgh 2014
-# 
+# Copyright (c) The University of Edinburgh 2014-2015
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,37 +13,45 @@
 # limitations under the License.
 
 '''
-This is a dispel4py graph which produces a workflow that splits the data and sends it to two nodes (cons1 and cons2)
-and the output of those two nodes is merged by another node (last). 
+This is a dispel4py graph which produces a workflow that splits the data and
+sends it to two nodes (cons1 and cons2) and the output of those two nodes is
+merged by another node (last).
 
 .. image:: /api/images/split_merge.png
 
-It can be executed with MPI and STORM. 
+It can be executed with MPI and STORM.
 
-* MPI: Please, locate yourself into the dispel4py directory. 
+* MPI: Please, locate yourself into the dispel4py directory.
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi [-a name_dispel4py_graph] [-f file containing the input dataset in JSON format]
-	[-i number of iterations/runs'] [-s]
-	
-    The argument '-s' forces to run the graph in a simple processing, which means that the first node of the graph will be executed in a process, and the rest of nodes will be        executed in a second process.  
-    When [-i number of interations/runs] is not indicated, the graph is executed once by default. 	
-        
+        mpiexec -n <number mpi_processes> dispel4py mpi <module|module file>\
+            [-a name_dispel4py_graph]
+            [-f file containing the input dataset in JSON format]
+            [-i number of iterations/runs'] [-s]
+
+    The argument '-s' forces to run the graph in a simple processing, which
+    means that the first node of the graph will be executed in a process, and
+    the rest of nodes will be executed in a second process.
+    When [-i number of interations/runs] is not indicated, the graph is
+    executed once by default.
+
 
     For example::
-    
-        mpiexec -n 4 python -m dispel4py.worker_mpi dispel4py.examples.graph_testing.split_merge
-        
+
+        mpiexec -n 4 dispel4py mpi dispel4py.examples.graph_testing.split_merge
+
     .. note::
-    
-        Each node in the graph is executed as a separate MPI process. 
-        This graph has 4 nodes. For this reason we need at least 4 MPI processes to execute it. 
-        
+
+        Each node in the graph is executed as a separate MPI process.
+        This graph has 4 nodes. For this reason we need at least 4 MPI
+        processes to execute it.
+
     Output::
-    
+
         Processing 1 iterations
-        Processes: {'TestProducer0': [0], 'TestOneInOneOutWriter2': [1], 'TestOneInOneOut1': [3], 'TestTwoInOneOut3': [2]}
+        Processes: {'TestProducer0': [0], 'TestOneInOneOutWriter2': [1],\
+            'TestOneInOneOut1': [3], 'TestTwoInOneOut3': [2]}
         TestProducer0 (rank 0): I'm a spout
         Rank 0: Sending terminate message to [3]
         Rank 0: Sending terminate message to [1]
@@ -60,17 +68,16 @@ It can be executed with MPI and STORM.
         TestOneInOneOut1 (rank 3): Completed.
         TestTwoInOneOut3 (rank 2): Processed 2 input block(s)
         TestTwoInOneOut3 (rank 2): Completed.
-				
-* STORM:  
 '''
 
 from dispel4py.examples.graph_testing import testing_PEs as t
 from dispel4py.workflow_graph import WorkflowGraph
 
+
 def testSplitMerge():
     '''
     Creates the split/merge graph with 4 nodes.
-    
+
     :rtype: the created graph
     '''
     graph = WorkflowGraph()
