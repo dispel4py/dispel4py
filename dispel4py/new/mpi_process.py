@@ -1,5 +1,5 @@
-# Copyright (c) The University of Edinburgh 2014
-# 
+# Copyright (c) The University of Edinburgh 2014-2015
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,14 +13,14 @@
 # limitations under the License.
 
 '''
-Enactment of dispel4py graphs with MPI. 
+Enactment of dispel4py graphs with MPI.
 
 From the commandline, run the following command::
 
-    dispel4py mpi <module>  [-h] [-a attribute] [-f inputfile] [-i iterations]
-    
+    dispel4py mpi <module> [-h] [-a attribute] [-f inputfile] [-i iterations]
+
 with parameters
- 
+
 :module:    module that creates a Dispel4Py graph
 :-a attr:   name of the graph attribute within the module (optional)
 :-f file:   file containing input data in JSON format (optional)
@@ -29,14 +29,17 @@ with parameters
 
 For example::
 
-    mpiexec -n 6 dispel4py mpi dispel4py.examples.graph_testing.pipeline_test -i 5 
+    mpiexec -n 6 dispel4py mpi dispel4py.examples.graph_testing.pipeline_test\
+        -i 5
     Processing 5 iterations.
     Processing 5 iterations.
     Processing 5 iterations.
     Processing 5 iterations.
     Processing 5 iterations.
     Processing 5 iterations.
-    Processes: {'TestProducer0': [5], 'TestOneInOneOut5': [2], 'TestOneInOneOut4': [4], 'TestOneInOneOut3': [3], 'TestOneInOneOut2': [1], 'TestOneInOneOut1': [0]}
+    Processes: {'TestProducer0': [5], 'TestOneInOneOut5': [2],\
+        'TestOneInOneOut4': [4], 'TestOneInOneOut3': [3],\
+        'TestOneInOneOut2': [1], 'TestOneInOneOut1': [0]}
     TestOneInOneOut1 (rank 0): Processed 5 iterations.
     TestOneInOneOut2 (rank 1): Processed 5 iterations.
     TestOneInOneOut3 (rank 3): Processed 5 iterations.
@@ -46,18 +49,18 @@ For example::
 '''
 
 from mpi4py import MPI
-        
-comm=MPI.COMM_WORLD
-rank=comm.Get_rank()
-size=comm.Get_size()
 
-from processor import GenericWrapper, simpleLogger, STATUS_TERMINATED, STATUS_ACTIVE    
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
+
+from processor\
+    import GenericWrapper, simpleLogger, STATUS_TERMINATED, STATUS_ACTIVE
 import processor
 
 import argparse
 import types
 import traceback
-from pickle import PickleError
 
 
 def parse_args(args, namespace):
@@ -70,49 +73,55 @@ def parse_args(args, namespace):
 
 
 def process(workflow, inputs, args):
-    processes={}
+    processes = {}
     inputmappings = {}
     outputmappings = {}
-    success=True
-    nodes = [ node.getContainedObject() for node in workflow.graph.nodes() ]
+    success = True
+    nodes = [node.getContainedObject() for node in workflow.graph.nodes()]
     if rank == 0 and not args.simple:
         try:
-            processes, inputmappings, outputmappings = processor.assign_and_connect(workflow, size)
+            processes, inputmappings, outputmappings =\
+                processor.assign_and_connect(workflow, size)
         except:
-            success=False
-    success=comm.bcast(success,root=0)
+            success = False
+    success = comm.bcast(success, root=0)
 
     if args.simple or not success:
         ubergraph = processor.create_partitioned(workflow)
-        nodes = [ node.getContainedObject() for node in ubergraph.graph.nodes() ]
+        nodes = [node.getContainedObject() for node in ubergraph.graph.nodes()]
         if rank == 0:
-            print 'Partitions: %s' % ', '.join(('[%s]' % ', '.join((pe.id for pe in part)) for part in workflow.partitions))
+            print 'Partitions: %s' % ', '.join(('[%s]' % ', '.join(
+                (pe.id for pe in part)) for part in workflow.partitions))
             for node in ubergraph.graph.nodes():
                 wrapperPE = node.getContainedObject()
-                print('%s contains %s' % (wrapperPE.id, [n.getContainedObject().id for n in wrapperPE.workflow.graph.nodes()]))
+                print('%s contains %s' % (wrapperPE.id,
+                                          [n.getContainedObject().id for n in
+                                           wrapperPE.workflow.graph.nodes()]))
             try:
-                processes, inputmappings, outputmappings = processor.assign_and_connect(ubergraph, size)
+                processes, inputmappings, outputmappings =\
+                    processor.assign_and_connect(ubergraph, size)
                 inputs = processor.map_inputs_to_partitions(ubergraph, inputs)
                 success = True
             except:
                 # print traceback.format_exc()
-                print 'dispel4py.mpi_process: Not enough processes for execution of graph'
+                print 'dispel4py.mpi_process: \
+                    Not enough processes for execution of graph'
                 success = False
 
-    success=comm.bcast(success,root=0)
+    success = comm.bcast(success, root=0)
 
     if not success:
         return
 
     try:
-        inputs = { pe.id : v for pe, v in inputs.iteritems() }
+        inputs = {pe.id: v for pe, v in inputs.iteritems()}
     except AttributeError:
         pass
-    processes=comm.bcast(processes,root=0)
-    inputmappings=comm.bcast(inputmappings,root=0)
-    outputmappings=comm.bcast(outputmappings,root=0)
-    inputs=comm.bcast(inputs,root=0)
-    
+    processes = comm.bcast(processes, root=0)
+    inputmappings = comm.bcast(inputmappings, root=0)
+    outputmappings = comm.bcast(outputmappings, root=0)
+    inputs = comm.bcast(inputs, root=0)
+
     if rank == 0:
         print 'Processes: %s' % processes
         # print 'Inputs: %s' % inputs
@@ -125,8 +134,9 @@ def process(workflow, inputs, args):
             wrapper.sources = inputmappings[rank]
             wrapper.process()
 
+
 class MPIWrapper(GenericWrapper):
-    
+
     def __init__(self, pe, provided_inputs=None):
         GenericWrapper.__init__(self, pe)
         self.pe.log = types.MethodType(simpleLogger, pe)
@@ -138,17 +148,19 @@ class MPIWrapper(GenericWrapper):
         result = super(MPIWrapper, self)._read()
         if result is not None:
             return result
-            
+
         status = MPI.Status()
-        msg=comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
+        msg = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
         tag = status.Get_tag()
         while tag == STATUS_TERMINATED:
             self.terminated += 1
             if self.terminated >= self._num_sources:
                 break
             else:
-               msg=comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
-               tag = status.Get_tag()
+                msg = comm.recv(source=MPI.ANY_SOURCE,
+                                tag=MPI.ANY_TAG,
+                                status=status)
+                tag = status.Get_tag()
         return msg, tag
 
     def _write(self, name, data):
@@ -159,20 +171,22 @@ class MPIWrapper(GenericWrapper):
             # self.pe.log('Produced output: %s' % {name: data})
             return
         for (inputName, communication) in targets:
-            output = { inputName : data }
+            output = {inputName: data}
             dest = communication.getDestination(output)
             for i in dest:
                 try:
-                    self.pe.log('Sending %s to %s' % (output, i))
-                    request=comm.isend(output, tag=STATUS_ACTIVE, dest=i)
+                    # self.pe.log('Sending %s to %s' % (output, i))
+                    request = comm.isend(output, tag=STATUS_ACTIVE, dest=i)
                     status = MPI.Status()
                     request.Wait(status)
                 except:
-                    self.pe.log('Failed to send data stream "%s" to rank %s: %s' % (name, i, traceback.format_exc()))
-                
+                    self.pe.log(
+                        'Failed to send data stream "%s" to rank %s: %s'
+                        % (name, i, traceback.format_exc()))
+
     def _terminate(self):
         for output, targets in self.targets.iteritems():
             for (inputName, communication) in targets:
                 for i in communication.destinations:
                     # self.pe.log('Terminating consumer %s' % i)
-                    request=comm.isend(None, tag=STATUS_TERMINATED, dest=i)
+                    comm.isend(None, tag=STATUS_TERMINATED, dest=i)

@@ -1,5 +1,5 @@
-# Copyright (c) The University of Edinburgh 2014
-# 
+# Copyright (c) The University of Edinburgh 2014-2015
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -26,7 +26,8 @@ Using nose (https://nose.readthedocs.org/en/latest/) run as follows::
 '''
 import argparse
 
-from dispel4py.examples.graph_testing.testing_PEs import TestProducer, TestOneInOneOut, TestTwoInOneOut
+from dispel4py.examples.graph_testing.testing_PEs\
+    import TestProducer, TestOneInOneOut, TestTwoInOneOut
 from dispel4py.workflow_graph import WorkflowGraph
 from multi_process import process
 
@@ -34,6 +35,7 @@ from multi_process import process
 args = argparse.Namespace
 args.num = 5
 args.simple = False
+
 
 def testPipeline():
     prod = TestProducer()
@@ -45,8 +47,9 @@ def testPipeline():
     args = argparse.Namespace
     args.num = 5
     args.simple = False
-    process(graph, inputs={ prod : [ {}, {}, {}  ] }, args=args )
-    
+    process(graph, inputs={prod: [{}, {}, {}]}, args=args)
+
+
 def testSquare():
     graph = WorkflowGraph()
     prod = TestProducer(2)
@@ -58,22 +61,15 @@ def testSquare():
     graph.connect(cons1, 'output', last, 'input0')
     graph.connect(cons2, 'output', last, 'input1')
     args.num = 4
-    process(graph, inputs={ prod : [{}]}, args=args )
+    process(graph, inputs={prod: [{}]}, args=args)
+
 
 def testTee():
     graph = WorkflowGraph()
     prod = TestProducer()
-    prev = prod
     cons1 = TestOneInOneOut()
     cons2 = TestOneInOneOut()
     graph.connect(prod, 'output', cons1, 'input')
     graph.connect(prod, 'output', cons2, 'input')
     args.num = 3
     process(graph, inputs={prod: [{}, {}, {}, {}, {}]}, args=args)
-
-#print '='*20 + 'PIPELINE' + '='*20 
-#testPipeline()
-#print '='*20 + 'SQUARE  ' + '='*20 
-#testSquare()
-#print '='*20 + 'TEE     ' + '='*20 
-#testTee()

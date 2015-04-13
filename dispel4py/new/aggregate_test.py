@@ -1,10 +1,12 @@
 from dispel4py.examples.graph_testing.testing_PEs import NumberProducer
-from dispel4py.new.aggregate import parallelSum, parallelCount, parallelMin, parallelMax, parallelAvg
+from dispel4py.new.aggregate \
+    import parallelSum, parallelCount, parallelMin, parallelMax, parallelAvg
 
 from dispel4py.new import simple_process
 from dispel4py.workflow_graph import WorkflowGraph
 
 from nose import tools
+
 
 def graph_sum():
     prod = NumberProducer(1000)
@@ -44,43 +46,51 @@ def graph_count():
 def testSum():
     sum_wf = graph_sum()
     sum_wf.flatten()
-    results = simple_process.process_and_return(sum_wf, inputs={ 'NumberProducer' : [ {} ] } )
+    results = simple_process.process_and_return(
+        sum_wf,
+        inputs={'NumberProducer': [{}]})
     # there should be only one result
     tools.eq_(1, len(results))
     for key in results:
-        tools.eq_({ 'output' :[[499500]]} , results[key])
+        tools.eq_({'output': [[499500]]}, results[key])
 
 
 def testAvg():
     avg_wf = graph_avg()
     avg_wf.flatten()
-    results = simple_process.process_and_return(avg_wf, inputs={ 'NumberProducer' : [ {} ] } )
+    results = simple_process.process_and_return(
+        avg_wf,
+        inputs={'NumberProducer': [{}]})
     tools.eq_(1, len(results))
     for key in results:
-        tools.eq_({ 'output' :[[499.5, 1000, 499500]]} , results[key])
+        tools.eq_({'output': [[499.5, 1000, 499500]]}, results[key])
 
 
 def testCount():
     count_wf = graph_count()
     count_wf.flatten()
-    results = simple_process.process_and_return(count_wf, inputs={ 'NumberProducer' : [ {} ] } )
+    results = simple_process.process_and_return(
+        count_wf,
+        inputs={'NumberProducer': [{}]})
     print results
     tools.eq_(1, len(results))
     for key in results:
-        tools.eq_({ 'output' :[[1000]]} , results[key])
+        tools.eq_({'output': [[1000]]}, results[key])
 
 
 def testMinMax():
     min_max_wf = graph_min_max()
     min_max_wf.flatten()
-    results = simple_process.process_and_return(min_max_wf, inputs={ 'NumberProducer' : [ {} ] } )
+    results = simple_process.process_and_return(
+        min_max_wf,
+        inputs={'NumberProducer': [{}]})
     print results
     tools.eq_(2, len(results))
     for key in results:
         if key.startswith('MinPE'):
-            tools.eq_({ 'output' :[[0]]} , results[key])
+            tools.eq_({'output': [[0]]}, results[key])
         else:
-            tools.eq_({ 'output' :[[999]]} , results[key])
+            tools.eq_({'output': [[999]]}, results[key])
 
 
 sum_wf = graph_sum()

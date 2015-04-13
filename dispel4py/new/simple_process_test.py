@@ -1,5 +1,5 @@
 # Copyright (c) The University of Edinburgh 2014
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -25,12 +25,15 @@ Using nose (https://nose.readthedocs.org/en/latest/) run as follows::
     OK
 '''
 
-from dispel4py.examples.graph_testing.testing_PEs import TestProducer, TestOneInOneOut, TestOneInOneOutWriter, TestTwoInOneOut
+from dispel4py.examples.graph_testing.testing_PEs\
+    import TestProducer, TestOneInOneOut,\
+    TestOneInOneOutWriter, TestTwoInOneOut
 
 import simple_process
 from dispel4py.workflow_graph import WorkflowGraph
 
 from nose import tools
+
 
 def testPipeline():
     prod = TestProducer()
@@ -39,9 +42,12 @@ def testPipeline():
     graph = WorkflowGraph()
     graph.connect(prod, 'output', cons1, 'input')
     graph.connect(cons1, 'output', cons2, 'input')
-    results = simple_process.process_and_return(graph, inputs={ prod : [ {}, {}, {}, {}, {} ] } )
-    tools.eq_({ cons2.id : { 'output' : [1, 2, 3, 4, 5] } }, results)
-    
+    results = simple_process.process_and_return(
+        graph,
+        inputs={prod: [{}, {}, {}, {}, {}]})
+    tools.eq_({cons2.id: {'output': [1, 2, 3, 4, 5]}}, results)
+
+
 def testSquare():
     graph = WorkflowGraph()
     prod = TestProducer(2)
@@ -52,25 +58,32 @@ def testSquare():
     graph.connect(prod, 'output1', cons2, 'input')
     graph.connect(cons1, 'output', last, 'input0')
     graph.connect(cons2, 'output', last, 'input1')
-    results = simple_process.process_and_return(graph, { prod : [{}]} )
-    tools.eq_({last.id : { 'output' :['1', '1']} }, results)
+    results = simple_process.process_and_return(graph, {prod: [{}]})
+    tools.eq_({last.id: {'output': ['1', '1']}}, results)
+
 
 def testTee():
     graph = WorkflowGraph()
     prod = TestProducer()
-    prev = prod
     cons1 = TestOneInOneOut()
     cons2 = TestOneInOneOut()
     graph.connect(prod, 'output', cons1, 'input')
     graph.connect(prod, 'output', cons2, 'input')
-    results = simple_process.process_and_return(graph, {prod: [{}, {}, {}, {}, {}]})
-    tools.eq_({ cons1.id : {'output': [1, 2, 3, 4, 5]}, cons2.id: {'output' : [1, 2, 3, 4, 5]} }, results)
+    results = simple_process.process_and_return(
+        graph,
+        {prod: [{}, {}, {}, {}, {}]})
+    tools.eq_(
+        {cons1.id: {'output': [1, 2, 3, 4, 5]},
+         cons2.id: {'output': [1, 2, 3, 4, 5]}},
+        results)
+
 
 def testWriter():
     graph = WorkflowGraph()
     prod = TestProducer()
-    prev = prod
     cons1 = TestOneInOneOutWriter()
     graph.connect(prod, 'output', cons1, 'input')
-    results = simple_process.process_and_return(graph, {prod: [{}, {}, {}, {}, {}]})
-    tools.eq_({ cons1.id : {'output': [1, 2, 3, 4, 5]} }, results)
+    results = simple_process.process_and_return(
+        graph,
+        {prod: [{}, {}, {}, {}, {}]})
+    tools.eq_({cons1.id: {'output': [1, 2, 3, 4, 5]}}, results)

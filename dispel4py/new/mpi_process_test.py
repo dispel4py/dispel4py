@@ -1,5 +1,5 @@
-# Copyright (c) The University of Edinburgh 2014
-# 
+# Copyright (c) The University of Edinburgh 2014-2015
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -14,20 +14,15 @@
 
 from dispel4py.new.mpi_process import process
 from dispel4py.workflow_graph import WorkflowGraph
-from dispel4py.examples.graph_testing.testing_PEs import TestProducer, TestOneInOneOut
-
-from mpi4py import MPI
-        
-comm=MPI.COMM_WORLD
-rank=comm.Get_rank()
-size=comm.Get_size()
+from dispel4py.examples.graph_testing.testing_PEs\
+    import TestProducer, TestOneInOneOut
 
 prod = TestProducer()
 cons1 = TestOneInOneOut()
 cons2 = TestOneInOneOut()
-    
+
 graph = WorkflowGraph()
 graph.connect(prod, 'output', cons1, 'input')
 graph.connect(cons1, 'output', cons2, 'input')
 
-process(graph, { prod : [ {}, {}, {} ] } )
+process(graph, {prod: [{}, {}, {}]})
