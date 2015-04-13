@@ -1,4 +1,5 @@
-from dispel4py.examples.graph_testing.testing_PEs import TestMultiProducer, TestOneInOneOut
+from dispel4py.examples.graph_testing.testing_PEs\
+    import TestMultiProducer, TestOneInOneOut
 from dispel4py.workflow_graph import WorkflowGraph
 
 

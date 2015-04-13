@@ -1,5 +1,5 @@
 # Copyright (c) The University of Edinburgh 2014
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,37 +13,48 @@
 # limitations under the License.
 
 '''
-This is a dispel4py graph which produces a workflow with a pipeline 
-in which the producer node ``prod`` sends data to the consumer node ``cons1`` which then sends data to node ``cons2``. 
-Note that in this graph we have defined several instances of the cons1 and cons2 nodes
-and all the instances of the cons1 node are sending data to only one instance of cons2 node. 
-This type of grouping is called *global* in dispel4py (all to one). 
+This is a dispel4py graph which produces a workflow with a pipeline
+in which the producer node ``prod`` sends data to the consumer node ``cons1``
+which then sends data to node ``cons2``.
+Note that in this graph we have defined several instances of the cons1 and
+cons2 nodes and all the instances of the cons1 node are sending data to only
+one instance of cons2 node.
+This type of grouping is called *global* in dispel4py (all to one).
 
 It can be executed with MPI and STORM.
 
-* MPI: Please, locate yourself into the dispel4py directory. 
+* MPI: Please, locate yourself into the dispel4py directory.
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi <name_dispel4py_graph> <-f file containing the input dataset in JSON format>
-	<-i number of iterations/runs'> <-s>
-	
-    The argument '-s' forces to run the graph in a simple processing, which means that the first node of the graph will be executed in a process, and the rest of nodes will be        executed in a second process.  
-    When <-i number of interations/runs> is not indicated, the graph is executed once by default. 	
+        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi\
+            <name_dispel4py_graph>\
+            <-f file containing the input dataset in JSON format>
+            <-i number of iterations/runs'> <-s>
+
+    The argument '-s' forces to run the graph in a simple processing, which
+    means that the first node of the graph will be executed in a process, and
+    the rest of nodes will be executed in a second process.
+    When <-i number of interations/runs> is not indicated, the graph is
+    executed once by default.
 
     For example::
-    
-        mpiexec -n 11 python -m dispel4py.worker_mpi dispel4py.examples.graph_testing.grouping_alltoone -i 10
-        
+
+        mpiexec -n 11 python -m dispel4py.worker_mpi \
+            dispel4py.examples.graph_testing.grouping_alltoone -i 10
+
     .. note::
-    
-        Each node in the graph is executed as a separate MPI process. 
-        This graph has 11 nodes. For this reason we need at least 11 MPI processes to execute it. 
-        
+
+        Each node in the graph is executed as a separate MPI process.
+        This graph has 11 nodes. For this reason we need at least 11 MPI
+        processes to execute it.
+
     Output::
-			
+
         Processing 10 iterations
-        Processes: {'TestProducer0': [5], 'TestOneInOneOut2': [6, 7, 8, 9, 10], 'TestOneInOneOut1': [0, 1, 2, 3, 4]}
+        Processes: {'TestProducer0': [5], \
+            'TestOneInOneOut2': [6, 7, 8, 9, 10],\
+            'TestOneInOneOut1': [0, 1, 2, 3, 4]}
         TestOneInOneOut1 (rank 0): I'm a bolt
         TestOneInOneOut1 (rank 1): I'm a bolt
         TestOneInOneOut2 (rank 9): I'm a bolt
@@ -79,32 +90,35 @@ It can be executed with MPI and STORM.
         TestOneInOneOut2 (rank 6): I'm a bolt
         TestOneInOneOut2 (rank 6): Processed 10 input block(s)
         TestOneInOneOut2 (rank 6): Completed.
-        
-    Note that only one instance of the consumer node ``TestOneInOneOut2`` (rank 6) received all the input blocks from the previous PE,
+
+    Note that only one instance of the consumer node ``TestOneInOneOut2``
+    (rank 6) received all the input blocks from the previous PE,
     as the grouping has been defined as `global`.
-				
-* STORM:  
+
+* STORM:
 '''
 
 from dispel4py.examples.graph_testing import testing_PEs as t
 from dispel4py.workflow_graph import WorkflowGraph
 
+
 def testAlltoOne():
     '''
     Creates a graph with two consumer nodes and a global grouping.
-    
+
     :rtype: the created graph
     '''
     graph = WorkflowGraph()
     prod = t.TestProducer()
     cons1 = t.TestOneInOneOut()
     cons2 = t.TestOneInOneOut()
-    cons1.numprocesses=5
-    cons2.numprocesses=5
+    cons1.numprocesses = 5
+    cons2.numprocesses = 5
     graph.connect(prod, 'output', cons1, 'input')
     cons2.inputconnections['input']['grouping'] = 'global'
     graph.connect(cons1, 'output', cons2, 'input')
     return graph
+
 
 ''' important: this is the graph_variable '''
 graph = testAlltoOne()
