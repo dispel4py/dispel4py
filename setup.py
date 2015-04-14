@@ -15,6 +15,7 @@
 import os
 from setuptools import setup
 
+
 # Utility function to read the README file.
 # Used for the long_description.  It's nice, because now 1) we have a top level
 # README file and 2) it's easier to type in the README file than to put a raw
@@ -22,16 +23,23 @@ from setuptools import setup
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+
 setup(
-    name = "dispel4py",
-    version = "1.0.1",
-    author = "The University of Edinburgh",
-    author_email = "a.krause@epcc.ed.ac.uk",
-    description = ("Dispel4py is a Python library used to describe abstract workflows for distributed data-intensive applications."),
-    license = "Apache 2",
-    keywords = "dispel4py dispel workflows processing elements data intensive",
-    url = "http://dispel4py.org",
-    packages=['dispel4py', 'dispel4py.new', 'dispel4py.seismo', 'dispel4py.storm', 'dispel4py.examples', 'dispel4py.examples.graph_testing'],
+    name="dispel4py",
+    version="1.0.1",
+    author="The University of Edinburgh",
+    author_email="a.krause@epcc.ed.ac.uk",
+    description=("Dispel4py is a Python library used to describe abstract \
+        workflows for distributed data-intensive applications."),
+    license="Apache 2",
+    keywords="dispel4py dispel workflows processing elements data intensive",
+    url="http://dispel4py.org",
+    packages=['dispel4py',
+              'dispel4py.new',
+              'dispel4py.seismo',
+              'dispel4py.storm',
+              'dispel4py.examples',
+              'dispel4py.examples.graph_testing'],
     long_description=read('README.md'),
     install_requires=['networkx', 'flake8'],
     entry_points={

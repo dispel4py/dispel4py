@@ -1,5 +1,5 @@
 # Copyright (c) The University of Edinburgh 2014
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -14,30 +14,33 @@
 
 import storm
 
+
 class OutputWriter(object):
-    
+
     def __init__(self, scriptname, streamname):
         self.scriptname = scriptname
         self.streamname = streamname
-        
+
     def write(self, output):
         result = output if isinstance(output, list) else [output]
         try:
             storm.emit(result, stream=self.streamname)
-            storm.log("Dispel4Py ------> %s: Emitted to stream %s." % (self.scriptname, self.streamname))
+            storm.log("Dispel4Py ------> %s: Emitted to stream %s."
+                      % (self.scriptname, self.streamname))
         except TypeError:
             # encode manually
             encoded = encode_types(result)
             storm.emit(encoded, stream=self.streamname)
-            storm.log("Dispel4Py ------> %s: Emitted to stream %s." % (self.scriptname, self.streamname))
-        
+            storm.log("Dispel4Py ------> %s: Emitted to stream %s."
+                      % (self.scriptname, self.streamname))
+
 import io
-import json
 import numpy
 import base64
 import pickle
 from obspy.core import read as obread
 from obspy.core.stream import Stream
+
 
 def encode_types(obj):
     # storm.log('encoding %s' % str(obj))
@@ -53,13 +56,13 @@ def encode_types(obj):
     elif isinstance(obj, dict):
         new_obj = dict()
         for k, v in obj.iteritems():
-            new_obj[k]=encode_types(v)
+            new_obj[k] = encode_types(v)
     elif isinstance(obj, Stream):
         buf = io.BytesIO()
         obj.write(buf, "MSEED")
         new_obj = {
-            '__dispel4py.type__' : 'obspy.Stream',
-            'data' : base64.b64encode(buf.getvalue())
+            '__dispel4py.type__': 'obspy.Stream',
+            'data': base64.b64encode(buf.getvalue())
         }
         responses = []
         for tr in obj:
@@ -70,13 +73,14 @@ def encode_types(obj):
         if responses:
             new_obj['response'] = responses
     elif isinstance(obj, numpy.ndarray):
-        new_obj = { 
-            '__dispel4py.type__' : 'numpy.ndarray', 
-            'dtype' : obj.dtype.name, 
-            'data' : base64.b64encode(obj)
+        new_obj = {
+            '__dispel4py.type__': 'numpy.ndarray',
+            'dtype': obj.dtype.name,
+            'data': base64.b64encode(obj)
         }
     return new_obj
-    
+
+
 def decode_types(obj):
     new_obj = obj
     if isinstance(obj, (tuple, list)):
@@ -106,5 +110,5 @@ def decode_types(obj):
         # if it's just a normal dictionary then decode recursively
         new_obj = dict()
         for k, v in obj.iteritems():
-            new_obj[k]=decode_types(v)
+            new_obj[k] = decode_types(v)
     return new_obj

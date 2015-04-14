@@ -1,5 +1,5 @@
 # Copyright (c) The University of Edinburgh 2014
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -16,10 +16,11 @@
 Tests for multiprocessing engine.
 '''
 
-from nose import tools
-from dispel4py.examples.graph_testing.testing_PEs import TestProducer, TestOneInOneOut
+from dispel4py.examples.graph_testing.testing_PEs\
+    import TestProducer, TestOneInOneOut
 from dispel4py.workflow_graph import WorkflowGraph
 from dispel4py.multi_process import multiprocess
+
 
 def testPipeline():
     graph = WorkflowGraph()
@@ -27,13 +28,15 @@ def testPipeline():
     cons = TestOneInOneOut()
     graph.connect(prod, 'output', cons, 'input')
     multiprocess(graph, 2, [{}, {}, {}, {}, {}])
-    
+
+
 def testPipelineMulti():
     graph = WorkflowGraph()
     prod = TestProducer()
     cons = TestOneInOneOut()
     graph.connect(prod, 'output', cons, 'input')
     multiprocess(graph, 6, [{}, {}, {}, {}, {}])
+
 
 def testTwoPipelines():
     graph = WorkflowGraph()
@@ -44,6 +47,7 @@ def testTwoPipelines():
     graph.connect(prod1, 'output', cons1, 'input')
     graph.connect(prod2, 'output', cons2, 'input')
     multiprocess(graph, 2, [{}, {}, {}, {}, {}])
+
 
 def testTee():
     graph = WorkflowGraph()
