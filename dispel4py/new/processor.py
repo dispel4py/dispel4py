@@ -707,7 +707,7 @@ def main():
     inputs = {}
     if args.file:
         if not os.path.exists(args.file):
-            raise ValueError("File '%s' does not exists." % args.file)
+            raise ValueError("File '%s' does not exist." % args.file)
         try:
             with open(args.file) as inputfile:
                 inputs = json.loads(inputfile.read())
