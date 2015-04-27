@@ -15,7 +15,6 @@
 from dispel4py.workflow_graph import WorkflowGraph
 
 from dispel4py.registry import core
-# reg = core.initRegistry(username='admin', password='admin', url='https://escience8.inf.ed.ac.uk:443')
 reg = core.initRegistry(username='iraklis', password='iraklis')
 
 import Local
