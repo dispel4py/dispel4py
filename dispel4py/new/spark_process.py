@@ -9,14 +9,15 @@ Run as follows::
         [-d <input data>]
         [-a <graph attribute>]
 
-The graph module must either be included in the python package with `--py-files`
-and specified as a module name, or, if providing a filename, the filename must
-be absolute and the file must be available on each node of the Spark cluster.
+The graph module must either be included in the python package with
+`--py-files` and specified as a module name, or, if providing a filename,
+the filename must be absolute and the file must be available on each node of
+the Spark cluster.
 
 For example::
 
     spark-submit --py-files=/path/to/dispel4py-1.0.1-py2.7.egg
-        dispel4py/new/spark_process.py 
+        dispel4py/new/spark_process.py
         dispel4py.examples.graph_testing.pipeline_test -i 10
 
 If the input JSON data contains a URI to a text file this will be read as a
@@ -109,7 +110,7 @@ class Rename(object):
         self.mapping = mapping
 
     def rename(self, data):
-        print 'renaming data: %s, mapping is: %s' % (data, self.mapping,)
+        # print 'renaming data: %s, mapping is: %s' % (data, self.mapping,)
         result = {}
         for o, i in self.mapping.items():
             if o in data:
@@ -138,11 +139,11 @@ def process(sc, workflow, inputs, args):
         for p in processes[pe.id]:
             process_to_pes[p] = pe
             wrappers[p] = wrapper
-    print 'Processes: %s' % processes
-    print inputmappings
-    print outputmappings
+    # print 'Processes: %s' % processes
+    # print inputmappings
+    # print outputmappings
     ordered = _order_by_dependency(inputmappings, outputmappings)
-    print 'Ordered processes: %s' % ordered
+    # print 'Ordered processes: %s' % ordered
     output_rdd = {}
     result_rdd = {}
 
@@ -238,10 +239,10 @@ def main():
     if graph is None:
         return
     graph.flatten()
-    
+
     inputs = processor.create_inputs(args, graph)
     print 'Inputs: %s' % inputs
-    
+
     process(sc, graph, inputs=inputs, args=args)
 
 if __name__ == '__main__':
