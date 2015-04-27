@@ -40,17 +40,17 @@ class PEWrapper(object):
         self.pe.preprocess()
 
     def process(self, data):
-        self.pe.log('processing %s' % data)
+        # self.pe.log('processing %s' % data)
         for output, desc in self.pe.outputconnections.items():
             desc['writer'] = SimpleWriter(output)
         result = self.pe.process(data)
-        self.pe.log('result: %s' % result)
+        # self.pe.log('result: %s' % result)
         written = []
         if result is not None:
             written.append(result)
         for output, desc in self.pe.outputconnections.items():
             written.extend(desc['writer'].data)
-        self.pe.log('writing: %s' % written)
+        # self.pe.log('writing: %s' % written)
         return written
 
 
@@ -196,7 +196,6 @@ def process(sc, workflow, inputs, args):
             out_rdd = start_rdd.flatMap(wrapper.process)
             if len(outs) == 1:
                 for output_name in outs:
-                    print 'connecting %s' % output_name
                     for inp in outs[output_name]:
                         input_name = inp[0]
                         rename = Rename({output_name: input_name})
@@ -213,7 +212,7 @@ def process(sc, workflow, inputs, args):
                             out_rdd.flatMap(rename.rename)
             if not outs:
                 result_rdd[proc] = out_rdd
-    print "RESULT PROCESSES: %s" % result_rdd.keys()
+    # print "RESULT PROCESSES: %s" % result_rdd.keys()
     for p in result_rdd:
         result = result_rdd[p].collect()
         print 'RESULT FROM %s: %s' % (p, result)
@@ -241,7 +240,6 @@ def main():
     graph.flatten()
 
     inputs = processor.create_inputs(args, graph)
-    print 'Inputs: %s' % inputs
 
     process(sc, graph, inputs=inputs, args=args)
 
