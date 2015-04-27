@@ -1,5 +1,5 @@
 # Copyright (c) The University of Edinburgh 2014
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -28,8 +28,8 @@ AUTH_HEADER = 'X-Auth-Token'
 
 class VerceRegistry(object):
     '''
-    Dispel4Py's interface to the VERCE Registry. Dispel4Py could work withut a registry or through 
-    connecting to alternative registries of python and dispel4py components. In this instance this 
+    Dispel4Py's interface to the VERCE Registry. Dispel4Py could work withut a registry or through
+    connecting to alternative registries of python and dispel4py components. In this instance this
     makes use of the VERCE Registry's REST API.
     '''
     
@@ -50,7 +50,7 @@ class VerceRegistry(object):
         self.workspace = wspc_id
         
         # print 'Initialised VerceRegistry object for ' + self.registry_url
-        
+    
     def set_workspace(self, wspc_id):
         self.workspace = wspc_id
     
@@ -69,7 +69,7 @@ class VerceRegistry(object):
             self.user = user
         except:
             raise NotAuthorisedException()
-            
+    
     def find_module(self, fullname, path=None):
         try:
             url = self.registry_url + "workspace/%s?packagesByPrefix=%s&exists=true" % (self.workspace, fullname)
@@ -89,7 +89,7 @@ class VerceRegistry(object):
                 # print "found code for " + fullname
                 self.registered_entities[fullname] = code
                 return self
-
+    
     def clone(self, wspc_id, clone_name):
         ''' Clone the given Workspace(wspc_id) into a new one named clone_name. '''
         try:
@@ -103,12 +103,12 @@ class VerceRegistry(object):
             print traceback.format_exc()
             sys.stderr.write("An error occurred:\n%s\n" % err)
             sys.exit(-1)
-
+    
     def load_module(self, fullname):
         # print "load_module " + fullname
         if fullname in sys.modules:
             return sys.modules[fullname]
-            
+        
         mod = imp.new_module(fullname)
         mod.__loader__ = self
         sys.modules[fullname] = mod
@@ -119,21 +119,21 @@ class VerceRegistry(object):
         mod.__file__ = "[%r]" % fullname
         mod.__path__ = []
         return mod
-
+    
     def get_code(self, fullname):
         '''
-        Retrieves and returns the source code of the dispel4py component identified by 'fullname'. 
-        'fullname' is in the form package.name. 
+        Retrieves and returns the source code of the dispel4py component identified by 'fullname'.
+        'fullname' is in the form package.name.
         '''
         impl_id = self.getImplementationId(fullname)
         if impl_id:
             response = requests.get(self.registry_url + "implementation/%s" % impl_id, headers=getHeaders(self.token))
             if response.status_code == requests.codes.ok:
                 return response.json()["code"]
-                
+    
     def update_code(self, fullname, code):
-        ''' 
-        Updates/replaces the source code of the given dispel4py component identified by 'fullname' 
+        '''
+        Updates/replaces the source code of the given dispel4py component identified by 'fullname'
         with the contents of 'code'.
         '''
         impl_id = self.getImplementationId(fullname)
@@ -151,7 +151,7 @@ class VerceRegistry(object):
             print "Error: %s" % response_json["errors"]
             raise Exception("Implementation update failed")
         return response_json["id"]
-
+    
     def getImplementationId(self, fullname):
         pkg, simpleName = split_name(fullname)
         url = self.registry_url + "workspace/%s/%s/%s?deep=true" % (self.workspace, pkg, simpleName)
@@ -159,7 +159,7 @@ class VerceRegistry(object):
             response = requests.get(url, headers=getHeaders(self.token))
         except:
             return None
-
+        
         if response.status_code != requests.codes.ok:
             return None
         
@@ -167,7 +167,7 @@ class VerceRegistry(object):
         if "implementations" in json:
             impl_id = json["implementations"][0]["id"]
             return impl_id
-                
+    
     def register_gendef(self, pkg, simpleName):
         gendef = {}
         gendef["user"] = { 'username' : self.user }
@@ -183,7 +183,7 @@ class VerceRegistry(object):
             print response.text
             raise RegistrationFailed, "Registration of generic definition failed", sys.exc_info()[2]
         return response.json().get("id")
-                
+    
     def register_implementation(self, sigId, pkg, simpleName, path):
         with open(path, "r") as src:
             code = src.read()
@@ -206,13 +206,13 @@ class VerceRegistry(object):
             print "Error: %s" % response_json["errors"]
             raise Exception("Registration of implementation failed")
         return response_json["id"]
-        
+    
     def register_function(self, fullname, functionName, path):
         '''
-        Registers a dispel4py/python function with the VERCE Registry. The function is registered under 
+        Registers a dispel4py/python function with the VERCE Registry. The function is registered under
         'fullname' and it is identified by 'functionName'. 'path' is the path to a file containing
         the source code of the function to be registered.
-        '''           
+        '''
         pkg, simpleName = split_name(fullname)
         
         # load the code
@@ -252,13 +252,13 @@ class VerceRegistry(object):
         except:
             requests.delete(self.registry_url + "gendef/%s" % genDefId)
             raise
-            
-    def register_pe(self, fullname, className, path):   
+    
+    def register_pe(self, fullname, className, path):
         '''
-        Registers a dispel4py processing element (PE) with the VERCE Registry. The PE is registered under 
+        Registers a dispel4py processing element (PE) with the VERCE Registry. The PE is registered under
         'fullname' and it is identified by 'className'. 'path' is the path to a file containing
         the source code of the PE to be registered.
-        '''          
+        '''
         pkg, simpleName = split_name(fullname)
         
         # load the code
@@ -309,7 +309,7 @@ class VerceRegistry(object):
             # delete everything that was registered if anything went wrong
             requests.delete(self.registry_url + "gendef/%s" % genDefId)
             raise
-            
+    
     def list(self, pkg):
         '''
         Lists the contents of package 'pkg'.
@@ -325,7 +325,7 @@ class VerceRegistry(object):
         elif response.status_code == requests.codes.not_found: # not found
             raise UnknownPackageException(pkg)
         return result
-            
+    
     def listPackages(self, pkg):
         '''
         Lists the packages contained within package 'pkg'.
@@ -339,7 +339,7 @@ class VerceRegistry(object):
         elif response.status_code == requests.codes.not_found: # not found
             raise UnknownPackageException(pkg)
         return result
-        
+    
     def delete(self, fullname):
         pkg, simpleName = split_name(fullname)
         # assume that the gen def is defined in subpackage PKG_GENERICDEF
@@ -355,7 +355,7 @@ class VerceRegistry(object):
                 print response.text
         else:
             print "Cannot find " + fullname
-            
+    
     def createWorkspace(self, name):
         url = self.registry_url + 'workspace'
         data = { 'workspace': { 'name' : name, 'owner' : self.user } }
@@ -375,7 +375,7 @@ class VerceRegistry(object):
         return response
 
 ##############################################################################
-# Utility and static methods: 
+# Utility and static methods:
 ##############################################################################
 
 def remove_registry_from_meta_path():
@@ -400,7 +400,7 @@ def initRegistry(username=None, password=None, url=DEF_URL, workspace=DEF_WORKSP
     reg.user = username
     
     # FIXME Check 'dummy' works on the registry and if not, add it - this is to quickly see if we're logged in
-    if token: 
+    if token:
         reg.token = token
         response = requests.get(url + 'dummy', headers=getHeaders(token))
         if response.status_code == requests.codes.forbidden:
@@ -412,37 +412,37 @@ def initRegistry(username=None, password=None, url=DEF_URL, workspace=DEF_WORKSP
     
     sys.meta_path.append(reg)
     return reg
-        
+
 def split_name(fullname):
     parts = fullname.split('.')
     pkg = ".".join(parts[:-1])
     simpleName = parts[-1]
-    return pkg, simpleName    
-    
+    return pkg, simpleName
+
 def getHeaders(token):
     if token:
         return { AUTH_HEADER : token }
     else:
         raise NotAuthorisedException()
-    
+
 class NotAuthorisedException(Exception):
-    pass    
+    pass
 
 class UnknownPackageException(Exception):
     pass
-    
+
 class RegistrationFailed(Exception):
     pass
 
 import os
 
 def createResources(resources_dir, registry):
-    ''' 
-    Caches source code imported from the registry 
+    '''
+    Caches source code imported from the registry
     
     :param resources_dir: directory for caching the source code
     :param registry: the dispel4py registry, may be None.
-    '''    
+    '''
     if not registry:
         return
     for mod, code in registry.registered_entities.iteritems():
@@ -465,10 +465,10 @@ def store_resource(resources_dir, mod, code):
             fullpath = resources_dir + '/'
             for part in pkg.split('/')[:-1]:
                 fullpath += part + '/'
-                open(fullpath + "__init__.py", 'w').close() 
+                open(fullpath + "__init__.py", 'w').close()
         with open(path, "w") as code_file:
             code_file.write(code)
-        # print "Wrote source code to %s" % path 
+        # print "Wrote source code to %s" % path
     except AttributeError:
         print "Warning: Could not find source code for module " + mod
     except Exception as exc:

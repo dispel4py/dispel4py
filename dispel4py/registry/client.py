@@ -1,5 +1,5 @@
 # Copyright (c) The University of Edinburgh 2014
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -18,8 +18,8 @@ import os
 import json
 import base64
 import inspect
-import tempfile
-import subprocess
+# import tempfile
+# import subprocess
 import traceback
 import getpass
 
@@ -31,13 +31,14 @@ DISPEL4PY_CONFIG_DIR = os.path.expanduser('.dispel4py/')
 CACHE = DISPEL4PY_CONFIG_DIR + '.cache'
 CONFIG_NAME = 'config.json'
 
+
 def login(username, password=None, conf=None):
     if username is None:
-        username = raw_input('Username: ') 
+        username = raw_input('Username: ')
     if password is None:
         password = getpass.getpass('Password: ')
     if conf is None:
-        conf=configure()
+        conf = configure()
     workspace = conf['verce.registry']['workspace']
     url = None
     if 'VERCEREGISTRY_HOST' in os.environ:
@@ -45,7 +46,8 @@ def login(username, password=None, conf=None):
     else:
         url = conf['verce.registry']['url']
     try:
-        reg = core.initRegistry(username, password, url=url, workspace=workspace)
+        reg = core.initRegistry(username, password, url=url,
+                                workspace=workspace)
     except core.NotAuthorisedException:
         sys.stderr.write("Not authorised.\n")
         sys.exit(4)
@@ -58,17 +60,19 @@ def login(username, password=None, conf=None):
         file.write('%s\n%s\n%s' % (username, enc, reg.token))
     # print 'Logged in.'
     return reg
-        
+
+
 def removeCache():
     try:
         os.remove(CACHE)
     except:
         pass
     print 'Cleared login cache.'
-        
+
+
 def _initRegistry(config=None, username=None, password=None):
     token = None
-    if (config==None):
+    if config is None:
         config = configure()
     if not username:
         try:
@@ -76,12 +80,12 @@ def _initRegistry(config=None, username=None, password=None):
                 [username, enc, token] = file.read().splitlines()
                 password = base64.b64decode(enc)
         except IOError:
-            username = raw_input("Username: ")  
+            username = raw_input("Username: ")
             password = getpass.getpass('Password: ')
     elif not password:
         password = getpass.getpass('Password: ')
 
-    reg_conf = config['verce.registry']   
+    reg_conf = config['verce.registry']
     try:
         workspace = reg_conf['workspace']
     except KeyError:
@@ -90,12 +94,13 @@ def _initRegistry(config=None, username=None, password=None):
     try:
         url = reg_conf['url']
     except KeyError:
-        url = registry.DEF_URL
-        
+        url = core.Registry.DEF_URL
+
     try:
         if token:
             try:
-                reg = core.initRegistry(username=username, token=token, url=url, workspace=workspace)
+                reg = core.initRegistry(username=username, token=token,
+                                        url=url, workspace=workspace)
             except core.NotAuthorisedException:
                 reg = login(username, password)
         else:
@@ -103,13 +108,14 @@ def _initRegistry(config=None, username=None, password=None):
     except core.NotAuthorisedException:
         sys.stderr.write("Not authorised.\n")
         sys.exit(4)
-    
+
     return reg
 
+
 def register(reg, name, attr, file=None):
-    '''
-    Register the contents of the given file under the given name. If a file is not provided, use stdin.
-    '''
+    """Register the contents of the given file under the given name.
+    If a file is not provided, use stdin."""
+
     pkg, simpleName = core.split_name(name)
     if file:
         with open(file, 'r') as source_file:
@@ -129,9 +135,11 @@ def register(reg, name, attr, file=None):
         sys.stderr.write("An error occurred:\n%s\n" % err)
         sys.exit(-1)
 
+
 def __select_wspc(reg):
-    ''' List all workspaces and allow the user to select one - return (workspace's id, name) '''
-    
+    """List all workspaces and allow the user to select one
+    - return (workspace's id, name)"""
+
     resp = None
     try:
         resp = reg.listWorkspaces()
@@ -160,33 +168,38 @@ def __select_wspc(reg):
     if choice < 0 or choice > len(resp.json()):
         sys.stderr.write('Invalid selection - out of bounds.\n')
         sys.exit(3)
-    
-    return (resp.json()[choice-1]['id'],resp.json()[choice-1]['name'])
+
+    return (resp.json()[choice-1]['id'], resp.json()[choice-1]['name'])
+
 
 def clone_workspace(reg):
-    ''' Clone a workspace by choosing one of the existing ones '''
-    
-    print 'Please select a workspace to clone by providing the corresponding number. Enter 0 to exit.'
+    """Clone a workspace by choosing one of the existing ones."""
+
+    print ('Please select a workspace to clone by providing the ' +
+           'corresponding number. Enter 0 to exit.')
     wspc_id, wspc_name = __select_wspc(reg)
-    
+
     new_name = raw_input('Please provide a name for the new workspace: ')
     try:
         reg.clone(wspc_id, new_name)
     except Exception as err:
         sys.stderr.write("An error occurred:\n%s\n" % err)
         sys.exit(-1)
-    
-    print 'New workspace created \'' + new_name + '\' as a clone of \'' + wspc_name + '\''
+
+    print ('New workspace created \'' + new_name + '\' as a clone of \'' +
+           wspc_name + '\'')
+
 
 def workspace(reg):
     ''' Choose a new default workspace '''
 
-    print 'Please select one of the following workspaces by providing the corresponding number. Enter 0 to exit.'
+    print ('Please select one of the following workspaces by providing ' +
+           'the corresponding number. Enter 0 to exit.')
     wspc_id, wspc_name = __select_wspc(reg)
     set_default_workspace(wspc_id)
-    print 'Active workspace changed to \'' + wspc_name + '\'' 
-    
-    
+    print 'Active workspace changed to \'' + wspc_name + '\''
+
+
 def view(reg, name):
     '''
     Display the source for the Dispel4Py entity identified by 'name'
@@ -205,6 +218,7 @@ def view(reg, name):
         sys.stdout.write(source)
         sys.stdout.write('\n')
 
+
 def __lst_pckgs(reg):
     '''List the packages of a workspace'''
     packages = set([])
@@ -218,37 +232,40 @@ def __lst_pckgs(reg):
         print traceback.format_exc()
         sys.stderr.write("An error occurred:\n%s\n" % err)
         sys.exit(-1)
-    
+
     if wspc_json == []:
-        sys.stderr.write('Empty response received. The default workspace may not exist. Try switching to a valid workspace by calling "workspace" first.\n')
+        sys.stderr.write('Empty response received. The default workspace' +
+                         ' may not exist. Try switching to a valid ' +
+                         'workspace by calling "workspace" first.\n')
         sys.exit(5)
-        
+
     for wi in wspc_json['workspaceItems']:
         p = wi['pckg']
         if not p.endswith('__gendef') and not p.endswith('__impl'):
             packages.add(str(wi['pckg']))
     # packs =  list(packages) -- this causes an error for whatever reason...
-    packs=[]
+    packs = []
     for i in packages:
         packs.append(i)
     packs.sort()
-    if len(packs)>0:
+    if len(packs) > 0:
         print 'Packages:'
         print '\n'.join('   ' + p for p in packs)
     else:
         print 'No packages found.'
-        
+
+
 def list(reg, name=''):
     '''
     List the contents of the package with 'name'.
     '''
-    
+
     print 'Listing of Workspace:' + str(reg.workspace)
     # XXX: Refactor / special case for name=''
-    if name=='':
+    if name == '':
         __lst_pckgs(reg)
         return
-        
+
     try:
         pkgs = reg.listPackages(name)
     except core.UnknownPackageException as exc:
@@ -261,12 +278,15 @@ def list(reg, name=''):
         print traceback.format_exc()
         sys.stderr.write("An error occurred:\n%s\n" % err)
         sys.exit(-1)
-        
+
     if pkgs == []:
-        sys.stderr.write('Empty response received. The default workspace may not exist. Try switching to a valid workspace by calling "workspace" first.\n')
+        sys.stderr.write('Empty response received. The default ' +
+                         'workspace may not exist. Try switching to a' +
+                         ' valid workspace by calling "workspace" first.\n')
         sys.exit(5)
-        
-    if pkgs: sys.stdout.write("Packages:\n")
+
+    if pkgs:
+        sys.stdout.write("Packages:\n")
     for pkg in pkgs:
         # ignore internal packages __gendef and __impl
         if not pkg.endswith('__gendef') and not pkg.endswith('__impl'):
@@ -279,7 +299,7 @@ def list(reg, name=''):
     except Exception as err:
         sys.stderr.write("An error occurred:\n%s\n" % err)
         sys.exit(-1)
-    if objs: 
+    if objs:
         sys.stdout.write("Processing Elements:\n\033[94m")
         for obj in objs:
             try:
@@ -297,72 +317,89 @@ def list(reg, name=''):
             except:
                 pass
         sys.stdout.write('\033[0m')
-        
+
+
 def delete(reg, name):
     reg.delete(name)
-        
+
+
 def updateCode(reg, name, code):
-    ''' 
-    Updates/replaces the source code of the given Dispel4Py component identified by 'name' 
-    with the contents of 'code'.
-    '''
+    """Updates/replaces the source code of the given Dispel4Py component
+    identified by 'name' with the contents of 'code'."""
+
     reg.update_code(name, code)
+
 
 def update(reg, name, file):
     with open(file, "r") as src:
         code = src.read()
     updateCode(reg, name, code)
 
-def edit(reg, name):
-    '''
-    Downloads the source code of the given Dispel4Py component identified by 'name' and opens
-    an editor. When the editor is closed the modified source code is uploaded to the registry.
-    '''
-    temp_path = None
-    def_editor = getEditor()
-    try:
-        if not def_editor:
-            sys.stderr.write("Please specify environment variable EDITOR or 'default.editor' in the Dispel4Py configuration.")
-        source = reg.get_code(name)
-        fd, temp_path = tempfile.mkstemp()
-        if source is not None:
-            file = open(temp_path, 'w')
-            data = file.write(source)
-            file.close()
-        os.close(fd)
-        subprocess.call([def_editor, temp_path])
-        if source is None:
-            register(name, temp_path)
-        else:
-            update(reg, name, temp_path)
-    except Exception as err:
-        if temp_path: os.remove(temp_path)
-        import traceback
-        traceback.print_exc()
-        sys.stderr.write("An error occurred:\n%s\n" % err)
-        sys.exit(-1)
+
+# def edit(reg, name):
+#     """
+#     Downloads the source code of the given Dispel4Py component identified by
+#     'name' and opens an editor. When the editor is closed the modified source
+#     code is uploaded to the registry.
+#     """
+#     temp_path = None
+#     def_editor = getEditor()
+#     try:
+#         if not def_editor:
+#             sys.stderr.write("Please specify environment variable EDITOR" +
+#                              " or 'default.editor' in the Dispel4Py " +
+#                              "configuration.")
+#         source = reg.get_code(name)
+#         fd, temp_path = tempfile.mkstemp()
+#         if source is not None:
+#             file = open(temp_path, 'w')
+#             # data = file.write(source)
+#             file.close()
+#         os.close(fd)
+#         subprocess.call([def_editor, temp_path])
+#         if source is None:
+#             register(name, temp_path)
+#         else:
+#             update(reg, name, temp_path)
+#     except Exception as err:
+#         if temp_path:
+#             os.remove(temp_path)
+#         import traceback
+#         traceback.print_exc()
+#         sys.stderr.write("An error occurred:\n%s\n" % err)
+#         sys.exit(-1)
+
 
 def usage():
     sys.stderr.write("Usage: dispel4py <command> <arguments ...> \n")
     sys.stderr.write("Commands:\n")
-    sys.stderr.write("  - login [-u USERNAME] [-p PASSWORD]: Log in and store the username and password.")
-    sys.stderr.write("  - list <package>: Lists all PEs and functions in the given package.\n")
-    sys.stderr.write("  - register <name> <file>: Registers a dispel4py component specified in the given file, under the given name.\n")
-    sys.stderr.write("  - view <name>: Displays the source code of the given Dispel4Py component.\n")
-    sys.stderr.write("  - edit <name>: Edits the given dispel4py component and registers the modified source.\n")
-    sys.stderr.write("  - update <name> <file>: Updates an existing Dispel4Py component.\n")
+    sys.stderr.write("  - login [-u USERNAME] [-p PASSWORD]: Log in and \
+                     store the username and password.")
+    sys.stderr.write("  - list <package>: Lists all PEs and functions in the \
+                     given package.\n")
+    sys.stderr.write("  - register <name> <file>: Registers a dispel4py \
+                     component specified in the given file, under the given\
+                      name.\n")
+    sys.stderr.write("  - view <name>: Displays the source code of the given\
+                     Dispel4Py component.\n")
+    sys.stderr.write("  - edit <name>: Edits the given dispel4py component and\
+                     registers the modified source.\n")
+    sys.stderr.write("  - update <name> <file>: Updates an existing Dispel4Py \
+                     component.\n")
 
-def getEditor():
-    def_editor = None
-    try:
-        def_editor = os.environ['EDITOR'].encode('utf-8')
-    except KeyError:
-        pass
-    try:
-        def_editor = config['default.editor']
-    except:
-        pass
-    return def_editor
+
+# def getEditor():
+#     def_editor = None
+#     try:
+#         def_editor = os.environ['EDITOR'].encode('utf-8')
+#     except KeyError:
+#         pass
+#     try:
+#         def_editor = conf['default.editor']
+#     except:
+#         pass
+#     return def_editor
+
 
 def configure():
     configName = '.dispel4py/' + CONFIG_NAME
@@ -375,11 +412,13 @@ def configure():
             CONFIG = os.path.abspath(configName)
         else:
             # or in the user home directory
-            CONFIG = os.path.abspath('%s%s' % (DISPEL4PY_CONFIG_DIR, CONFIG_NAME))
+            CONFIG = os.path.abspath('%s%s' % (DISPEL4PY_CONFIG_DIR,
+                                     CONFIG_NAME))
             CONFIG = os.path.abspath(DISPEL4PY_CONFIG_DIR + CONFIG_NAME)
     if not os.path.isfile(CONFIG):
         # create config
-        conf = { 'verce.registry' : { 'url' : core.DEF_URL, 'workspace' : core.DEF_WORKSPACE } }
+        conf = {'verce.registry': {'url': core.DEF_URL,
+                                   'workspace': core.DEF_WORKSPACE}}
         with open(CONFIG, 'w') as config_file:
             config_file.write(json.dumps(conf))
     else:
@@ -387,15 +426,18 @@ def configure():
             with open(CONFIG, 'r') as config_file:
                 conf = json.load(config_file)
         except:
-            # the file exists but it's invalid - remove it so that it gets recreated next time idispel4py is run
+            # the file exists but it's invalid - remove it so that it gets
+            # recreated next time idispel4py is run
             os.remove(configName)
-            sys.stderr.write("No valid configuration found. Please ensure that the configuration is available at ~/%s or define $DISPEL4PY_CONFIG.\n" % configName)
+            sys.stderr.write("No valid configuration found. Please ensure \
+                             that the configuration is available at ~/%s or \
+                             define $DISPEL4PY_CONFIG.\n" % configName)
             sys.exit(1)
     return conf
-    
-    
+
+
 def set_default_workspace(wspc_id):
-    CONFIG = None 
+    CONFIG = None
     if 'DISPEL4PY_CONFIG' in os.environ:
         CONFIG = os.environ['DISPEL4PY_CONFIG'].encode('utf-8')
     else:
@@ -409,13 +451,16 @@ def set_default_workspace(wspc_id):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='View and register Dispel4Py objects in a registry.')
-    parser.add_argument('command', help='command to execute, one of: list, view, register, workspace')
+    parser = argparse.ArgumentParser(description='View and register Dispel4Py \
+                                     objects in a registry.')
+    parser.add_argument('command', help='command to execute, one of: list, \
+                        view, register, workspace')
     parser.add_argument('args', nargs='*', help='command arguments')
-    parser.add_argument('-u', '--username', help='username for registry access')
+    parser.add_argument('-u', '--username',
+                        help='username for registry access')
     parser.add_argument('-p', '--password', help='password')
     args = parser.parse_args()
-    
+
     if args.command == 'login':
         login(args.username, args.password)
     elif args.command == 'exit':
@@ -428,6 +473,6 @@ def main():
         except KeyError:
             sys.stderr.write("Unknown command: %s\n" % args.command)
             usage()
-    
+
 if __name__ == '__main__':
     main()

@@ -1,5 +1,5 @@
 # Copyright (c) The University of Edinburgh 2014
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -27,13 +27,14 @@ from fns.reg_random_int import reg_random_int
 # Direct implementation import
 from impls.RandomIntImpl2 import reg_random_int as rand2
 
+Local.test_method()
+
 # print reg_random_int.__doc__
-print '> ' + str(reg_random_int(10,100))
-print '>>' + str(rand2(10,100))
+print '> ' + str(reg_random_int(10, 100))
+print '>>' + str(rand2(10, 100))
 
 words = RandomWordProducer()
 filter = RandomFilter()
 
 graph = WorkflowGraph()
 graph.connect(words, 'output', filter, 'input')
-
