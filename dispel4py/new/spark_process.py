@@ -189,10 +189,10 @@ def process(sc, workflow, inputs, args):
                 # only one slice so there no repetitions - not the best
                 start_rdd = sc.parallelize(pe_input, 1)
             elif isinstance(pe_input, (int, long)):
-                start_rdd = sc.parallelize(range(pe_input), 1)
+                start_rdd = sc.parallelize(xrange(pe_input), 1)
             else:
                 # fingers crossed it's a string and the file exists!
-                start_rdd = sc.textFile(pe_input, 1)
+                start_rdd = sc.textFile(pe_input)
             out_rdd = start_rdd.flatMap(wrapper.process)
             if len(outs) == 1:
                 for output_name in outs:
@@ -214,7 +214,7 @@ def process(sc, workflow, inputs, args):
                 result_rdd[proc] = out_rdd
     # print "RESULT PROCESSES: %s" % result_rdd.keys()
     for p in result_rdd:
-        result = result_rdd[p].collect()
+        result = result_rdd[p].foreach(lambda x: None)
         print 'RESULT FROM %s: %s' % (p, result)
         for x in result:
             print x
