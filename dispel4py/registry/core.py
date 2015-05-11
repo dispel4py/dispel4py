@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import imp
+# import imp
 import sys
 import requests
 # import traceback
@@ -21,14 +21,121 @@ import os
 import datetime
 from tempfile import NamedTemporaryFile
 # from dispel4py.registry import utils
+from os.path import expanduser
 
 import logging
 logging.basicConfig()
 logger = logging.getLogger('DJREG_LIB')
 logger.setLevel(logging.INFO)
 
+from urlparse import urlparse
 
-class Registry(object):
+
+class RegistryConfiguration(object):
+    """An encapsulation of the configuration of the interface with the
+    registry."""
+    url = None
+    username = None
+    password = None
+    def_workspace = None
+
+    DEF_CONF_FILENAME = '.d4p_reg.json'
+    conf_file = None
+
+    # Environment variable constants:
+    CONF_VAR = 'D4P_REG_CONF'
+    URL_VAR = 'D4P_REG_URL'
+    USERNAME_VAR = 'D4P_REG_USERNAME'
+    PASSWORD_VAR = 'D4P_REG_PASSWORD'
+    WORKSPACE_VAR = 'D4P_REG_WORKSPACE'
+
+    # Configuration file constants:
+    URL_FILE = 'URL'
+    USERNAME_FILE = 'username'
+    PASSWORD_FILE = 'password'
+    WORKSPACE_FILE = 'workspace'
+
+    def __init__(self):
+        self.conf_file = expanduser('~/' +
+                                    RegistryConfiguration.DEF_CONF_FILENAME)
+        try:
+            self.conf_file = expanduser(
+                os.environ[RegistryConfiguration.CONF_VAR])
+        except:
+            pass
+        self.loadFromEnvVars()
+        self.loadFromFile()
+
+        # Check we have the required configuration values:
+        if (self.url is None or
+                self.username is None or
+                self.password is None or
+                not self._valid_url()):
+            msg = 'A valid URL, username and password were not provided.'
+            msg += '\nPlease refer to documentation on setting up the '
+            msg += 'dispel4py Registry environment.'
+            raise ConfigurationError(msg)
+
+    def _valid_url(self):
+        """
+        Return True if self.url is valid; false otherwise.
+        Should revisit as needed.
+        """
+        p = urlparse(self.url)
+        return p.scheme == 'http' or p.scheme == 'https'
+
+    def loadFromEnvVars(self):
+        """Gather configuration from individual environment variables"""
+        try:
+            self.url = os.environ[RegistryConfiguration.URL_VAR]
+        except:
+            pass
+        try:
+            self.username = os.environ[RegistryConfiguration.USERNAME_VAR]
+        except:
+            pass
+        try:
+            self.password = os.environ[RegistryConfiguration.PASSWORD_VAR]
+        except:
+            pass
+        try:
+            self.def_workspace = os.environ[
+                RegistryConfiguration.WORKSPACE_VAR]
+        except:
+            pass
+
+    def loadFromFile(self):
+        """Gather configuration from the configuration file."""
+        try:
+            with open(self.conf_file) as cf:
+                conf = json.load(cf)
+        except:
+            pass
+        try:
+            self.url = conf[RegistryConfiguration.URL_FILE]
+        except:
+            pass
+        try:
+            self.username = conf[RegistryConfiguration.USERNAME_FILE]
+        except:
+            pass
+        try:
+            self.password = conf[RegistryConfiguration.PASSWORD_FILE]
+        except:
+            pass
+        try:
+            self.def_workspace = conf[RegistryConfiguration.WORKSPACE_FILE]
+        except:
+            pass
+
+    def __str__(self):
+        return ('url: ' + str(self.url) + '\n' +
+                'username: ' + str(self.username) + '\n' +
+                'password: ' + str(self.password) + '\n' +
+                'workspace: ' + str(self.def_workspace))
+
+
+class RegistryInterface(object):
     """
     Dispel4Py's interface to the VERCE Registry. Dispel4Py could work without a
     registry or through connecting to alternative registries of python and
@@ -59,10 +166,11 @@ class Registry(object):
     URL_WORKSPACES = '/workspaces/'
     URL_PES = '/pes/'
     URL_FNS = '/functions/'
+    URL_FNPARAMS = '/fnparams/'
     URL_LITS = '/literals/'
     URL_CONNS = '/connections/'
-    URL_PEIMPLS = '/pe_implementations/'
-    URL_FNIMPLS = '/fn_implementations/'
+    URL_PEIMPLS = '/peimpls/'
+    URL_FNIMPLS = '/fnimpls/'
 
     # Default package names depending on the type of the registrable item
     DEF_PKG_PES = 'pes'
@@ -91,20 +199,31 @@ class Registry(object):
     # registry_url = DEF_URL
     workspace = DEF_WORKSPACE_ID
     # user = None
-    registered_entities = {}
+    registered_entities = {}  # In-memory cache
     # token = None
     # ###########################
 
-    def __init__(self, wspc_id=DEF_WORKSPACE_ID):
+    # def __init__(self, conf=None, wspc_id=DEF_WORKSPACE_ID):
+
+    def __init__(self, conf=None):
+        """
+        Initialise the registry interface module.
+        :param conf: a valid RegistryConfiguration object.
+        """
         # this imports the requests module before anything else
         # so we don't get a loop when importing
-        requests.get('http://github.com')
-        # change the registry URL according to the environment var, if set
-        if 'VERCEREGISTRY_HOST' in os.environ:
-            self.protocol, self.host, self.port = split_url(
-                os.environ['VERCEREGISTRY_HOST'])
-            # self.registry_url = os.environ['VERCEREGISTRY_HOST']
+        # requests.get('http://github.com')  # TODO: Why is this needed? Check.
 
+        self.protocol, self.host, self.port = split_url(conf.url)
+        self.user = conf.username
+        if not conf.def_workspace:
+            wspc_name = DEF_WSPC_NAME
+        else:
+            wspc_name = conf.def_workspace
+
+        self.login(conf.username, conf.password)
+
+        wspc_id = self._get_workspace_by_name(conf.username, wspc_name)['id']
         self.workspace = wspc_id
 
     def get_auth_token(self):
@@ -142,11 +261,11 @@ class Registry(object):
         kind = rhs[:rhs.find('/')]
 
         if kind == 'pes':
-            return Registry.TYPE_PE
+            return RegistryInterface.TYPE_PE
         elif kind == 'functions':
-            return Registry.TYPE_FN
+            return RegistryInterface.TYPE_FN
         else:
-            return Registry.TYPE_NOT_RECOGNISED
+            return RegistryInterface.TYPE_NOT_RECOGNISED
 
     def login(self, username, password):
         """
@@ -181,39 +300,35 @@ class Registry(object):
             f.close()
         return self.logged_in
 
+    def get_workspace_ls(self, workspace_id=None, startswith=''):
+        """Gets a listing of the given workspace."""
+        workspace_id = workspace_id or self.workspace
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        url = (self.get_base_url() + self.URL_WORKSPACES + str(workspace_id) +
+               '/?ls&startswith=' + startswith)
+        r = requests.get(url, headers=self._get_auth_header(), verify=False)
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
+
     def get_base_url(self):
         """Return the base URL for the registry."""
         return self.protocol + '://' + self.host + (self.port and ':' +
                                                     self.port or '')
 
-    def set_workspace(self, wspc_id):
-        self.workspace = wspc_id
+    # def set_workspace(self, wspc_id):
+    #     self.workspace = wspc_id
 
-    def find_module(self, fullname, path=None):
-        print '---- (find_module) fullname=' + str(fullname),
-        'path=' + str(path)
-        # try:
-        url = (self.get_base_url() +
-               "/workspaces/%s?ls&startswith=%s" % (self.workspace, fullname))
-        response = requests.get(url, headers=self._get_auth_header(),
-                                verify=False)
-        # except:
-        #     pass
-        if response.status_code != requests.codes.ok:
-            return None
-
-        # maybe it's a package
-        if len(response.json()['packages']) > 0:
-            return self
-
-        # maybe it's an object?
-        try:
-            code = self.get_code(fullname)
-            # print "found code for " + fullname
-            self.registered_entities[fullname] = code
-            return self
-        except:
-            return None
+    def set_workspace(self, name, owner=None):
+        """Set the default workspace to the one identified by the given
+        owner and name."""
+        if not owner:
+            owner = self.username
+        wspc = self._get_workspace_by_name(owner, name)
+        self.workspace = wspc['id']
 
     def clone(self, orig_workspace_id, name):
         """Clone the given workspace into a new one with the name `name`. """
@@ -226,22 +341,6 @@ class Registry(object):
         r = requests.post(url, data={'name': name},
                           headers=self._get_auth_header(), verify=False)
         print r.text
-
-    def load_module(self, fullname):
-        print ">>>> load_module " + fullname
-        if fullname in sys.modules:
-            return sys.modules[fullname]
-
-        mod = imp.new_module(fullname)
-        mod.__loader__ = self
-        sys.modules[fullname] = mod
-        if fullname in self.registered_entities:
-            code = self.registered_entities[fullname]
-            # print "compiling code for module " + fullname
-            exec code in mod.__dict__
-        mod.__file__ = "[%r]" % fullname
-        mod.__path__ = []
-        return mod
 
     def get_code(self, fullname, workspace_id=DEF_WORKSPACE_ID):
         """
@@ -264,6 +363,12 @@ class Registry(object):
 
         # if all else fails, attempt to fetch the direct implementation
         return self.get_direct_implementation_code(workspace_id, pckg, name)
+
+    def get_default_workspace_id(self):
+        """
+        Return the id of the currently set default workspace.
+        """
+        return self.workspace
 
     def get_pe_implementation_code(self, workspace_id, pckg, name,
                                    impl_index=0):
@@ -290,7 +395,8 @@ class Registry(object):
             raise ImplementationNotFound()
             return
 
-        r = requests.get(impl_url, headers=self._get_auth_header(),
+        r = requests.get(impl_url,
+                         headers=self._get_auth_header(),
                          verify=False)
         return r.json().get('code')
 
@@ -309,11 +415,45 @@ class Registry(object):
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
 
-        print r
         try:
             return r.json().get('code')
         except:
             raise ImplementationNotFound()
+
+    def _ls(self):
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        url = (self.get_base_url() + self.URL_WORKSPACES +
+               str(self.workspace) + '/?ls')
+        r = requests.get(url, headers=self._get_auth_header(), verify=False)
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
+
+    def ls(self):
+        """Return a listing of contents of the currently selected workspace."""
+
+        listing = self._ls()
+        print listing
+
+    def _get_workspace_by_name(self, username, wspcname):
+        """Return the dictionary describing a workspace identified by
+        the owner's and the workspace's name."""
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        url = (self.get_base_url() + self.URL_WORKSPACES +
+               '?username=' + username + '&name=' + wspcname)
+        # print 'get_wspc_by_name: ', username, wspcname
+        r = requests.get(url, headers=self._get_auth_header(), verify=False)
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
 
     def get_fn_implementation_code(self, workspace_id, pckg, name,
                                    impl_index=0):
@@ -323,7 +463,6 @@ class Registry(object):
         """
         if not self.logged_in:
             raise NotLoggedInError()
-            return
 
         url = (self.get_base_url() + self.URL_WORKSPACES + str(workspace_id) +
                '/?fqn=' + pckg + '.' + name)
@@ -347,13 +486,331 @@ class Registry(object):
                          verify=False)
         return r.json().get('code')
 
+    def register_pe_spec(self, pckg, name, workspace_id=None, descr=''):
+        """
+        Register a new PE specification or update an existing one.
+        :param workspace_id: the id of the workspace; defaults to the default
+        workspace
+        :param pckg: a string denoting the package of the PE to register.
+        :param name: the name of the PE to register.
+        :param descr: a textual description of the PE specification.
+        """
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        workspace_id = workspace_id or self.workspace
+        workspace_url = self.get_base_url() + self.URL_WORKSPACES + \
+            str(workspace_id) + '/'
+        data = {'workspace': workspace_url,
+                'pckg': pckg,
+                'name': name,
+                'description': descr}
+        url = self.get_base_url() + self.URL_PES
+        r = requests.post(url, headers=self._get_auth_header(), data=data)
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
+
+    def register_fn_spec(self, pckg, name, return_type,
+                         workspace_id=None, descr=''):
+        """
+        Register a new function specification or update an existing one.
+        :param workspace_id: the id of the workspace; defaults to the default
+        workspace
+        :param pckg: a string denoting the package of the PE to register.
+        :param name: the name of the PE to register.
+        :param return_type: the type expected to be returned by the function.
+        :param descr: a textual description of the PE specification.
+        """
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        workspace_id = workspace_id or self.workspace
+        workspace_url = self.get_base_url() + self.URL_WORKSPACES + \
+            str(workspace_id) + '/'
+        data = {'workspace': workspace_url,
+                'pckg': pckg,
+                'name': name,
+                'description': descr,
+                'return_type': return_type}
+        url = self.get_base_url() + self.URL_FNS
+        r = requests.post(url, headers=self._get_auth_header(), data=data)
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
+
+    def add_fn_param(self, name, fnid, ptype=None):
+        """
+        Attach a function parameter to the function identified by fnid.
+        :param name: the name of the parameter
+        :param ptype: the type of the parameter
+        """
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        fn_url = self.get_base_url() + self.URL_FNS + fnid + '/'
+        url = self.get_base_url() + self.URL_FNPARAMS
+
+        data = {
+            'param_name': name,
+            'param_type': ptype,
+            'parent_function': fn_url
+        }
+        r = requests.post(url, headers=self._get_auth_header(), data=data)
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
+
+    def add_pe_connection(
+            self,
+            pe_id,
+            kind,
+            name,
+            stype=None,
+            dtype=None,
+            comment=None,
+            is_array=False,
+            modifiers=None):
+        """
+        Add a new connection to an existing PE signature. modifiers should
+        be colon-separated string values. pe_id is expected to be of type
+        `long` - i.e. just the id, not the URL
+        """
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        pe_url = self.get_base_url() + self.URL_PES + pe_id + '/'
+        url = self.get_base_url() + self.URL_CONNS  # + '/'
+        data = {
+            'pesig': pe_url,
+            'kind': kind,
+            'name': name,
+            's_type': stype,
+            'd_type': dtype,
+            'comment': comment,
+            'is_array': is_array,
+            'modifiers': modifiers}
+
+        # logger.info('New connection data: ' + str(data))
+        r = requests.post(url, headers=self._get_auth_header(), data=data)
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
+
+    def delete_pespec(self, peid):
+        """
+        Delete the PE specification identified by the given id.
+        :param peid: the id of the PE spec to be deleted.
+        :return the id of the deleted PE specification.
+        """
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        url = self.get_base_url() + self.URL_PES + peid + '/'
+        r = requests.get(url, headers=self._get_auth_header())
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        for c in r.json()['connections']:
+            requests.delete(c, headers=self._get_auth_header())
+
+        for i in r.json()['peimpls']:
+            requests.delete(i, headers=self._get_auth_header())
+
+        r = requests.delete(r.json()['url'], headers=self._get_auth_header())
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return peid
+
+    def delete_fnspec(self, fnid):
+        """
+        Delete the function specification identified by fnid.
+        :param fnid: the if of the function to be deleted.
+        :return the id of the deleted function specification.
+        """
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        url = self.get_base_url() + self.URL_FNS + fnid + '/'
+        r = requests.get(url, headers=self._get_auth_header())
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        for c in r.json()['parameters']:
+            requests.delete(c, headers=self._get_auth_header())
+
+        for i in r.json()['fnimpls']:
+            requests.delete(i, headers=self._get_auth_header())
+
+        r = requests.delete(r.json()['url'], headers=self._get_auth_header())
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return fnid
+
+    def delete_peimpl(self, peimpl_id):
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        url = self.get_base_url() + self.URL_PEIMPLS + peimpl_id + '/'
+        r = requests.delete(url, headers=self._get_auth_header())
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return peimpl_id
+
+    # TODO: Test
+    def delete_fnimpl(self, fnimpl_id):
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        url = self.get_base_url() + self.URL_FNIMPLS + fnimpl_id + '/'
+        r = requests.delete(url, headers=self._get_auth_header())
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return fnimpl_id
+
+    def delete_pe_connection(self, conn_id):
+        """Delete the named connection from the given pe"""
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        conn_url = self.get_base_url() + self.URL_CONNS + conn_id + '/'
+        r = requests.delete(conn_url, headers=self._get_auth_header())
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return conn_id
+
+    def add_pe_implementation(
+            self,
+            pe_id,
+            code,
+            pckg='peimpls',
+            name=None,
+            description=''):
+        """Create a new implementation for the PE identified by `pe_id`."""
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        # Retrieve the corresponding PE
+        pe_url = self.get_base_url() + self.URL_PES + pe_id + '/'
+        pereq = requests.get(pe_url, headers=self._get_auth_header())
+        if pereq.status_code != requests.codes.ok:
+            pereq.raise_for_status()
+
+        if name is None:
+            name = pereq.json()['name'] + '_IMPL_' + str(datetime.date.today())
+
+        workspace = pereq.json()['workspace']
+        url = self.get_base_url() + self.URL_PEIMPLS
+        data = {'description': description,
+                'code': code,
+                'parent_sig': pe_url,
+                'pckg': pckg,
+                'name': name,
+                'workspace': workspace}
+        r = requests.post(url, headers=self._get_auth_header(), data=data)
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
+
+    def add_fn_implementation(
+            self,
+            fn_id,
+            code,
+            pckg='fnimpls',
+            name=None,
+            description=''):
+        """
+        Create a new implementation for the function identified by
+        `fn_id`.
+        """
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        # Retrieve the corresponding function
+        fn_url = self.get_base_url() + self.URL_FNS + fn_id + '/'
+        fnreq = requests.get(fn_url, headers=self._get_auth_header())
+        if fnreq.status_code != requests.codes.ok:
+            fnreq.raise_for_status()
+
+        if not name:
+            name = fnreq.json()['name'] + '_IMPL_' + str(datetime.date.today())
+
+        workspace = fnreq.json()['workspace']
+        print 'workspace:', str(workspace)
+        url = self.get_base_url() + self.URL_FNIMPLS
+        print 'url:', url
+        data = {'description': description,
+                'code': code,
+                'parent_sig': fn_url,
+                'pckg': pckg,
+                'name': name,
+                'workspace': workspace}
+        print '\n\nDATA:', str(data)
+        r = requests.post(url, headers=self._get_auth_header(), data=data)
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
+
+    def get_by_name(self, fqn, workspace=None, kind=None):
+        """
+        Get an object by fqn.
+        :param fqn: the fqn of the object to fetch, which is pckg.name
+        :param workspace: the workspace in which to operate; defaults to the
+        interface's default workspace.
+        :param kind: filter by the kind of the object to be fetched;
+        takes values RegistryInterface.[TYPE_PE|TYPE_FN]. By default it does
+        not filter.
+        """
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        workspace = workspace or self.workspace
+        url = (self.get_base_url() + self.URL_WORKSPACES + str(workspace) +
+               '/?fqn=' + fqn)
+        r = requests.get(url, headers=self._get_auth_header())
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        j = r.json()
+        if not kind:
+            return j
+
+        jtype = self._extract_kind_from_json_object(j)
+        if kind == jtype:
+            return j
+
+        return None
+
+
 ##############################################################################
 # Utility and static methods:
 ##############################################################################
 
 
 def remove_registry_from_meta_path():
-    mylist = [i for i in sys.meta_path if type(i) != Registry]
+    mylist = [i for i in sys.meta_path if type(i) != RegistryInterface]
     sys.meta_path = mylist
 
 
@@ -362,10 +819,11 @@ def currentRegistry():
     Returns the currently used registry instance.
     """
     for i in sys.meta_path:
-        if isinstance(i, Registry):
+        if isinstance(i, RegistryInterface):
             return i
 
 DEF_WORKSPACE_ID = 1
+DEF_WSPC_NAME = 'ROOT'
 
 
 def initRegistry(username=None, password=None, url=None,
@@ -375,11 +833,10 @@ def initRegistry(username=None, password=None, url=None,
     statements.
     """
     remove_registry_from_meta_path()
-    reg = Registry()
+    reg = RegistryInterface()
     reg.workspace = workspace
     if url:
         reg.protocol, reg.host, reg.port = split_url(url)
-    print reg.protocol, reg.host, reg.port
     reg.user = username
     if token:
         reg.token = token
@@ -390,6 +847,30 @@ def initRegistry(username=None, password=None, url=None,
             response.raise_for_status()
     else:
         reg.login(username, password)
+    sys.meta_path.append(reg)
+    return reg
+
+
+def initRegistryFromConf(conf):
+    """
+    Initialise and return a Registry instance given the configuration object.
+    If the configuration does not specify a default workspace, default to the
+    ROOT workspace.
+    :param conf: A valid RegistryConfiguration instance
+    """
+    remove_registry_from_meta_path()
+    reg = RegistryInterface()
+    reg.protocol, reg.host, reg.port = split_url(conf.url)
+    reg.user = conf.username
+    if not conf.def_workspace:
+        wspc_name = DEF_WSPC_NAME
+    else:
+        wspc_name = conf.def_workspace
+
+    reg.login(conf.username, conf.password)
+    wspc_id = reg._get_workspace_by_name(conf.username, wspc_name)['id']
+    reg.workspace = wspc_id
+
     sys.meta_path.append(reg)
     return reg
 
@@ -425,15 +906,15 @@ class VerceRegClientLibError(Exception):
     pass
 
 
-class ImplementationNotFound(Exception):
+class ImplementationNotFound(VerceRegClientLibError):
     pass
 
 
-class NotPEError(Exception):
+class NotPEError(VerceRegClientLibError):
     pass
 
 
-class NotFunctionError(Exception):
+class NotFunctionError(VerceRegClientLibError):
     pass
 
 
@@ -446,6 +927,10 @@ class UnknownPackageException(VerceRegClientLibError):
 
 
 class RegistrationFailed(VerceRegClientLibError):
+    pass
+
+
+class ConfigurationError(VerceRegClientLibError):
     pass
 
 
@@ -496,9 +981,14 @@ def store_resource(resources_dir, mod, code):
 
 
 def main():
-    print 'Main for testing starting'
-    reg = initRegistry(username='iraklis', password='iraklis')
-    print reg.find_module(fullname='pes.RandomWordProducer')
+    rconf = RegistryConfiguration()
+
+    reg = initRegistryFromConf(rconf)
+    print reg.get_workspace_ls()
+
+    # print 'Main for testing starting'
+#     reg = initRegistry(username='iraklis', password='iraklis')
+#     print reg.find_module(fullname='pes.RandomWordProducer')
 
 if __name__ == '__main__':
     main()

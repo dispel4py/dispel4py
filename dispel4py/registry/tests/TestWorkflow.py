@@ -15,7 +15,9 @@
 from dispel4py.workflow_graph import WorkflowGraph
 
 from dispel4py.registry import core
-reg = core.initRegistry(username='iraklis', password='iraklis')
+
+# reg = core.initRegistry(username='iraklis', password='iraklis')
+registry = core.initRegistryFromConf(core.RegistryConfiguration())
 
 import Local
 
@@ -35,6 +37,8 @@ print '>>' + str(rand2(10, 100))
 
 words = RandomWordProducer()
 filter = RandomFilter()
+
+registry.ls()
 
 graph = WorkflowGraph()
 graph.connect(words, 'output', filter, 'input')

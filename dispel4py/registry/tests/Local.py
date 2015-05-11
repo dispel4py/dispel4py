@@ -13,7 +13,5 @@
 # limitations under the License.
 
 
-class Local:
-
-    def test_method():
-        pass
+def test_method():
+    print 'I am a test'
