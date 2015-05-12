@@ -81,7 +81,7 @@ DIRECTION = 'direction'
 
 
 class WorkflowGraph(object):
-    """ 
+    """
     A graph representing the workflow and related methods
     """
 
@@ -91,7 +91,7 @@ class WorkflowGraph(object):
 
     def add(self, n):
         '''
-        Adds node n, which must be an instance of 
+        Adds node n, which must be an instance of
         :py:class:`dispel4py.core.GenericPE`, and returns the created workflow
         node.
 
