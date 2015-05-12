@@ -23,8 +23,8 @@ It can be executed with MPI and STORM.
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> dispel4py [-a name_dispel4py_graph]\
-            [-f file containing the input dataset in JSON format]
+        mpiexec -n <number mpi_processes> dispel4py [-a name_dispel4py_graph]\\
+            [-f file containing the input dataset in JSON format]\\
             [-i number of iterations/runs'] [-s]
 
     The argument '-s' forces to run the graph in a simple processing, which
@@ -38,7 +38,7 @@ It can be executed with MPI and STORM.
 
     For example::
 
-        mpiexec -n 4 dispel4py mpi\
+        mpiexec -n 4 dispel4py mpi \\
             dispel4py.examples.graph_testing.large_teecopy 1000000
 
     .. note::
@@ -50,8 +50,8 @@ It can be executed with MPI and STORM.
     Output::
 
         Processing 1 iterations
-        Processes: {'TestProducer0': [0], 'TestOneInOneOut2': [2],\
-            'TestOneInOneOut1': [1]}
+        Processes: {'TestProducer0': [0], 'TestOneInOneOut2': [2], \
+'TestOneInOneOut1': [1]}
         TestProducer0 (rank 0): I'm a spout
         Rank 0: Sending terminate message to [1]
         Rank 0: Sending terminate message to [2]

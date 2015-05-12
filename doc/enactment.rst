@@ -1,8 +1,8 @@
-Enactment of Dispel4Py workflows
+Enactment of dispel4py workflows
 ================================
 
 A workflow must be submitted for execution over available resources in order to produce results. 
-Dispel4Py provides various mappings for a number of enactment engines.
+dispel4py provides various mappings for a number of enactment engines.
 
 
 Sequential Processing
@@ -11,7 +11,7 @@ Sequential Processing
 This mapping serves as an enactment engine for processing small datasets, typically during development or when testing a new installation.
 The processing elements of the graph are executed in sequence by a single process.
 
-To execute a Dispel4py graph by using the simple (sequential) mapping run the following::
+To execute a dispel4py graph by using the simple (sequential) mapping run the following::
 
     $ dispel4py simple <module> \
                 [-f file containing the input dataset in JSON format]\
@@ -27,7 +27,7 @@ Multiprocessing
 This mapping leverages multiple processors on a shared memory system using the Python multiprocessing package. 
 The user can control the number of processes used by the mapping.
 
-To execute a Dispel4py graph by using the multiprocessing mapping run the following::
+To execute a dispel4py graph by using the multiprocessing mapping run the following::
 
     $ dispel4py multi -n <number of processes> <module> \
                 [-f file containing the input dataset in JSON format] \
@@ -45,10 +45,10 @@ A dispel4py graph can also be mapped to MPI for parallel execution by any MPI im
 To use the dispel4py MPI mapping mpi4py must be installed (which is wrapper for using MPI in Python).
 
 
-Submitting Dispel4Py with MPI 
+Submitting dispel4py with MPI 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To execute a Dispel4py graph by using the MPI mapping run the following::
+To execute a dispel4py graph by using the MPI mapping run the following::
 
     $ mpiexec -n <number mpi_processes> dispel4py mpi module \
         [-f file containing the input dataset in JSON format] \
@@ -71,7 +71,7 @@ For example::
 Storm
 -----
 
-A Dispel4Py graph can be translated to a Storm topology to be enacted on a Storm cluster.
+A dispel4py graph can be translated to a Storm topology to be enacted on a Storm cluster.
 
 To use Storm, download a release from http://storm.incubator.apache.org/downloads.html and unpack it. You may want to add ``$STORM_HOME/bin`` to the PATH where ``$STORM_HOME`` is the root directory of the unpacked Storm distribution. 
 
@@ -106,7 +106,7 @@ The graph attribute within the given module is discovered automatically or can b
 The resulting topology is assigned the id ``topology_name`` if provided, or an id is created automatically. 
 If using ``-s`` (save) the Storm topology and resources are not deleted when the topology has been submitted to a remote cluster or execution has completed in local mode. This is useful for debugging.
 
-Submitting Dispel4Py to a Storm cluster
+Submitting dispel4py to a Storm cluster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The following assumes the user has access to a Storm cluster, for example running on host ``storm.example.com``. 
@@ -121,7 +121,7 @@ To submit the topology to the remote cluster::
 
 	$ dispel4py storm mytestgraph MyTopologyTest01 -m remote
 
-Here, ``mytestgraph`` is the name of the Python module that creates the Dispel4Py graph, and ``MyTopologyTest01`` is the name that is assigned to the topology on the cluster. The name is optional and a random UUID will be assigned if it is not provided.
+Here, ``mytestgraph`` is the name of the Python module that creates the dispel4py graph, and ``MyTopologyTest01`` is the name that is assigned to the topology on the cluster. The name is optional and a random UUID will be assigned if it is not provided.
 
 The topology can be monitored on the web interface of the Storm cluster.
 

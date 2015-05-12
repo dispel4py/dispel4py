@@ -10,6 +10,7 @@ Subpackages
     dispel4py.new
     dispel4py.seismo
     dispel4py.storm
+    dispel4py.test
 
 Submodules
 ----------
@@ -30,37 +31,6 @@ dispel4py.core module
     :undoc-members:
     :show-inheritance:
 
-dispel4py.multi_process module
-------------------------------
-
-.. automodule:: dispel4py.multi_process
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-dispel4py.partition module
---------------------------
-
-.. automodule:: dispel4py.partition
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-dispel4py.provenance module
----------------------------
-
-.. automodule:: dispel4py.provenance
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-dispel4py.simple_process module
--------------------------------
-
-.. automodule:: dispel4py.simple_process
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 dispel4py.utils module
 ----------------------

@@ -22,7 +22,7 @@ Execution:
 
     Execute the sequential mapping as follows::
 
-        dispel4py simple dispel4py.examples.graph_testing.pipeline_composite\
+        dispel4py simple dispel4py.examples.graph_testing.pipeline_composite\\
             [-i number of iterations]
 
     By default, if the number of iterations is not specified, the graph is
@@ -34,24 +34,21 @@ Execution:
 
     Output::
 
-        adding addTwo to chain
-        adding multiplyByFour to chain
-        adding divideByTwo to chain
-        adding subtract to chain
         Processing 1 iteration.
-        Starting simple processing.
-        Inputs: [{}]
-        Results: [{('PE_subtract3', 'output'): [5]}]
+        Inputs: {'TestProducer4': 1}
+        SimplePE: Processed 1 iteration.
+        Outputs: {'PE_subtract3': {'output': [5]}}
 
 
 * MPI:
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> dispel4py mpi\
-            [-a name_dispel4py_graph]\
-            [-f file containing the input dataset in JSON format]\
-            [-i number of iterations/runs'] [-s]
+        mpiexec -n <number mpi_processes> dispel4py mpi\\
+            [-a name_dispel4py_graph]\\
+            [-f file containing the input dataset in JSON format]\\
+            [-i number of iterations/runs']\\
+            [-s]
 
     The argument '-s' forces to run the graph in a simple processing, which
     means that the first node of the graph will be executed in a process, and
@@ -62,7 +59,7 @@ Execution:
 
     For example::
 
-        mpiexec -n 5 dispel4py mpi\
+        mpiexec -n 5 dispel4py mpi \\
             dispel4py.examples.graph_testing.pipeline_composite
 
     .. note::
@@ -73,39 +70,20 @@ Execution:
 
     Output::
 
-        Processes: {'PE_addTwo0': [2], 'PE_subtract3': [3],\
-            'PE_divideByTwo2': [4], 'PE_multiplyByFour1': [1],
-            'TestProducer4': [0]}
-        PE_addTwo0 (rank 2): Starting to process
-        PE_multiplyByFour1 (rank 1): Starting to process
-        PE_multiplyByFour1 (rank 1): I'm a bolt
-        PE_addTwo0 (rank 2): I'm a bolt
-        PE_subtract3 (rank 3): Starting to process
-        PE_subtract3 (rank 3): I'm a bolt
-        PE_divideByTwo2 (rank 4): Starting to process
-        PE_divideByTwo2 (rank 4): I'm a bolt
-        TestProducer4 (rank 0): Starting to process
-        TestProducer4 (rank 0): I'm a spout
-        Rank 0: Sending terminate message to [2]
-        TestProducer4 (rank 0): Processed 1 input block(s)
-        TestProducer4 (rank 0): Completed.
-        Rank 2: Sending terminate message to [1]
-        PE_addTwo0 (rank 2): Processed 1 input block(s)
-        PE_addTwo0 (rank 2): Completed.
-        Rank 1: Sending terminate message to [4]
-        PE_multiplyByFour1 (rank 1): Processed 1 input block(s)
-        PE_multiplyByFour1 (rank 1): Completed.
-        Rank 4: Sending terminate message to [3]
-        PE_divideByTwo2 (rank 4): Processed 1 input block(s)
-        PE_divideByTwo2 (rank 4): Completed.
-        PE_subtract3 (rank 3): Processed 1 input block(s)
-        PE_subtract3 (rank 3): Completed.
+        Processing 1 iteration.
+        Processes: {'PE_addTwo0': [2], 'TestProducer4': [0], \
+'PE_subtract3': [4], 'PE_multiplyByFour1': [1], 'PE_divideByTwo2': [3]}
+        TestProducer4 (rank 0): Processed 1 iteration.
+        PE_addTwo0 (rank 2): Processed 1 iteration.
+        PE_multiplyByFour1 (rank 1): Processed 1 iteration.
+        PE_divideByTwo2 (rank 3): Processed 1 iteration.
+        PE_subtract3 (rank 4): Processed 1 iteration.
 
 * STORM:
 
     From the dispel4py directory launch the Storm submission client::
 
-        dispel4py storm dispel4py.examples.graph_testing.pipeline_composite\
+        dispel4py storm dispel4py.examples.graph_testing.pipeline_composite\\
             -m remote
 '''
 

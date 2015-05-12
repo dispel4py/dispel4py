@@ -17,7 +17,7 @@ This is a dispel4py graph which produces a workflow that sends copies of the
 output data from the producer node (words) to two nodes (filter1 and filter2),
 and the outputs of those two filters are merged in the last node (count).
 
-.. image:: /api/images/grouping_split_merge.png
+.. image:: /images/grouping_split_merge.png
 
 It can be executed with MPI and STORM.
 
@@ -25,10 +25,11 @@ It can be executed with MPI and STORM.
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi\
-            [-a name_dispel4py_graph]\
-            [-f file containing the input dataset in JSON format]\
-            [-i number of iterations/runs'] [-s]
+        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi\\
+            [-a name_dispel4py_graph]\\
+            [-f file containing the input dataset in JSON format]\\
+            [-i number of iterations/runs']\\
+            [-s]
 
     The argument '-s' forces to run the graph in a simple processing, which
     means that the first node of the graph will be executed in a process, and
@@ -38,7 +39,7 @@ It can be executed with MPI and STORM.
 
     For example::
 
-        mpiexec -n 4 python -m dispel4py.worker_mpi\
+        mpiexec -n 4 python -m dispel4py.worker_mpi\\
             dispel4py.examples.graph_testing.grouping_split_merge
 
 
@@ -51,8 +52,8 @@ It can be executed with MPI and STORM.
     Output::
 
         Processing 1 iterations
-        Processes: {'RandomFilter2': [3], 'WordCounter3': [1],\
-            'RandomFilter1': [0], 'RandomWordProducer0': [2]}
+        Processes: {'RandomFilter2': [3], 'WordCounter3': [1], \
+'RandomFilter1': [0], 'RandomWordProducer0': [2]}
         RandomFilter1 (rank 0): I'm a bolt
         RandomWordProducer0 (rank 2): I'm a spout
         WordCounter3 (rank 1): I'm a bolt

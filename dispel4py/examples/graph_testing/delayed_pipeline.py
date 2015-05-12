@@ -23,10 +23,11 @@ Execution:
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi\
-               [-a name_dispel4py_graph]
-               [-f file containing the input dataset in JSON format]
-               [-i number of iterations/runs'] [-s]
+        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi\\
+               [-a name_dispel4py_graph]\\
+               [-f file containing the input dataset in JSON format]\\
+               [-i number of iterations/runs']\\
+               [-s]
 
     The argument '-s' forces to run the graph in a simple processing, which
     means that the first node of the graph will be executed in a process, and
@@ -37,7 +38,7 @@ Execution:
 
     For example::
 
-        mpiexec -n 6 python -m dispel4py.worker_mpi \
+        mpiexec -n 6 dispel4py mpi \\
             dispel4py.examples.graph_testing.delayed_pipeline
 
     .. note::
@@ -48,8 +49,8 @@ Execution:
 
     Output::
 
-        Processes: {'TestDelayOneInOneOut2': [2, 3], 'TestProducer0': [4],
-                    'TestOneInOneOut1': [0, 1]}
+        Processes: {'TestDelayOneInOneOut2': [2, 3], 'TestProducer0': [4], \
+'TestOneInOneOut1': [0, 1]}
         TestProducer0 (rank 4): Processed 10 iterations.
         TestOneInOneOut1 (rank 1): Processed 5 iterations.
         TestOneInOneOut1 (rank 0): Processed 5 iterations.
