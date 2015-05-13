@@ -370,6 +370,44 @@ class RegistryInterface(object):
         """
         return self.workspace
 
+    def search_for_workspaces(self, search_str):
+        """
+        Search for workspaces satisfying the search_str given.
+        """
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        url = (self.get_base_url() + self.URL_WORKSPACES +
+               '?search=' + search_str)
+        r = requests.get(url, headers=self._get_auth_header())
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
+
+    def search_for_workspace_contents(self, search_str, workspace_id=None):
+        """
+        Search inside the given workspace for items that satisfy the given
+        search_str.
+        :param search_str: the string to search for
+        :param workspace_id: the id of the workspace to search in, defaults to
+        the current default workspace
+        """
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        workspace_id = workspace_id or self.workspace
+
+        url = (self.get_base_url() + self.URL_WORKSPACES +
+               str(workspace_id) + '/?search=' + search_str)
+        r = requests.get(url, headers=self._get_auth_header())
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
+
     def get_pe_implementation_code(self, workspace_id, pckg, name,
                                    impl_index=0):
         """

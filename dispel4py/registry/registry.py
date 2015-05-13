@@ -276,12 +276,42 @@ class Registry(object):
         """
         Find the earliest instance of a keyword in the given string and
         return its position. This uses the `find` method of str.
-        :param s: the string to be scanned
-        :return the earliest position of a match, -1 otherwise
+        :param s: the string to be scanned.
+        :return the earliest position of a match, -1 otherwise.
         """
         kws = [':name', ':input', ':output']
         pos = [s.find(k) for k in kws]
         return min(pos)
+
+    def _short_descr(self, s, length=30):
+        ret = s.strip()
+        if len(ret) > length:
+            ret = ret[:length].strip() + '...'
+        return ret
+
+    def find_workspaces(self, search_str):
+        """
+        Find workspaces that match the given search string.
+        :param search_str: the search string to search for.
+        """
+        r = self.regint.search_for_workspaces(search_str)
+        for i in r:
+            print ('(' + str(i['url']) + ')', i['name'] +
+                   ':', self._short_descr(i['description']))
+        print 'Total:', str(len(r))
+
+    def find_in_workspace(self, search_str):
+        """
+        Search for workspace contents in the given workspace. If a workspace
+        if is not given, search in the currently selected workspace.
+        :param search_str: the string to search for in the workspace items.
+        """
+
+        r = self.regint.search_for_workspace_contents(search_str)
+        for i in r:
+            print ('(' + str(i['url']) + ')', i['pckg'] + '.' +
+                   i['name'] + ':', self._short_descr(i['description']))
+        print 'Total:', str(len(r))
 
     # TODO: Add registration policy in case of name clash (replace, etc.)
     def register_fn(self, name, impl_subpackage='_impls'):
@@ -345,7 +375,7 @@ class Registry(object):
         except:
             pass
 
-        self.regint.delete_fnspec(str(fnid))
+        # self.regint.delete_fnspec(str(fnid))
 
     # TODO: Add registration policy in case of name clash
     def register_pe(self, name, impl_subpackage='_impls'):
