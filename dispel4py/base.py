@@ -106,7 +106,7 @@ class ProducerPE(BasePE):
         result = self._process()
         if result is not None:
             return {self.OUTPUT_NAME: result}
-    
+
     def _process(self):
         return None
 
