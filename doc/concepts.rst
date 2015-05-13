@@ -10,7 +10,7 @@ A PE normally takes data units from its inputs and deals with them one at a time
 
 PEs in dispel4py are Python classes and extend the class :py:class:`dispel4py.core.GenericPE`.
 This class has several methods that must or may be overridden.
-Please refer to the class documentation for further information.
+Please refer to the documentation of the class :py:class:`dispel4py.core.GenericPE` for further information.
 
 PEs have named inputs and outputs which can be connected to other PEs.
 A PE *must* declare the input and output connections that it provides as this is required information 
@@ -71,24 +71,24 @@ Composite processing elements are PEs that contain subgraphs.
 
 To create a composite PE first create a workflow graph, for example::
 
-	wordfilter = WorkflowGraph()
-	words = RandomWordProducer()
-	filter = RandomFilter()
-	wordfilter.connect(words, 'output', filter, 'input')
-	
+    wordfilter = WorkflowGraph()
+    words = RandomWordProducer()
+    filter = RandomFilter()
+    wordfilter.connect(words, 'output', filter, 'input')
+
 Now define the inputs and outputs of this subgraph by mapping a name to a pair ``(PE, name)`` that identifies an input or output within the subgraph::
-	
-	wordfilter.inputmappings = { }
-	wordfilter.outputmappings = { 'out' : (filter, 'output') }
-	
+
+    wordfilter.inputmappings = { }
+    wordfilter.outputmappings = { 'out' : (filter, 'output') }
+
 The above statements define that the composite PE containing the subgraph has no inputs and one output named ``output`` which is the output of the PE ``filter``.
-	
+
 Now the subworkflow can be used in another workflow and connected to a PE::
 
-	normalise = AnotherFilter()
-	toplevel = WorkflowGraph()
-	toplevel.connect(wordfilter, 'out', normalise, 'input')
-	
+    normalise = AnotherFilter()
+    toplevel = WorkflowGraph()
+    toplevel.connect(wordfilter, 'out', normalise, 'input')
+
     
 Functions
 ---------

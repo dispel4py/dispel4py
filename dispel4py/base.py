@@ -96,16 +96,19 @@ class ProducerPE(BasePE):
 
     def __init__(self):
         BasePE.__init__(self)
-        self._add_input(ProducerPE.OUTPUT_NAME)
+        self._add_output(ProducerPE.OUTPUT_NAME)
 
     def process(self, inputs):
         '''
         Calls the implementation of
         :py:func:`~dispel4py.base.ProducerPE._process` of the subclass.
         '''
-        result = self._process(inputs)
+        result = self._process()
         if result is not None:
             return {self.OUTPUT_NAME: result}
+    
+    def _process(self):
+        return None
 
 
 class ConsumerPE(BasePE):
