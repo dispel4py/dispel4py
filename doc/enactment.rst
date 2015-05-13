@@ -14,12 +14,20 @@ The processing elements of the graph are executed in sequence by a single proces
 To execute a dispel4py graph by using the simple (sequential) mapping run the following::
 
     $ dispel4py simple <module> \
-                [-f file containing the input dataset in JSON format]\
+                [-a graph attribute within the module] \
+                [-f file containing the input dataset in JSON format] \
+                [-d input data in JSON format] \
                 [-i number of iterations]
-                [-d input data in JSON format]
 
-If the number of iterations is not indicated, the graph is executed once by default.
-If an input file is specified with ``-f`` then the parameter ``-i`` will be ignored.
+The ``module`` parameter is the the file path or the name of the python module that creates the workflow graph.
+
+The parameter ``-a`` is the name of the graph attribute in the module. If there is only one dispel4py workflow graph in the module it is optional as the graph object is detected automatically. If the module creates more than one graph, for example if using composite PEs, the object name of the graph must be provided.
+
+If an input file is specified using ``-f`` then the parameters ``-i`` and ``-d`` are ignored.
+When using ``-d`` then the parameter ``-i`` is ignored.
+The number of iterations provided with ``-i`` applies to all of the root PEs of the workflow. This is usually used for testing and diagnostics rather than production runs.
+If none of the optional parameters are supplied, the graph is executed once by default. In this case it is assumed that the PEs at the root of the workflow execute once and determine internally as to when processing is complete.
+
 
 Multiprocessing
 ----------------
@@ -35,8 +43,11 @@ To execute a dispel4py graph by using the multiprocessing mapping run the follow
                 [-d input data in JSON format] \
                 [-a attribute] \
                 [-s]
-    
-If ``-s`` is specified the graph is partitioned to execute several PEs within one process.
+
+See above for use of the parameters ``-f``, ``-d`` and ``-i``.
+
+The argument ``-s`` forces the partitioning of the graph such that subsets of nodes are wrapped and executed within the same process. The partitioning of the graph, i.e. which nodes are executed in the same process, can be specified when building the graph. By default, the root nodes in the graph (that is, nodes that have no inputs) are executed in one process, and the rest of the graph is executed in many copies distributed across the remaining processes.
+
 
 MPI
 -----
@@ -57,10 +68,9 @@ To execute a dispel4py graph by using the MPI mapping run the following::
         [-a attribute] \
         [-s]
 
-If the number of iterations is not indicated, the graph is executed once by default.
-If an input file is specified with ``-f`` then the parameter ``-i`` will be ignored.
+See above for use of the parameters ``-f``, ``-d`` and ``-i``.
 
-The argument ``-s`` forces to run the graph in simple processing mode, which means that a number of nodes can be wrapped and executed within the same process. The partitioning of the graph, i.e. which nodes are executed in the same process, can be specified when building the graph. By default, the root nodes in the graph (that is, nodes that have no inputs) are executed in one process, and the rest of the graph is executed in many copies distributed across the remaining processes.
+The argument ``-s`` forces the partitioning of the graph such that subsets of nodes are wrapped and executed within the same process. The partitioning of the graph, i.e. which nodes are executed in the same process, can be specified when building the graph. By default, the root nodes in the graph (that is, nodes that have no inputs) are executed in one process, and the rest of the graph is executed in many copies distributed across the remaining processes.
 
 For example:: 
 
@@ -92,7 +102,8 @@ From the dispel4py directory launch the Storm submission client::
               [-s] \
               module [topology_name]
 
-The ``module`` parameter is the name of the python module (**without the file extension .py**) that creates a workflow graph.
+The ``module`` parameter is the name of the python module that creates the workflow graph. This cannot be the file name.
+
 The parameter ``-m`` specifies the execution mode of the Storm topology:
 
     *local*
@@ -104,7 +115,8 @@ The parameter ``-m`` specifies the execution mode of the Storm topology:
 
 The graph attribute within the given module is discovered automatically or can be specified (if there is more than one graph defined, for example) by using ``-a`` with the name of the variable.
 The resulting topology is assigned the id ``topology_name`` if provided, or an id is created automatically. 
-If using ``-s`` (save) the Storm topology and resources are not deleted when the topology has been submitted to a remote cluster or execution has completed in local mode. This is useful for debugging.
+
+The parameter ``-s`` (save) indicates that the Storm topology and resources are not deleted when the topology has been submitted to a remote cluster or execution has completed in local mode. This is useful for debugging.
 
 Submitting dispel4py to a Storm cluster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
