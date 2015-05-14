@@ -202,6 +202,7 @@ class RegistryInterface(object):
     registered_entities = {}  # In-memory cache
     # token = None
     # ###########################
+    conf = None
 
     # def __init__(self, conf=None, wspc_id=DEF_WORKSPACE_ID):
 
@@ -225,6 +226,7 @@ class RegistryInterface(object):
 
         wspc_id = self._get_workspace_by_name(conf.username, wspc_name)['id']
         self.workspace = wspc_id
+        self.conf = conf
 
     def get_auth_token(self):
         if not self.logged_in:
@@ -326,7 +328,7 @@ class RegistryInterface(object):
         """Set the default workspace to the one identified by the given
         owner and name."""
         if not owner:
-            owner = self.username
+            owner = self.conf.username
         wspc = self._get_workspace_by_name(owner, name)
         self.workspace = wspc['id']
 
@@ -369,6 +371,48 @@ class RegistryInterface(object):
         Return the id of the currently set default workspace.
         """
         return self.workspace
+
+    def get_workspace_info(self):
+        """
+        Return the default workspace entry.
+        """
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        url = self.get_base_url() + self.URL_WORKSPACES + str(self.workspace)
+        r = requests.get(url, headers=self._get_auth_header())
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
+
+    def get_user_info(self, id):
+        """
+        Retrieve and return user information identified by id
+        :param id: the id of the user to fetch information for
+        """
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        url = self.get_base_url() + self.URL_USERS + str(id)
+        r = requests.get(url, headers=self._get_auth_header())
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
+
+    def _get_by_arbitrary_url(self, url):
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        r = requests.get(url, headers=self._get_auth_header())
+        
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
 
     def search_for_workspaces(self, search_str):
         """

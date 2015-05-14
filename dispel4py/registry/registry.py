@@ -34,10 +34,31 @@ class Registry(object):
         self.regint = RegistryInterface(self.regconf)
         self.regimporter = RegistryImporter(self.regint)
 
-    def set_def_workspace(self, name, owner=None):
-        self.regint.set_workspace(name, owner)
-        print ('Default workspaces set to: ' + name + ' (' + owner, ') ' +
-               '[' + str(self.regint.workspace) + ']')
+    def set_workspace(self, name, owner=None):
+        """
+        Set the current workspace.
+        :param name: the name of the workspace to change to
+        :param owner: the owner of the workspace to change to. This defaults
+        to the current user.
+        """
+        owner = owner or self.regconf.username
+        try:
+            self.regint.set_workspace(name, owner)
+            print 'Default workspaces set to: ' + name + ' (' + owner + ') ' +\
+                  '[' + str(self.regint.workspace) + ']'
+        except:
+            print 'Workspace ' + name + ' (' + owner + ') not found.'
+
+    def set_workspace_by_id(self, wspcid):
+        """
+        Set the current workspace by id.
+        :param wspcid: the id of the workspace to switch to.
+        """
+        try:
+            self.regint.workspace = long(wspcid)
+        except:
+            print 'Invalid id ' + str(wspcid)
+        
 
     def _prntbln(self, name):
         if name == 'pes':
@@ -65,8 +86,8 @@ class Registry(object):
         if not name:
             if owner:
                 # cannot resolve workspace
-                print ('Cannot resolve workspace for specific user without' +
-                       ' a workspace name')
+                print 'Cannot resolve workspace for specific user without' +\
+                      ' a workspace name'
                 return
             else:
                 wid = self.regint.get_default_workspace_id()
@@ -76,8 +97,8 @@ class Registry(object):
             try:
                 wid = self.regint._get_workspace_by_name(owner, name)['id']
             except:
-                print ('Cannot resolve workspace with name "' +
-                       name + '" owned by "' + owner + '"')
+                print 'Cannot resolve workspace with name "' +\
+                      name + '" owned by "' + owner + '"'
                 return
 
         listing = self.regint.get_workspace_ls(wid, startswith)
@@ -85,13 +106,30 @@ class Registry(object):
         for t in ['pes', 'peimpls', 'functions',
                   'fnimpls', 'literals', 'packages']:
             if len(listing[t]) > 0:
-                print self._prntbln(t) + ':'
+                print '[' + self._prntbln(t) + ']'
                 for i in listing[t]:
                     if t == 'packages':
-                        print ' ', i
+                        print i
                     else:
                         for j in i:
-                            print ' ', j, i[j]
+                            print '(' + j + ')', i[j]
+
+    def info(self):
+        """
+        Print information regarding the current session.
+        """
+        info = self.regint.get_workspace_info()
+        userinfo = self.regint._get_by_arbitrary_url(info['owner'])
+        wurl = info['url']
+        wname = info['name']
+        wowner = userinfo['username']
+        wdescription = info['description']
+        print '[Current workspace]' 
+        print '(' + wurl + ') ' + wname + ' - ' + wowner
+        print '[Description]'
+        print _short_descr(wdescription, 75)
+        print '[Current user]'
+        print self.regint.conf.username
 
     def get_logged_in_username(self):
         print self.regconf.username
@@ -489,7 +527,7 @@ def main():
     # r.register_pe("tests.test_pe.RandomTestPE")
 
     # r.register_fn('tests.testfn.myfn')
-
+    r.wls()
     r.find_in_workspace('desc')
 
     r.find_workspaces('n')
@@ -499,6 +537,22 @@ def main():
 
     print '---'
     r.find_workspaces('root')
+
+    r.set_workspace('NEW_TEST')
+    r.find_in_workspace('desc')
+
+    r.set_workspace('NEW_TEST2')
+    r.find_in_workspace('desc')
+    
+    print 'WORKSPACE 3:'
+    r.set_workspace_by_id(3)
+    r.wls()
+    
+    print 'WORKSPACE 1:'
+    r.set_workspace_by_id(1)
+    r.wls()
+    
+    r.info()
 
 if __name__ == '__main__':
     main()
