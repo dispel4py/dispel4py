@@ -90,10 +90,9 @@ This produces the following output::
     SimplePE: Processed 1 iteration.
     Outputs: {'MyFirstPE3': {'output': [1]}}
 
-
 By default, without providing any input, the producer PE only processes once and only produces one number, the number 1 which is not divisible by 3 so this is the result of our workflow.
 
-To run more than one iteration, you can specify the number with the parameter ``-i``, say 100 times::
+To run more than one iteration, you can specify the number with the parameter ``-i``, say 20 times::
 
     $ dispel4py simple myfirstgraph.py -i 20
     Processing 20 iterations.
@@ -101,7 +100,7 @@ To run more than one iteration, you can specify the number with the parameter ``
     SimplePE: Processed 1 iteration.
     Outputs: {'MyFirstPE3': {'output': [1, 2, 4, 5, 7, 8, 10, 11, 13, 14, 16, 17, 19, 20]}}
 
-The output of this workflow are the numbers from 1 to 20 which are not divisible by 3.
+The output of this workflow are the numbers in the range from 1 to 20 which are not divisible by 3.
 
 
 Write a data producer PE
@@ -144,7 +143,7 @@ Now we hook our own producer into the workflow, replacing the TestProducer from 
 
 Everything else stays the same. We create an instance of the NumberProducer that outputs the range of numbers from 2 to 99 (excluding the upper bound of 100).
 
-Now process the new workflow::
+Now execute the new workflow using the simple mapping::
 
     $ dispel4py simple myfirstgraph.py
     Processing 1 iteration.
@@ -158,8 +157,8 @@ The output is the list of numbers from 2 to 99 that are not divisible by 3.
 Parallel processing
 -------------------
 
-For this very simple case we can easily parallelise the execution of this workflow. To do this we use the dispel4py multi mapping that executes a workflow in multiple processes::
-    
+For this very simple case we can easily parallelise the execution of the workflow. To do this we use the dispel4py multi mapping that executes a workflow in multiple processes using the Python multiprocessing [#]_ library::
+
     $ dispel4py multi myfirstgraph.py -n 4
     Processing 1 iteration.
     Processes: {'MyFirstPE3': [1, 2, 3], 'NumberProducer2': [0]}
@@ -180,3 +179,12 @@ shows which PE is assigned to which processes. In this case, ``MyFirstPE`` is as
 
 
 .. note:: Note that when executing in a parallel environment the output from each PE is not collected as in the simple mapping. You are responsible for collecting this output and printing or storing it.
+
+
+-----
+
+References
+----------
+
+.. [#] https://docs.python.org/2/library/multiprocessing.html
+
