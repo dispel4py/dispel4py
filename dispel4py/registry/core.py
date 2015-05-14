@@ -372,14 +372,18 @@ class RegistryInterface(object):
         """
         return self.workspace
 
-    def get_workspace_info(self):
+    def get_workspace_info(self, id=None):
         """
-        Return the default workspace entry.
+        Return the workspace entry id'ed by `id`.
+        :param id: the id of the workspace to fetch; defaults to the currently
+        selected one.
         """
         if not self.logged_in:
             raise NotLoggedInError()
 
-        url = self.get_base_url() + self.URL_WORKSPACES + str(self.workspace)
+        id = id or self.workspace
+
+        url = self.get_base_url() + self.URL_WORKSPACES + str(id)
         r = requests.get(url, headers=self._get_auth_header())
 
         if r.status_code != requests.codes.ok:
@@ -408,7 +412,7 @@ class RegistryInterface(object):
             raise NotLoggedInError()
 
         r = requests.get(url, headers=self._get_auth_header())
-        
+
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
 

@@ -26,6 +26,47 @@ regint = RegistryInterface(regconf)
 regimporter = RegistryImporter(regint)
 
 
+general_help = """
+Commands:
+    help([command]): outputs help for the dispel4py registry's interactive
+                     interface.
+    set_workspace(name [, owner]): change the active workspace to the one
+                                   identified by name and optionally owner.
+    set_workspace_by_id(wspcid): change the active workspace to the one
+                                 indicated by wspcid.
+    wls([name, owner, startswith]): list the contents of a workspace; defaults
+                                    to the currently active one.
+    info(): outputs information about the current session.
+    find_workspaces(str): searches for workspaces that satisfy the given text
+                          query.
+    find_in_workspace(str): searches inside the currently active workspace for
+                            entities that satisfy the given text query.
+    register_fn(name, impl_subpackage): register a function. The name should be
+                                        the full python name and it should be
+                                        importable by Python.
+    register_pe(name, impl_subpackage): register a processing element. The name
+                                        should be the full python name and it
+                                        should be importable by Python.
+"""
+
+
+def help(command=None):
+    """
+    Print help text.
+    """
+    # Voodooesque but it works for now.
+    import dispel4py
+    import dispel4py.registry
+    import dispel4py.registry.registry
+    if not command:
+        print general_help
+    else:
+        try:
+            print getattr(dispel4py.registry.registry, command).__doc__.strip()
+        except:
+            print 'Unknown command: ' + command
+
+
 def set_workspace(name, owner=None):
     """
     Set the current workspace.
@@ -118,12 +159,20 @@ def info():
     wurl = info['url']
     wname = info['name']
     wowner = userinfo['username']
-    wdescription = info['description']
+    durl = regint._get_workspace_by_name(
+        regconf.username, regconf.def_workspace)['url']
+    dname = regconf.def_workspace
+    downer = regconf.username
+    # wdescription = info['description']
     print '[Current workspace]'
     print '(' + wurl + ') ' + wname + ' - ' + wowner
-    print '[Description]'
-    print _short_descr(wdescription, 75)
-    print '[Current user]'
+    # print '[Workspace description]'
+    # print _short_descr(wdescription, 75)
+    print '[Default workspace]'
+    print '(' + durl + ') ' + dname + ' - ' + downer
+    print '[Registry endpoint]'
+    print regconf.url
+    print '[Registry user]'
     print regconf.username
 
 
@@ -379,13 +428,6 @@ def register_fn(name, impl_subpackage='_impls'):
 
     meta = _extract_meta_by_docstr(doc)
 
-    # import pprint
-    # pp = pprint.PrettyPrinter(indent=2)
-    # pp.pprint(meta)
-    # print '--CODE:' + '-' * 70
-    # print code
-    # print '-------' + '-' * 70
-
     try:
         fns = regint.register_fn_spec(meta['type']['name']['pckg'],
                                       meta['type']['name']['name'],
@@ -414,7 +456,7 @@ def register_fn(name, impl_subpackage='_impls'):
     except:
         pass
 
-    # regint.delete_fnspec(str(fnid))
+    print fns['url']
 
 
 # TODO: Add registration policy in case of name clash
@@ -442,10 +484,6 @@ def register_pe(name, impl_subpackage='_impls'):
     doc = pe.__doc__.strip()
 
     meta = _extract_meta_by_docstr(doc)
-
-    # import pprint
-    # pp = pprint.PrettyPrinter(indent=2)
-    # pp.pprint(meta)
 
     # Actual registrations via the core module here:
     try:
@@ -485,30 +523,7 @@ def register_pe(name, impl_subpackage='_impls'):
         # Do not do anything if a PEImpl of same fqn is already present
         pass
 
-    # import os
-    # os.system('read')
-    #
-    # regint.delete_pespec(str(peid))
-
-# def init():
-#     """Initialisation for interactive uses. It makes use of the default
-#     configuration mechanism."""
-#     conf = RegistryConfiguration()
-#
-#     reg = RegistryInterface()
-#     reg.protocol, reg.host, reg.port = split_url(conf.url)
-#     reg.user = conf.username
-#     if not conf.def_workspace:
-#         wspc_name = DEF_WSPC_NAME
-#     else:
-#         wspc_name = conf.def_workspace
-#
-#     reg.login(conf.username, conf.password)
-#     wspc_id = reg._get_workspace_by_name(conf.username, wspc_name)['id']
-#     reg.workspace = wspc_id
-#
-#     sys.meta_path.append(reg)
-#     return reg
+    print pes['url']
 
 
 def _short_descr(s, length=30):
@@ -547,6 +562,8 @@ def main():
     set_workspace_by_id(1)
     wls()
 
+    info()
+    set_workspace('NEW_TEST')
     info()
 
 if __name__ == '__main__':
