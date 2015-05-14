@@ -1,10 +1,14 @@
 Tutorial
 ========
 
+This tutorial is an introduction to dispel4py. We will see how to write dispel4py PEs, how to connect them together to form a workflow and how this workflow is executed in different environments.
+
 How to write a PE
 -----------------
 
-First you need to decide what kind of processing the PE will do and what the data units are that it processes. In our example we are implementing a PE that decides if a number is divisible by another number. The PE is configured with this divisor and for each input data item it tests whether the number can be divided by this divisor. It then returns the input data item, or nothing if the input is divisible.
+In this section we are going to implement our first PE.
+
+First you need to decide what kind of processing the PE will do and what the data units are that it processes. In our example we are implementing a PE that decides if a number is divisible by another number. The PE is configured with this divisor and for each input data item it tests whether the number can be divided by this divisor. It returns the input data item if it is not divisible.
 
 
 Create a PE class
@@ -31,7 +35,7 @@ Now the actual work begins: We have to implement the processing method. This is 
         def _process(self, data):
             ...
 
-We fill in the processing commands, in our case this means that we test if the input data item can be divided by our divisor, and return it if it is not divisible::
+We fill in the processing commands, in our case this means that we test if the input data item is divisible by our divisor, and return it if it is not divisible::
 
         def _process(self, data):
             if not data % self.divisor == 0:
@@ -54,7 +58,7 @@ That's it! Our first PE is complete::
 Create a simple workflow
 ------------------------
 
-Now we can use this PE in a workflow. There's a useful PE in the library of test PEs that just produces a sequence of numbers. 
+In this section we are going to create a workflow, using the PE that we implemented in the previous section. There's a useful PE in the library of dispel4py PEs that just produces a sequence of numbers. 
 
 We can connect this number producer to our PE which is initialised with the divisor 3 in this example::
 
@@ -174,4 +178,5 @@ shows which PE is assigned to which processes. In this case, ``MyFirstPE`` is as
     MyFirstPE3 (rank 2): Processed 33 iterations.
     MyFirstPE3 (rank 3): Processed 32 iterations.
 
-    
+
+.. note:: Note that when executing in a parallel environment the output from each PE is not collected as in the simple mapping. You are responsible for collecting this output and printing or storing it.
