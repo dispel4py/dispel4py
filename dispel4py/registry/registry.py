@@ -283,22 +283,17 @@ class Registry(object):
         pos = [s.find(k) for k in kws]
         return min(pos)
 
-    def _short_descr(self, s, length=30):
-        ret = s.strip()
-        if len(ret) > length:
-            ret = ret[:length].strip() + '...'
-        return ret
-
     def find_workspaces(self, search_str):
         """
         Find workspaces that match the given search string.
         :param search_str: the search string to search for.
         """
-        r = self.regint.search_for_workspaces(search_str)
-        for i in r:
-            print ('(' + str(i['url']) + ')', i['name'] +
-                   ':', self._short_descr(i['description']))
-        print 'Total:', str(len(r))
+        res = self.regint.search_for_workspaces(search_str)
+        for i in res:
+            # print i['url']
+            print '(' + i['url'] + ') ' + i['name'] + ': ' +\
+                  _short_descr(i['description'])
+        print 'Total:', str(len(res))
 
     def find_in_workspace(self, search_str):
         """
@@ -306,12 +301,11 @@ class Registry(object):
         if is not given, search in the currently selected workspace.
         :param search_str: the string to search for in the workspace items.
         """
-
-        r = self.regint.search_for_workspace_contents(search_str)
-        for i in r:
-            print ('(' + str(i['url']) + ')', i['pckg'] + '.' +
-                   i['name'] + ':', self._short_descr(i['description']))
-        print 'Total:', str(len(r))
+        res = self.regint.search_for_workspace_contents(search_str)
+        for i in res:
+            print '(' + str(i['url']) + ')', i['pckg'] + '.' +\
+                  i['name'] + ':', _short_descr(i['description'])
+        print 'Total:', str(len(res))
 
     # TODO: Add registration policy in case of name clash (replace, etc.)
     def register_fn(self, name, impl_subpackage='_impls'):
@@ -471,6 +465,14 @@ class Registry(object):
 #     return reg
 
 
+def _short_descr(s, length=30):
+    ret = str(s).strip()
+    ret = ret.replace('\n', ' ').replace('\r', '')
+    if len(ret) > length:
+        ret = ret[:length].strip() + ' ...'
+    return ret
+
+
 def main():
     # print 'Registry main'
     r = Registry()
@@ -486,7 +488,17 @@ def main():
     # r.register_pe("tests.rand_word.RandomWordProducer")
     # r.register_pe("tests.test_pe.RandomTestPE")
 
-    r.register_fn('tests.testfn.myfn')
+    # r.register_fn('tests.testfn.myfn')
+
+    r.find_in_workspace('desc')
+
+    r.find_workspaces('n')
+    print '---'
+
+    r.find_workspaces('new')
+
+    print '---'
+    r.find_workspaces('root')
 
 if __name__ == '__main__':
     main()
