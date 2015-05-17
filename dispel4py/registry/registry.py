@@ -34,6 +34,8 @@ Commands:
                                    identified by name and optionally owner.
     set_workspace_by_id(wspcid): change the active workspace to the one
                                  indicated by wspcid.
+    clone(name): clone the currently active workspace into a new one with the
+                 given name.
     wls([name, owner, startswith]): list the contents of a workspace; defaults
                                     to the currently active one.
     info(): outputs information about the current session.
@@ -375,7 +377,7 @@ def _find_earliest_doc_kw(s, beg=0):
     return min(pos)
 
 
-def find_workspaces(search_str):
+def find_workspaces(search_str=''):
     """
     Find workspaces that match the given search string.
     :param search_str: the search string to search for.
@@ -427,7 +429,7 @@ def register_fn(name, impl_subpackage='_impls'):
     doc = fn.__doc__.strip()
 
     meta = _extract_meta_by_docstr(doc)
-
+    already_present = False
     try:
         fns = regint.register_fn_spec(meta['type']['name']['pckg'],
                                       meta['type']['name']['name'],
@@ -444,6 +446,7 @@ def register_fn(name, impl_subpackage='_impls'):
                meta['type']['name']['name'])
         fns = regint.get_by_name(fqn, kind=RegistryInterface.TYPE_FN)
         fnid = fns['id']
+        already_present = True
 
     # Register the implementation and associate it to the spec above
     try:
@@ -456,7 +459,10 @@ def register_fn(name, impl_subpackage='_impls'):
     except:
         pass
 
-    print fns['url']
+    if already_present:
+        print 'Function already registered: ' + fns['url']
+    else:
+        print 'Registered function: ' + fns['url']
 
 
 # TODO: Add registration policy in case of name clash
@@ -484,6 +490,7 @@ def register_pe(name, impl_subpackage='_impls'):
     doc = pe.__doc__.strip()
 
     meta = _extract_meta_by_docstr(doc)
+    already_present = False
 
     # Actual registrations via the core module here:
     try:
@@ -509,6 +516,7 @@ def register_pe(name, impl_subpackage='_impls'):
                meta['type']['name']['name'])
         pes = regint.get_by_name(fqn, kind=RegistryInterface.TYPE_PE)
         peid = pes['id']
+        already_present = True
 
     # The implementation:
     code = inspect.getsource(m)
@@ -523,7 +531,31 @@ def register_pe(name, impl_subpackage='_impls'):
         # Do not do anything if a PEImpl of same fqn is already present
         pass
 
-    print pes['url']
+    if already_present:
+        print 'PE already registered: ' + pes['url']
+    else:
+        print 'Registered PE: ' + pes['url']
+
+
+def clone(name):
+    """
+    Clone the currently active workspace into a new one named `name`.
+    :param name: the name of the new workspace to clone the currently active
+    one into.
+    """
+    try:
+        r = regint.clone(name)
+        print 'New workspace created: ' + str(r['url'])
+    except:
+        # See if there is already a workspace with the same name under the
+        # current user and notify accordingly
+        try:
+            w = regint._get_workspace_by_name(regconf.username, name)
+            if 'id' in w:
+                print 'Workspace ' + name + ' (' + regconf.username + ')' +\
+                    ' already exists.'
+        except:
+            print 'Workspace cloning failed.'
 
 
 def _short_descr(s, length=30):
@@ -554,17 +586,22 @@ def main():
     set_workspace('NEW_TEST2')
     find_in_workspace('desc')
 
-    print 'WORKSPACE 3:'
-    set_workspace_by_id(3)
-    wls()
+    # print 'WORKSPACE 3:'
+    # set_workspace_by_id(3)
+    # wls()
+    #
+    # print 'WORKSPACE 1:'
+    # set_workspace_by_id(1)
+    # wls()
+    #
+    # info()
+    # set_workspace('NEW_TEST')
+    # info()
 
-    print 'WORKSPACE 1:'
-    set_workspace_by_id(1)
-    wls()
+    set_workspace('ROOT')
+    clone('root_clone3')
 
-    info()
-    set_workspace('NEW_TEST')
-    info()
+    find_workspaces()
 
 if __name__ == '__main__':
     main()

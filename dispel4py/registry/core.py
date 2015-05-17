@@ -15,6 +15,8 @@
 # import imp
 import sys
 import requests
+requests.packages.urllib3.disable_warnings()
+
 # import traceback
 import json
 import os
@@ -204,6 +206,8 @@ class RegistryInterface(object):
     # ###########################
     conf = None
 
+    SSL_CERT_VERIFY = False
+
     # def __init__(self, conf=None, wspc_id=DEF_WORKSPACE_ID):
 
     def __init__(self, conf=None):
@@ -223,10 +227,14 @@ class RegistryInterface(object):
             wspc_name = conf.def_workspace
 
         self.login(conf.username, conf.password)
-
-        wspc_id = self._get_workspace_by_name(conf.username, wspc_name)['id']
-        self.workspace = wspc_id
         self.conf = conf
+        try:
+            wspc_id = self._get_workspace_by_name(
+                conf.username, wspc_name)['id']
+        except:
+            wspc_id = self._get_workspace_by_name(
+                conf.username, wspc_name)['id']
+        self.workspace = wspc_id
 
     def get_auth_token(self):
         if not self.logged_in:
@@ -248,8 +256,7 @@ class RegistryInterface(object):
         Return true if the client has already logged in and login is valid.
         """
         return (self.logged_in and self.logged_in_username == username
-                and datetime.datetime.now() -
-                self.logged_in_time.total_seconds() <
+                and (datetime.datetime.now() - self.logged_in_time).seconds <
                 self.PASSWORD_EXPIRATION_PERIOD_HRS * 60 * 60)
 
     def _extract_kind_from_json_object(self, j):
@@ -281,8 +288,9 @@ class RegistryInterface(object):
 
         data = {'username': username, 'password': password}
         url = self.get_base_url() + self.URL_AUTH
-
-        r = requests.post(url, data, verify=False)
+        r = requests.post(url,
+                          data=data,
+                          verify=RegistryInterface.SSL_CERT_VERIFY)
         try:
             r.raise_for_status()
         except requests.exceptions.HTTPError:
@@ -290,7 +298,7 @@ class RegistryInterface(object):
                 raise NotAuthorisedException()
             else:
                 raise
-        self.logged_in = r.status_code == 200
+        self.logged_in = r.status_code == requests.codes.ok
         if self.logged_in:
             self.logged_in_time = datetime.datetime.now()
             self.logged_in_username = username
@@ -310,7 +318,9 @@ class RegistryInterface(object):
 
         url = (self.get_base_url() + self.URL_WORKSPACES + str(workspace_id) +
                '/?ls&startswith=' + startswith)
-        r = requests.get(url, headers=self._get_auth_header(), verify=False)
+        r = requests.get(url,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
 
@@ -332,17 +342,30 @@ class RegistryInterface(object):
         wspc = self._get_workspace_by_name(owner, name)
         self.workspace = wspc['id']
 
-    def clone(self, orig_workspace_id, name):
-        """Clone the given workspace into a new one with the name `name`. """
+    def clone(self, name, orig_workspace_id=None):
+        """
+        Clone the given workspace into a new one with the name `name`.
+        :param name: the name of the new workspace.
+        :param orig_workspace_id: the id of the original workspace; defaults
+        to the currently active workspace.
+        :return the resulting json
+        """
         if not self.logged_in:
             raise NotLoggedInError()
             return
 
+        orig_workspace_id = orig_workspace_id or self.workspace
+
         url = (self.get_base_url() + self.URL_WORKSPACES + '?clone_of=' +
                str(orig_workspace_id))
-        r = requests.post(url, data={'name': name},
-                          headers=self._get_auth_header(), verify=False)
-        print r.text
+        r = requests.post(url,
+                          data={'name': name},
+                          headers=self._get_auth_header(),
+                          verify=RegistryInterface.SSL_CERT_VERIFY)
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
 
     def get_code(self, fullname, workspace_id=DEF_WORKSPACE_ID):
         """
@@ -384,7 +407,9 @@ class RegistryInterface(object):
         id = id or self.workspace
 
         url = self.get_base_url() + self.URL_WORKSPACES + str(id)
-        r = requests.get(url, headers=self._get_auth_header())
+        r = requests.get(url,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -400,7 +425,9 @@ class RegistryInterface(object):
             raise NotLoggedInError()
 
         url = self.get_base_url() + self.URL_USERS + str(id)
-        r = requests.get(url, headers=self._get_auth_header())
+        r = requests.get(url,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -411,7 +438,9 @@ class RegistryInterface(object):
         if not self.logged_in:
             raise NotLoggedInError()
 
-        r = requests.get(url, headers=self._get_auth_header())
+        r = requests.get(url,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -427,7 +456,9 @@ class RegistryInterface(object):
 
         url = (self.get_base_url() + self.URL_WORKSPACES +
                '?search=' + search_str)
-        r = requests.get(url, headers=self._get_auth_header())
+        r = requests.get(url,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -449,7 +480,9 @@ class RegistryInterface(object):
 
         url = (self.get_base_url() + self.URL_WORKSPACES +
                str(workspace_id) + '/?search=' + search_str)
-        r = requests.get(url, headers=self._get_auth_header())
+        r = requests.get(url,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -467,7 +500,9 @@ class RegistryInterface(object):
 
         url = (self.get_base_url() + self.URL_WORKSPACES + str(workspace_id) +
                '/?fqn=' + pckg + '.' + name)
-        r = requests.get(url, headers=self._get_auth_header(), verify=False)
+        r = requests.get(url,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -483,7 +518,7 @@ class RegistryInterface(object):
 
         r = requests.get(impl_url,
                          headers=self._get_auth_header(),
-                         verify=False)
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
         return r.json().get('code')
 
     def get_direct_implementation_code(self, workspace_id, pckg, name):
@@ -496,7 +531,9 @@ class RegistryInterface(object):
 
         url = (self.get_base_url() + self.URL_WORKSPACES + str(workspace_id) +
                '/?fqn=' + pckg + '.' + name)
-        r = requests.get(url, headers=self._get_auth_header(), verify=False)
+        r = requests.get(url,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -512,7 +549,9 @@ class RegistryInterface(object):
 
         url = (self.get_base_url() + self.URL_WORKSPACES +
                str(self.workspace) + '/?ls')
-        r = requests.get(url, headers=self._get_auth_header(), verify=False)
+        r = requests.get(url,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -526,15 +565,19 @@ class RegistryInterface(object):
         print listing
 
     def _get_workspace_by_name(self, username, wspcname):
-        """Return the dictionary describing a workspace identified by
-        the owner's and the workspace's name."""
+        """
+        Return the dictionary describing a workspace identified by
+        the owner's and the workspace's name.
+        """
         if not self.logged_in:
             raise NotLoggedInError()
 
-        url = (self.get_base_url() + self.URL_WORKSPACES +
-               '?username=' + username + '&name=' + wspcname)
-        # print 'get_wspc_by_name: ', username, wspcname
-        r = requests.get(url, headers=self._get_auth_header(), verify=False)
+        url = self.get_base_url() + self.URL_WORKSPACES + \
+            '?username=' + username + '&name=' + wspcname
+
+        r = requests.get(url,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -552,7 +595,9 @@ class RegistryInterface(object):
 
         url = (self.get_base_url() + self.URL_WORKSPACES + str(workspace_id) +
                '/?fqn=' + pckg + '.' + name)
-        r = requests.get(url, headers=self._get_auth_header(), verify=False)
+        r = requests.get(url,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -568,8 +613,9 @@ class RegistryInterface(object):
             raise ImplementationNotFound()
             return
 
-        r = requests.get(impl_url, headers=self._get_auth_header(),
-                         verify=False)
+        r = requests.get(impl_url,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
         return r.json().get('code')
 
     def register_pe_spec(self, pckg, name, workspace_id=None, descr=''):
@@ -587,13 +633,17 @@ class RegistryInterface(object):
         workspace_id = workspace_id or self.workspace
         workspace_url = self.get_base_url() + self.URL_WORKSPACES + \
             str(workspace_id) + '/'
+
         data = {'workspace': workspace_url,
                 'pckg': pckg,
                 'name': name,
                 'description': descr}
         url = self.get_base_url() + self.URL_PES
-        r = requests.post(url, headers=self._get_auth_header(), data=data)
 
+        r = requests.post(url,
+                          headers=self._get_auth_header(),
+                          data=data,
+                          verify=RegistryInterface.SSL_CERT_VERIFY)
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
 
@@ -622,7 +672,10 @@ class RegistryInterface(object):
                 'description': descr,
                 'return_type': return_type}
         url = self.get_base_url() + self.URL_FNS
-        r = requests.post(url, headers=self._get_auth_header(), data=data)
+        r = requests.post(url,
+                          headers=self._get_auth_header(),
+                          data=data,
+                          verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -646,7 +699,10 @@ class RegistryInterface(object):
             'param_type': ptype,
             'parent_function': fn_url
         }
-        r = requests.post(url, headers=self._get_auth_header(), data=data)
+        r = requests.post(url,
+                          headers=self._get_auth_header(),
+                          data=data,
+                          verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -684,7 +740,10 @@ class RegistryInterface(object):
             'modifiers': modifiers}
 
         # logger.info('New connection data: ' + str(data))
-        r = requests.post(url, headers=self._get_auth_header(), data=data)
+        r = requests.post(url,
+                          headers=self._get_auth_header(),
+                          data=data,
+                          verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -701,18 +760,26 @@ class RegistryInterface(object):
             raise NotLoggedInError()
 
         url = self.get_base_url() + self.URL_PES + peid + '/'
-        r = requests.get(url, headers=self._get_auth_header())
+        r = requests.get(url,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
 
         for c in r.json()['connections']:
-            requests.delete(c, headers=self._get_auth_header())
+            requests.delete(c,
+                            headers=self._get_auth_header(),
+                            verify=RegistryInterface.SSL_CERT_VERIFY)
 
         for i in r.json()['peimpls']:
-            requests.delete(i, headers=self._get_auth_header())
+            requests.delete(i,
+                            headers=self._get_auth_header(),
+                            verify=RegistryInterface.SSL_CERT_VERIFY)
 
-        r = requests.delete(r.json()['url'], headers=self._get_auth_header())
+        r = requests.delete(r.json()['url'],
+                            headers=self._get_auth_header(),
+                            verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -729,18 +796,26 @@ class RegistryInterface(object):
             raise NotLoggedInError()
 
         url = self.get_base_url() + self.URL_FNS + fnid + '/'
-        r = requests.get(url, headers=self._get_auth_header())
+        r = requests.get(url,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
 
         for c in r.json()['parameters']:
-            requests.delete(c, headers=self._get_auth_header())
+            requests.delete(c,
+                            headers=self._get_auth_header(),
+                            verify=RegistryInterface.SSL_CERT_VERIFY)
 
         for i in r.json()['fnimpls']:
-            requests.delete(i, headers=self._get_auth_header())
+            requests.delete(i,
+                            headers=self._get_auth_header(),
+                            verify=RegistryInterface.SSL_CERT_VERIFY)
 
-        r = requests.delete(r.json()['url'], headers=self._get_auth_header())
+        r = requests.delete(r.json()['url'],
+                            headers=self._get_auth_header(),
+                            verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -752,7 +827,9 @@ class RegistryInterface(object):
             raise NotLoggedInError()
 
         url = self.get_base_url() + self.URL_PEIMPLS + peimpl_id + '/'
-        r = requests.delete(url, headers=self._get_auth_header())
+        r = requests.delete(url,
+                            headers=self._get_auth_header(),
+                            verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -765,7 +842,9 @@ class RegistryInterface(object):
             raise NotLoggedInError()
 
         url = self.get_base_url() + self.URL_FNIMPLS + fnimpl_id + '/'
-        r = requests.delete(url, headers=self._get_auth_header())
+        r = requests.delete(url,
+                            headers=self._get_auth_header(),
+                            verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -778,7 +857,9 @@ class RegistryInterface(object):
             raise NotLoggedInError()
 
         conn_url = self.get_base_url() + self.URL_CONNS + conn_id + '/'
-        r = requests.delete(conn_url, headers=self._get_auth_header())
+        r = requests.delete(conn_url,
+                            headers=self._get_auth_header(),
+                            verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
@@ -798,7 +879,9 @@ class RegistryInterface(object):
 
         # Retrieve the corresponding PE
         pe_url = self.get_base_url() + self.URL_PES + pe_id + '/'
-        pereq = requests.get(pe_url, headers=self._get_auth_header())
+        pereq = requests.get(pe_url,
+                             headers=self._get_auth_header(),
+                             verify=RegistryInterface.SSL_CERT_VERIFY)
         if pereq.status_code != requests.codes.ok:
             pereq.raise_for_status()
 
@@ -813,7 +896,10 @@ class RegistryInterface(object):
                 'pckg': pckg,
                 'name': name,
                 'workspace': workspace}
-        r = requests.post(url, headers=self._get_auth_header(), data=data)
+        r = requests.post(url,
+                          headers=self._get_auth_header(),
+                          data=data,
+                          verify=RegistryInterface.SSL_CERT_VERIFY)
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
 
@@ -835,7 +921,9 @@ class RegistryInterface(object):
 
         # Retrieve the corresponding function
         fn_url = self.get_base_url() + self.URL_FNS + fn_id + '/'
-        fnreq = requests.get(fn_url, headers=self._get_auth_header())
+        fnreq = requests.get(fn_url,
+                             headers=self._get_auth_header(),
+                             verify=RegistryInterface.SSL_CERT_VERIFY)
         if fnreq.status_code != requests.codes.ok:
             fnreq.raise_for_status()
 
@@ -853,7 +941,10 @@ class RegistryInterface(object):
                 'name': name,
                 'workspace': workspace}
         print '\n\nDATA:', str(data)
-        r = requests.post(url, headers=self._get_auth_header(), data=data)
+        r = requests.post(url,
+                          headers=self._get_auth_header(),
+                          data=data,
+                          verify=RegistryInterface.SSL_CERT_VERIFY)
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
 
@@ -875,7 +966,9 @@ class RegistryInterface(object):
         workspace = workspace or self.workspace
         url = (self.get_base_url() + self.URL_WORKSPACES + str(workspace) +
                '/?fqn=' + fqn)
-        r = requests.get(url, headers=self._get_auth_header())
+        r = requests.get(url,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
 
