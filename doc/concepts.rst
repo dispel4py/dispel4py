@@ -4,9 +4,13 @@ Concepts
 Basic processing elements
 -------------------------
 
-Processing elements in Dispel4Py extend the class :py:class:`dispel4py.core.GenericPE`.
+PEs form nodes in dispel4py data-flow graphs. Each PE captures a particular data-handling or data-processing step. There may be many instances of the same PE in a dispel4py graph.
+A library of standard PEs is provided, there are many libraries of specialised PEs for particular application fields, and users can define their own PEs, as described here.
+A PE normally takes data units from its inputs and deals with them one at a time, emitting data units on its outputs. However, some PEs may need to collect a set of data units before they can process them and generate the resultant output.
+
+PEs in dispel4py are Python classes and extend the class :py:class:`dispel4py.core.GenericPE`.
 This class has several methods that must or may be overridden.
-Please refer to the API documentation of the class for further information.
+Please refer to the documentation of the class :py:class:`dispel4py.core.GenericPE` for further information.
 
 PEs have named inputs and outputs which can be connected to other PEs.
 A PE *must* declare the input and output connections that it provides as this is required information 
@@ -18,20 +22,20 @@ For example, to declare a graph with one input ``in1`` and one output ``out1``::
         self._add_input('in1')
         self._add_output('out1')
 
-A PE *may* implement custom processing by overriding the :py:func:`~dispel4py.GenericPE.GenericPE.process` method. 
-This method is called for each data block in an input stream.
-The inputs parameter is a dictionary which maps the name of an input connection to the corresponding input data block.
-Note that at least one input will have input data when :py:func:`~dispel4py.GenericPE.GenericPE.process` is called, but some inputs may be empty.
-The output data must be a dictionary mapping names of output connections to the corresponding output data blocks.
+A PE *may* implement custom processing by overriding the :py:func:`~dispel4py.core.GenericPE._process` method. 
+This method is called for each data unit in an input stream.
+The inputs parameter is a dictionary which maps the name of an input connection to the corresponding input data unit.
+Note that at least one input will have input data when :py:func:`~dispel4py.core.GenericPE._process` is called, but some inputs may be empty.
+The output data must be a dictionary mapping names of output connections to the corresponding output data units.
 
 The example shows show how to produce output after applying ``myfunc`` to the input::
 
-    def process(self, inputs):
+    def _process(self, inputs):
         data = inputs['in1']
         result = myfunc(data)
         return { 'out1' : result }
 
-If a PE produces more than one output block in an iteration these can be written to output streams at any time during :py:func:`~dispel4py.core.GenericPE.process` by calling :py:func:`~dispel4py.core.GenericPE.write`.
+If a PE produces more than one output data unit in an iteration these can be written to output streams at any time during :py:func:`~dispel4py.core.GenericPE._process` by calling :py:func:`~dispel4py.core.GenericPE.write`.
 
 The method :py:func:`~dispel4py.core.GenericPE.log` can be used for log statements when implementing custom PEs. 
 The enactment engine takes care of providing a logging mechanism for a particular environment.
@@ -39,7 +43,7 @@ For example, a standalone enactment process would print the log messages to stdo
 
 Initialisation of variables before the start of the processing loop can be implemented by overriding :py:func:`~dispel4py.core.GenericPE.preprocess`.
 
-Note that is possible to submit a PE from a client that does not support all of the libraries used in the processing function. Since a client doesn't execute :py:func:`~dispel4py.core.GenericPE.process` it is possible to use the PE in the definition of a Dispel4Py workflow by ensuring that any corresponding :py:exc:`ImportError` is caught and ignored. For example, in the following the PE uses an obspy module when processing but doesn't require it to be available on the client for the graph definition::
+If the user does not choose to perform local development runs then it is possible to submit a PE from a client that does not provide all of the libraries used in the process() function. Since a client doesn't execute :py:func:`~dispel4py.core.GenericPE._process` it is possible to use the PE in the definition of a dispel4py workflow by ensuring that any corresponding :py:exc:`ImportError` is caught and ignored. For example, the PE below uses an ObsPy (http://obspy.org) module when processing but doesn't require it to be available on the client for the graph definition so we catch the error and only print a warning message::
 
     try:
         from obspy.core import Stream
@@ -47,7 +51,6 @@ Note that is possible to submit a PE from a client that does not support all of 
         print "Warning: Could not import 'obspy.core'"
         pass
 
-A PE can be registered in a remote registry, identified by a package name (the module) and its class name.
 
 PE base classes
 ---------------
@@ -55,8 +58,9 @@ PE base classes
 Base classes for various patterns are available that may be extended or modified when implementing custom PEs:
 
 * :py:class:`dispel4py.base.BasePE` - a PE that is initialised with a list of input and output names.
-* :py:class:`dispel4py.base.IterativePE` - a PE that declares one input and one output. Subclasses implement the method :py:func:`~dispel4py.base.IterativePE._process`.
-* :py:class:`dispel4py.base.ConsumerPE` - a PE that has one input and no outputs. Subclasses implement the method :py:func:`~dispel4py.base.ConsumerPE._process`.
+* :py:class:`dispel4py.base.IterativePE` - a PE that declares one input named  ``input`` and one output named ``output``. Subclasses implement the method :py:func:`~dispel4py.base.IterativePE._process`.
+* :py:class:`dispel4py.base.ConsumerPE` - a PE that has one input named ``input`` and no outputs. Subclasses implement the method :py:func:`~dispel4py.base.ConsumerPE._process`.
+* :py:class:`dispel4py.base.ProducerPE` - a PE that has no inputs and one output named ``output``. Subclasses implement the method :py:func:`~dispel4py.base.ProducerPE._process`.
 * :py:class:`dispel4py.base.SimpleFunctionPE` - This PE calls a function with the input data for each processing iteration. The function is specified when instantiating this PE.
 
 
@@ -67,24 +71,24 @@ Composite processing elements are PEs that contain subgraphs.
 
 To create a composite PE first create a workflow graph, for example::
 
-	wordfilter = WorkflowGraph()
-	words = RandomWordProducer()
-	filter = RandomFilter()
-	wordfilter.connect(words, 'output', filter, 'input')
-	
+    wordfilter = WorkflowGraph()
+    words = RandomWordProducer()
+    filter = RandomFilter()
+    wordfilter.connect(words, 'output', filter, 'input')
+
 Now define the inputs and outputs of this subgraph by mapping a name to a pair ``(PE, name)`` that identifies an input or output within the subgraph::
-	
-	wordfilter.inputmappings = { }
-	wordfilter.outputmappings = { 'out' : (filter, 'output') }
-	
+
+    wordfilter.inputmappings = { }
+    wordfilter.outputmappings = { 'out' : (filter, 'output') }
+
 The above statements define that the composite PE containing the subgraph has no inputs and one output named ``output`` which is the output of the PE ``filter``.
-	
+
 Now the subworkflow can be used in another workflow and connected to a PE::
 
-	normalise = AnotherFilter()
-	toplevel = WorkflowGraph()
-	toplevel.connect(wordfilter, 'out', normalise, 'input')
-	
+    normalise = AnotherFilter()
+    toplevel = WorkflowGraph()
+    toplevel.connect(wordfilter, 'out', normalise, 'input')
+
     
 Functions
 ---------

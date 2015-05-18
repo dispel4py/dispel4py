@@ -13,7 +13,7 @@
 # limitations under the License.
 
 '''
-The IPython module for visualising a Dispel4Py graph using Graphviz dot.
+The IPython module for visualising a dispel4py graph using Graphviz dot.
 
 For example, to visualise a graph named 'pipeline'::
 

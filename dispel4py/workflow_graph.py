@@ -81,7 +81,9 @@ DIRECTION = 'direction'
 
 
 class WorkflowGraph(object):
-    """ A graph representing the workflow and related methods """
+    """
+    A graph representing the workflow and related methods
+    """
 
     def __init__(self):
         self.graph = nx.Graph()
@@ -89,8 +91,10 @@ class WorkflowGraph(object):
 
     def add(self, n):
         '''
-        Adds node n, which should be a GenericPE of a python routine, and
-        returns the created workflow node
+        Adds node n, which must be an instance of
+        :py:class:`dispel4py.core.GenericPE`, and returns the created workflow
+        node.
+
         :rtype: WorkflowNode
         '''
         nd = WorkflowNode(n)

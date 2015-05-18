@@ -20,7 +20,7 @@ they look quite similar. However, they do different things.
 In this example, the nodes ``cons1`` and ``cons2`` are different PE and the
 node ``prod`` sends the same data to both PEs.
 
-.. image:: /api/images/teecopy.png
+.. image:: /images/teecopy.png
 
 It can be executed with MPI and STORM.
 
@@ -28,10 +28,11 @@ It can be executed with MPI and STORM.
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> dispel4py mpi <module|module file>\
-            [-a name_dispel4py_graph]\
-            [-f file containing the input dataset in JSON format]\
-            [-i number of iterations/runs'] [-s]
+        mpiexec -n <number mpi_processes> dispel4py mpi <module|module file>\\
+            [-a name_dispel4py_graph]\\
+            [-f file containing the input dataset in JSON format]\\
+            [-i number of iterations/runs']\\
+            [-s]
 
     The argument '-s' forces to run the graph in a simple processing, which
     means that the first node of the graph will be executed in a process, and
@@ -52,20 +53,12 @@ It can be executed with MPI and STORM.
 
     Output::
 
-        Processing 1 iterations
-        Processes: {'TestProducer0': [0], 'TestOneInOneOut2': [2],\
-            'TestOneInOneOut1': [1]}
-        TestProducer0 (rank 0): I'm a spout
-        Rank 0: Sending terminate message to [1]
-        Rank 0: Sending terminate message to [2]
-        TestProducer0 (rank 0): Processed 1 input block(s)
-        TestProducer0 (rank 0): Completed.
-        TestOneInOneOut2 (rank 2): I'm a bolt
-        TestOneInOneOut2 (rank 2): Processed 1 input block(s)
-        TestOneInOneOut2 (rank 2): Completed.
-        TestOneInOneOut1 (rank 1): I'm a bolt
-        TestOneInOneOut1 (rank 1): Processed 1 input block(s)
-        TestOneInOneOut1 (rank 1): Completed
+        Processing 1 iteration.
+        Processes: {'TestProducer0': [0], 'TestOneInOneOut2': [2], \
+'TestOneInOneOut1': [1]}
+        TestProducer0 (rank 0): Processed 1 iteration.
+        TestOneInOneOut2 (rank 2): Processed 1 iteration.
+        TestOneInOneOut1 (rank 1): Processed 1 iteration.
 '''
 
 from dispel4py.examples.graph_testing import testing_PEs as t

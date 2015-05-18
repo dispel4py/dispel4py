@@ -16,7 +16,7 @@
 This is a dispel4py graph which produces two pipeline workflows which are
 unconnected.
 
-.. image:: /api/images/unconnected_pipeline.png
+.. image:: /images/unconnected_pipeline.png
 
 It can be executed with MPI and STORM.
 
@@ -24,10 +24,11 @@ It can be executed with MPI and STORM.
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> dispel4py mpi <module|module file>\
-            [-a name_dispel4py_graph]\
-            [-f file containing the input dataset in JSON format]
-            [-i number of iterations/runs'] [-s]
+        mpiexec -n <number mpi_processes> dispel4py mpi <module|module file>\\
+            [-a name_dispel4py_graph]\\
+            [-f file containing the input dataset in JSON format]\\
+            [-i number of iterations/runs']\\
+            [-s]
 
     The argument '-s' forces to run the graph in a simple processing, which
     means that the first node of the graph will be executed in a process, and
@@ -37,7 +38,7 @@ It can be executed with MPI and STORM.
 
     For example::
 
-        mpiexec -n 12 dispel4py mpi\
+        mpiexec -n 12 dispel4py mpi \\
             dispel4py.examples.graph_testing.unconnected_pipeline
 
     .. note::
@@ -49,23 +50,11 @@ It can be executed with MPI and STORM.
     Output::
 
         Processing 1 iteration.
-        Processing 1 iteration.
-        Processing 1 iteration.
-        Processing 1 iteration.
-        Processing 1 iteration.
-        Processing 1 iteration.
-        Processing 1 iteration.
-        Processing 1 iteration.
-        Processing 1 iteration.
-        Processing 1 iteration.
-        Processing 1 iteration.
-        Processing 1 iteration.
-        Processes: {'TestProducer0': [9], 'TestProducer6': [6],\
-            'TestOneInOneOut9': [7], 'TestOneInOneOut8': [8],\
-            'TestOneInOneOut7': [11], 'TestOneInOneOut5': [1],\
-            'TestOneInOneOut4': [2], 'TestOneInOneOut3': [4],\
-            'TestOneInOneOut2': [0], 'TestOneInOneOut1': [10],\
-            'TestOneInOneOut11': [3], 'TestOneInOneOut10': [5]}
+        Processes: {'TestProducer0': [9], 'TestProducer6': [6], \
+'TestOneInOneOut9': [7], 'TestOneInOneOut8': [8], 'TestOneInOneOut7': [11], \
+'TestOneInOneOut5': [1], 'TestOneInOneOut4': [2], 'TestOneInOneOut3': [4], \
+'TestOneInOneOut2': [0], 'TestOneInOneOut1': [10], 'TestOneInOneOut11': [3], \
+'TestOneInOneOut10': [5]}
         TestProducer6 (rank 6): Processed 1 iteration.
         TestProducer0 (rank 9): Processed 1 iteration.
         TestOneInOneOut1 (rank 10): Processed 1 iteration.

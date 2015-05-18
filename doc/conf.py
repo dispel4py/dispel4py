@@ -109,7 +109,8 @@ html_theme = 'dispel4py_theme'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = { 'header_text' : 'dispel4py', 
+html_theme_options = { 'header_text' : 'dispel4py.org', 
+                       'header_link' : 'http://dispel4py.org',
                        'transparent_logo' : 'DISPEL4PY_mono_white_trans.png ' }
 
 # Add any paths that contain custom themes here, relative to this directory.

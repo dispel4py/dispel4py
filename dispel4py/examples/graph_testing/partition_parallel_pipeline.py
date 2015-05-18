@@ -33,10 +33,11 @@ Execution:
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> dispel4py mpi\
-            [-a name_dispel4py_graph]\
-            [-f file containing the input dataset in JSON format]
-            [-i number of iterations/runs'] [-s]
+        mpiexec -n <number mpi_processes> dispel4py mpi\\
+            [-a name_dispel4py_graph]\\
+            [-f file containing the input dataset in JSON format]\\
+            [-i number of iterations/runs']\\
+            [-s]
 
     The argument '-s' forces to run the graph in a simple processing, which
     means that the first node of the graph will be executed in a process,
@@ -47,13 +48,13 @@ Execution:
 
     For example::
 
-        mpiexec -n 3 python -m dispel4py.worker_mpi\
+        mpiexec -n 3 python -m dispel4py.worker_mpi \\
             dispel4py.examples.graph_testing.partition_parallel_pipeline -i 10
 
     Output::
 
-        Partitions:  [TestProducer0, TestOneInOneOut1, TestOneInOneOut2],\
-                     [TestOneInOneOut3]
+        Partitions:  [TestProducer0, TestOneInOneOut1, TestOneInOneOut2], \
+[TestOneInOneOut3]
         Processes: {'GraphWrapperPE5': [0, 1], 'GraphWrapperPE4': [2]}
         GraphWrapperPE5 (rank 0): I'm a bolt
         GraphWrapperPE5 (rank 1): I'm a bolt

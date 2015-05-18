@@ -66,6 +66,12 @@ class IterativePE(BasePE):
         self._add_output(IterativePE.OUTPUT_NAME)
 
     def process(self, inputs):
+        '''
+        Calls the implementation of
+        :py:func:`~dispel4py.base.ConsumerPE._process` of the subclass with
+        the data read from the input stream and writes the return value to the
+        output stream.
+        '''
         data = inputs[IterativePE.INPUT_NAME]
         result = self._process(data)
         if result is not None:
@@ -80,7 +86,37 @@ class IterativePE(BasePE):
         return None
 
 
+class ProducerPE(BasePE):
+    '''
+    A PE that has no input and one output named "output".
+    Subclasses are expected to override
+    :py:func:`~dispel4py.base.ProducerPE._process` to implement processing.
+    '''
+    OUTPUT_NAME = 'output'
+
+    def __init__(self):
+        BasePE.__init__(self)
+        self._add_output(ProducerPE.OUTPUT_NAME)
+
+    def process(self, inputs):
+        '''
+        Calls the implementation of
+        :py:func:`~dispel4py.base.ProducerPE._process` of the subclass.
+        '''
+        result = self._process()
+        if result is not None:
+            return {self.OUTPUT_NAME: result}
+
+    def _process(self):
+        return None
+
+
 class ConsumerPE(BasePE):
+    '''
+    A PE that has one input named "input" and no outputs.
+    Subclasses are expected to override
+    :py:func:`~dispel4py.base.ConsumerPE._process` to implement processing.
+    '''
     INPUT_NAME = 'input'
 
     def __init__(self):
@@ -88,6 +124,11 @@ class ConsumerPE(BasePE):
         self._add_input(ConsumerPE.INPUT_NAME)
 
     def process(self, inputs):
+        '''
+        Calls the implementation of
+        :py:func:`~dispel4py.base.ConsumerPE._process` of the subclass with
+        the data read from the input stream.
+        '''
         data = inputs[ConsumerPE.INPUT_NAME]
         self._process(data)
 

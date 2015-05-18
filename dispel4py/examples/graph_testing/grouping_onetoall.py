@@ -50,10 +50,10 @@ It can be executed with MPI and STORM.
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi\
-            [-a name_dispel4py_graph]\
-            [-f file containing the input dataset in JSON format]\
-            [-i number of iterations/runs']\
+        mpiexec -n <number mpi_processes> python -m dispel4py.worker_mpi\\
+            [-a name_dispel4py_graph]\\
+            [-f file containing the input dataset in JSON format]\\
+            [-i number of iterations/runs']\\
             [-s]
 
     The argument '-s' forces to run the graph in a simple processing, which
@@ -65,7 +65,7 @@ It can be executed with MPI and STORM.
 
     For example::
 
-        mpiexec -n 3 python -m dispel4py.worker_mpi\
+        mpiexec -n 3 python -m dispel4py.worker_mpi\\
             dispel4py.examples.graph_testing.grouping_onetoall
 
     .. note::

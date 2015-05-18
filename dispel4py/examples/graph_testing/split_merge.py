@@ -17,7 +17,7 @@ This is a dispel4py graph which produces a workflow that splits the data and
 sends it to two nodes (cons1 and cons2) and the output of those two nodes is
 merged by another node (last).
 
-.. image:: /api/images/split_merge.png
+.. image:: /images/split_merge.png
 
 It can be executed with MPI and STORM.
 
@@ -25,10 +25,11 @@ It can be executed with MPI and STORM.
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> dispel4py mpi <module|module file>\
-            [-a name_dispel4py_graph]
-            [-f file containing the input dataset in JSON format]
-            [-i number of iterations/runs'] [-s]
+        mpiexec -n <number mpi_processes> dispel4py mpi <module|module file>\\
+            [-a name_dispel4py_graph]\\
+            [-f file containing the input dataset in JSON format]\\
+            [-i number of iterations/runs']\\
+            [-s]
 
     The argument '-s' forces to run the graph in a simple processing, which
     means that the first node of the graph will be executed in a process, and
@@ -49,25 +50,13 @@ It can be executed with MPI and STORM.
 
     Output::
 
-        Processing 1 iterations
-        Processes: {'TestProducer0': [0], 'TestOneInOneOutWriter2': [1],\
-            'TestOneInOneOut1': [3], 'TestTwoInOneOut3': [2]}
-        TestProducer0 (rank 0): I'm a spout
-        Rank 0: Sending terminate message to [3]
-        Rank 0: Sending terminate message to [1]
-        TestProducer0 (rank 0): Processed 1 input block(s)
-        TestProducer0 (rank 0): Completed.
-        TestOneInOneOutWriter2 (rank 1): I'm a bolt
-        Rank 1: Sending terminate message to [2]
-        TestOneInOneOutWriter2 (rank 1): Processed 1 input block(s)
-        TestOneInOneOutWriter2 (rank 1): Completed.
-        TestTwoInOneOut3 (rank 2): I'm a bolt
-        TestOneInOneOut1 (rank 3): I'm a bolt
-        Rank 3: Sending terminate message to [2]
-        TestOneInOneOut1 (rank 3): Processed 1 input block(s)
-        TestOneInOneOut1 (rank 3): Completed.
-        TestTwoInOneOut3 (rank 2): Processed 2 input block(s)
-        TestTwoInOneOut3 (rank 2): Completed.
+        Processing 1 iteration.
+        Processes: {'TestProducer0': [1], 'TestOneInOneOutWriter2': [2], \
+'TestTwoInOneOut3': [0], 'TestOneInOneOut1': [3]}
+        TestProducer0 (rank 1): Processed 1 iteration.
+        TestOneInOneOut1 (rank 3): Processed 1 iteration.
+        TestOneInOneOutWriter2 (rank 2): Processed 1 iteration.
+        TestTwoInOneOut3 (rank 0): Processed 2 iterations.
 '''
 
 from dispel4py.examples.graph_testing import testing_PEs as t

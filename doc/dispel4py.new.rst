@@ -12,6 +12,14 @@ dispel4py.new.aggregate module
     :undoc-members:
     :show-inheritance:
 
+dispel4py.new.aggregate_test module
+-----------------------------------
+
+.. automodule:: dispel4py.new.aggregate_test
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 dispel4py.new.mappings module
 -----------------------------
 
@@ -44,14 +52,6 @@ dispel4py.new.multi_process module
     :undoc-members:
     :show-inheritance:
 
-dispel4py.new.multi_process_test module
----------------------------------------
-
-.. automodule:: dispel4py.new.multi_process_test
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 dispel4py.new.processor module
 ------------------------------
 
@@ -64,14 +64,6 @@ dispel4py.new.simple_process module
 -----------------------------------
 
 .. automodule:: dispel4py.new.simple_process
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-dispel4py.new.simple_process_test module
-----------------------------------------
-
-.. automodule:: dispel4py.new.simple_process_test
     :members:
     :undoc-members:
     :show-inheritance:

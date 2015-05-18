@@ -17,7 +17,7 @@ This is a dispel4py graph which produces a pipeline workflow with one producer
 node (prod) and 5 consumer nodes.
 It can be executed with MPI and STORM.
 
-.. image:: /api/images/pipeline_test.png
+.. image:: /images/pipeline_test.png
 
 Execution:
 
@@ -25,10 +25,11 @@ Execution:
 
     Execute the MPI mapping as follows::
 
-        mpiexec -n <number mpi_processes> dispel4py mpi\
-            [-a name_dispel4py_graph]\
-            [-f file containing the input dataset in JSON format]\
-            [-i number of iterations/runs'] [-s]
+        mpiexec -n <number mpi_processes> dispel4py mpi\\
+            [-a name_dispel4py_graph]\\
+            [-f file containing the input dataset in JSON format]\\
+            [-i number of iterations/runs']\\
+            [-s]
 
     The argument '-s' forces to run the graph in a simple processing, which
     means that the first node of the graph will be executed in a process, and
@@ -39,7 +40,7 @@ Execution:
 
     For example::
 
-        mpiexec -n 6 dispel4py mpi\
+        mpiexec -n 6 dispel4py mpi\\
             dispel4py.examples.graph_testing.pipeline_test
 
     .. note::
@@ -50,38 +51,22 @@ Execution:
 
     Output::
 
-        Processes: {'TestProducer0': [1], 'TestOneInOneOut5': [5],\
-            'TestOneInOneOut4': [4], 'TestOneInOneOut3': [3],\
-            'TestOneInOneOut2': [2], 'TestOneInOneOut1': [0]}
-        TestOneInOneOut1 (rank 0): I'm a bolt
-        TestOneInOneOut2 (rank 2): I'm a bolt
-        TestOneInOneOut4 (rank 4): I'm a bolt
-        TestProducer0 (rank 1): I'm a spout
-        Rank 1: Sending terminate message to [0]
-        TestProducer0 (rank 1): Processed 1 input block(s)
-        TestProducer0 (rank 1): Completed.
-        TestOneInOneOut3 (rank 3): I'm a bolt
-        TestOneInOneOut5 (rank 5): I'm a bolt
-        Rank 0: Sending terminate message to [2]
-        TestOneInOneOut1 (rank 0): Processed 1 input block(s)
-        TestOneInOneOut1 (rank 0): Completed.
-        Rank 2: Sending terminate message to [3]
-        TestOneInOneOut2 (rank 2): Processed 1 input block(s)
-        TestOneInOneOut2 (rank 2): Completed.
-        Rank 3: Sending terminate message to [4]
-        TestOneInOneOut3 (rank 3): Processed 1 input block(s)
-        TestOneInOneOut3 (rank 3): Completed.
-        Rank 4: Sending terminate message to [5]
-        TestOneInOneOut4 (rank 4): Processed 1 input block(s)
-        TestOneInOneOut4 (rank 4): Completed.
-        TestOneInOneOut5 (rank 5): Processed 1 input block(s)
-        TestOneInOneOut5 (rank 5): Completed.
+        Processing 10 iterations.
+        Processes: {'TestProducer0': [5], 'TestOneInOneOut5': [2], \
+'TestOneInOneOut4': [4], 'TestOneInOneOut3': [3], 'TestOneInOneOut2': [1], \
+'TestOneInOneOut1': [0]}
+        TestProducer0 (rank 5): Processed 10 iterations.
+        TestOneInOneOut1 (rank 0): Processed 10 iterations.
+        TestOneInOneOut2 (rank 1): Processed 10 iterations.
+        TestOneInOneOut3 (rank 3): Processed 10 iterations.
+        TestOneInOneOut4 (rank 4): Processed 10 iterations.
+        TestOneInOneOut5 (rank 2): Processed 10 iterations.
 
 * STORM:
 
     From the dispel4py directory launch the Storm submission client::
 
-        dispel4py storm dispel4py.examples.graph_testing.pipeline_test\
+        dispel4py storm dispel4py.examples.graph_testing.pipeline_test\\
             -m remote
 
     Output::
@@ -94,8 +79,8 @@ Execution:
         Spec'ing TestProducer6
         spouts {'TestProducer6': ... }
         bolts  {'TestOneInOneOut5': ... }
-        Created Storm submission package in\
-            /var/folders/58/7bjr3s011kgdtm5lx58prc_40000gn/T/tmp5ePEq3
+        Created Storm submission package in \
+/var/folders/58/7bjr3s011kgdtm5lx58prc_40000gn/T/tmp5ePEq3
         Running: java -client -Dstorm.options= -Dstorm.home= ...
         Submitting topology 'TestTopology' to storm.example.com:6627 ...
 

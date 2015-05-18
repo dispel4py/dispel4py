@@ -13,7 +13,7 @@
 # limitations under the License.
 
 '''
-Submits a Dispel4Py graph for processing to Storm.
+Submits a dispel4py graph for processing to Storm.
 All dependencies must be available in the named resources directory or from the
 registry.
 

@@ -688,23 +688,10 @@ def create_arg_parser():
     return parser
 
 
-def main():
-    from importlib import import_module
+def create_inputs(args, graph):
     import json
-
-    from dispel4py.utils import load_graph
-
-    parser = create_arg_parser()
-    args, remaining = parser.parse_known_args()
-    # args = parser.parse_args()
-
-    graph = load_graph(args.module, args.attr)
-    if graph is None:
-        sys.exit(1)
-    graph.flatten()
-
-    # run only once if no input data
     inputs = {}
+
     if args.file:
         if not os.path.exists(args.file):
             raise ValueError("File '%s' does not exist." % args.file)
@@ -738,6 +725,25 @@ def main():
             inputs[pe.id] = d
         except:
             pass
+
+    return inputs
+
+
+def main():
+    from importlib import import_module
+
+    from dispel4py.utils import load_graph
+
+    parser = create_arg_parser()
+    args, remaining = parser.parse_known_args()
+    # args = parser.parse_args()
+
+    graph = load_graph(args.module, args.attr)
+    if graph is None:
+        return
+    graph.flatten()
+
+    inputs = create_inputs(args, graph)
 
     try:
         # see if platform is in the mappings file as a simple name
