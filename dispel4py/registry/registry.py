@@ -26,6 +26,20 @@ regint = RegistryInterface(regconf)
 regimporter = RegistryImporter(regint)
 
 
+class bcolors:
+    """
+    Support for coloured output on the terminal.
+    """
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
 general_help = """
 Commands:
     help([command]): outputs help for the dispel4py registry's interactive
@@ -152,29 +166,46 @@ def wls(name=None, owner=None, startswith=''):
                         print '(' + j + ')', i[j]
 
 
+def __header(s):
+    return bcolors.BOLD + s + bcolors.ENDC
+
+
 def info():
     """
     Print information regarding the current session.
     """
     info = regint.get_workspace_info()
-    userinfo = regint._get_by_arbitrary_url(info['owner'])
+    try:
+        userinfo = regint._get_by_arbitrary_url(info['owner'])
+    except:
+        userinfo = None
     wurl = info['url']
     wname = info['name']
-    wowner = userinfo['username']
-    durl = regint._get_workspace_by_name(
-        regconf.username, regconf.def_workspace)['url']
+    if userinfo:
+        wowner = userinfo['username']
+    else:
+        wowner = info['owner']
+    try:
+        durl = regint._get_workspace_by_name(
+            regconf.username, regconf.def_workspace)['url']
+        dname = regconf.def_workspace
+        downer = regconf.username
+    except:
+        durl = 'N/A'
+        dname = 'N/A'
+        downer = 'N/A'
     dname = regconf.def_workspace
     downer = regconf.username
     # wdescription = info['description']
-    print '[Current workspace]'
+    print __header('[Current workspace]')
     print '(' + wurl + ') ' + wname + ' - ' + wowner
     # print '[Workspace description]'
     # print _short_descr(wdescription, 75)
-    print '[Default workspace]'
+    print __header('[Default workspace]')
     print '(' + durl + ') ' + dname + ' - ' + downer
-    print '[Registry endpoint]'
+    print __header('[Registry endpoint]')
     print regconf.url
-    print '[Registry user]'
+    print __header('[Registry user]')
     print regconf.username
 
 
@@ -543,19 +574,19 @@ def clone(name):
     :param name: the name of the new workspace to clone the currently active
     one into.
     """
-    try:
-        r = regint.clone(name)
-        print 'New workspace created: ' + str(r['url'])
-    except:
-        # See if there is already a workspace with the same name under the
-        # current user and notify accordingly
-        try:
-            w = regint._get_workspace_by_name(regconf.username, name)
-            if 'id' in w:
-                print 'Workspace ' + name + ' (' + regconf.username + ')' +\
-                    ' already exists.'
-        except:
-            print 'Workspace cloning failed.'
+    # try:
+    r = regint.clone(name)
+    print 'New workspace created: ' + str(r['url'])
+    # except:
+    #     # See if there is already a workspace with the same name under the
+    #     # current user and notify accordingly
+    #     try:
+    #         w = regint._get_workspace_by_name(regconf.username, name)
+    #         if 'id' in w:
+    #             print 'Workspace ' + name + ' (' + regconf.username + ')' +\
+    #                 ' already exists.'
+    #     except:
+    #         print 'Workspace cloning failed.'
 
 
 def _short_descr(s, length=30):

@@ -208,6 +208,10 @@ class RegistryInterface(object):
 
     SSL_CERT_VERIFY = False
 
+    # The root workspace is expected/assumed to exist always
+    ROOT_WSPC = 'root'
+    ROOT_OWNER = 'admin'
+
     # def __init__(self, conf=None, wspc_id=DEF_WORKSPACE_ID):
 
     def __init__(self, conf=None):
@@ -233,7 +237,8 @@ class RegistryInterface(object):
                 conf.username, wspc_name)['id']
         except:
             wspc_id = self._get_workspace_by_name(
-                conf.username, wspc_name)['id']
+                RegistryInterface.ROOT_OWNER,
+                RegistryInterface.ROOT_WSPC)['id']
         self.workspace = wspc_id
 
     def get_auth_token(self):
@@ -358,10 +363,12 @@ class RegistryInterface(object):
 
         url = (self.get_base_url() + self.URL_WORKSPACES + '?clone_of=' +
                str(orig_workspace_id))
+
         r = requests.post(url,
                           data={'name': name},
                           headers=self._get_auth_header(),
                           verify=RegistryInterface.SSL_CERT_VERIFY)
+
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
 
