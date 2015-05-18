@@ -134,7 +134,7 @@ class RegistryConfiguration(object):
         return ('url: ' + str(self.url) + '\n' +
                 'username: ' + str(self.username) + '\n' +
                 'password: ' + str(self.password) + '\n' +
-                'workspace: ' + str(self.def_workspace))
+                'workspace: ' + str(self.workspace))
 
 
 class RegistryInterface(object):
@@ -367,11 +367,13 @@ class RegistryInterface(object):
 
         return r.json()
 
-    def get_code(self, fullname, workspace_id=DEF_WORKSPACE_ID):
+    def get_code(self, fullname, workspace_id=None):
         """
         First try pe implementations and then fns. If all fails raise an
         ImplementationNotFound exception.
         """
+        workspace_id = workspace_id or self.workspace
+
         toks = fullname.split('.')
         pckg = toks[0]
         name = toks[1]
