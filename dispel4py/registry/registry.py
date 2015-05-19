@@ -21,6 +21,9 @@ import importlib
 import inspect
 import requests  # for exceptions and errors
 
+from pygments import highlight
+from pygments.lexers import PythonLexer
+from pygments.formatters import TerminalFormatter
 
 regconf = RegistryConfiguration()
 regint = RegistryInterface(regconf)
@@ -45,6 +48,7 @@ general_help = """
 \033[1mCommands:\033[0m
     help([command]): outputs help for the dispel4py registry's interactive
                      interface.
+    info(): outputs information about the current session.
     set_workspace(name [, owner]): change the active workspace to the one
                                    identified by name and optionally owner.
     set_workspace_by_id(wspcid): change the active workspace to the one
@@ -53,7 +57,6 @@ general_help = """
                  given name.
     wls([name, owner, startswith]): list the contents of a workspace; defaults
                                     to the currently active one.
-    info(): outputs information about the current session.
     find_workspaces(str): searches for workspaces that satisfy the given text
                           query.
     find_in_workspace(str): searches inside the currently active workspace for
@@ -64,6 +67,11 @@ general_help = """
     register_pe(name, impl_subpackage): register a processing element. The name
                                         should be the full python name and it
                                         should be importable by Python.
+    rm_pe(name): delete the given PE and its associated implementations in the
+                 currently active workspace.
+    rm_fn(name): delete the given function and its associated implementations
+                 in the currently active workspace.
+    view(name): view details about the given named item.
 """
 
 
@@ -175,7 +183,12 @@ def info():
     """
     Print information regarding the current session.
     """
-    info = regint.get_workspace_info()
+    try:
+        info = regint.get_workspace_info()
+    except:
+        print 'Could not retrieve information for active workspace (' +\
+              'id=' + str(regint.workspace) + ').'
+        return
     try:
         userinfo = regint._get_by_arbitrary_url(info['owner'])
     except:
@@ -480,7 +493,7 @@ def register_fn(name, impl_subpackage='_impls'):
     except requests.HTTPError as e:
         if e.response.status_code == 403:
             print 'Insufficient permissions'
-            return  # Abort the registration completely:
+            return  # Abort the registration completely
         # elif e.response.status_code == 400:
         #     print 'Failure possibly due to incomplete documentation.'
         #     return
@@ -596,32 +609,204 @@ def register_pe(name, impl_subpackage='_impls'):
         print 'Registered PE: ' + pes['url']
 
 
+def rm_pe(name):
+    """
+    Remove the PE identified by `name` in the currently active workspace.
+    :param name: The pckg.name for the PE to remove.
+    """
+    try:
+        r = regint.get_by_name(name, kind=RegistryInterface.TYPE_PE)
+    except:
+        print 'PE ' + name + ' could not be found inside the active workspace.'
+        return
+    if 'id' in r:
+        try:
+            regint.delete_pespec(r['id'])
+        except requests.HTTPError as e:
+            if e.response.status_code == 403:
+                print 'Insufficient permissions'
+            else:
+                print 'An unknown error has occurred'
+            return
+        print 'Deleted PE ' + name
+    else:  # Should not reach here
+        print 'PE ' + name + ' could not be found inside the active workspace.'
+
+
+def rm_fn(name):
+    """
+    Remove the PE identified by `name` in the currently active workspace.
+    :param name: The pckg.name for the function to remove.
+    """
+    try:
+        r = regint.get_by_name(name, kind=RegistryInterface.TYPE_FN)
+    except requests.HTTPError as e:
+        print 'Function ' + name + \
+              ' could not be found inside the active workspace.'
+        return
+    if 'id' in r:
+        try:
+            regint.delete_fnspec(r['id'])
+        except requests.HTTPError as e:
+            if e.response.status_code == 403:
+                print 'Insufficient permissions'
+            else:
+                print 'An unknown error has occurred'
+            return
+        print 'Deleted function ' + name
+    else:
+        print 'Function ' + name + \
+              ' could not be found inside the active workspace.'
+
+
 def clone(name):
     """
     Clone the currently active workspace into a new one named `name`.
     :param name: the name of the new workspace to clone the currently active
     one into.
     """
-    # try:
-    r = regint.clone(name)
-    print 'New workspace created: ' + str(r['url'])
-    # except:
-    #     # See if there is already a workspace with the same name under the
-    #     # current user and notify accordingly
-    #     try:
-    #         w = regint._get_workspace_by_name(regconf.username, name)
-    #         if 'id' in w:
-    #             print 'Workspace ' + name + ' (' + regconf.username + ')' +\
-    #                 ' already exists.'
-    #     except:
-    #         print 'Workspace cloning failed.'
+    try:
+        r = regint.clone(name)
+        print 'New workspace created: ' + str(r['url'])
+    except:
+        # See if there is already a workspace with the same name under the
+        # current user and notify accordingly
+        try:
+            w = regint._get_workspace_by_name(regconf.username, name)
+            if 'id' in w:
+                print 'Workspace ' + name + ' (' + regconf.username + ')' +\
+                    ' already exists.'
+        except:
+            print 'Workspace cloning failed.'
+
+
+def display_pe(j):
+    """
+    Display the PE information contained in the json object j.
+    :param j: the PE to display in json format.
+    """
+    print __header('Name: ') + j['pckg'] + '.' + j['name']
+    print __header('URL: ') + j['url']
+    if j['description'].strip() != '':
+        print __header('Description: ') + _short_descr(j['description'])
+    print __header('Implementations:')
+    for i in j['peimpls']:
+        try:
+            peimpl = regint._get_by_arbitrary_url(i)
+            print '(' + peimpl['url'] + ') ' + \
+                  peimpl['pckg'] + '.' + peimpl['name']
+        except:
+            pass
+
+
+def display_fn(j):
+    """
+    Display the PE information contained in the json object j.
+    :param j: the PE to display in json format.
+    """
+    print __header('Name: ') + j['pckg'] + '.' + j['name']
+    print __header('URL: ') + j['url']
+    if j['description'].strip() != '':
+        print __header('Description: ') + _short_descr(j['description'])
+    print __header('Implementations:')
+    for i in j['fnimpls']:
+        try:
+            fnimpl = regint._get_by_arbitrary_url(i)
+            print '(' + fnimpl['url'] + ') ' + \
+                  fnimpl['pckg'] + '.' + fnimpl['name']
+        except:
+            pass
+
+
+def display_lit(j):
+    """
+    Display the PE information contained in the json object j.
+    :param j: the PE to display in json format.
+    """
+    print __header('Name: ') + j['pckg'] + '.' + j['name']
+    print __header('URL: ') + j['url']
+    if j['description'].strip() != '':
+        print __header('Description: ') + _short_descr(j['description'])
+    print __header('Value: ') + j['value']
+
+
+def display_peimpl(j):
+    """
+    Display the PE information contained in the json object j.
+    :param j: the PE to display in json format.
+    """
+    # Get the parent sig
+    parent_name = 'Unknown!'
+    try:
+        p = regint._get_by_arbitrary_url(j['parent_sig'])
+        parent_name = p['pckg'] + '.' + p['name']
+    except:
+        pass
+    print __header('Name: ') + j['pckg'] + '.' + j['name']
+    print __header('URL: ') + j['url']
+    if j['description'].strip() != '':
+        print __header('Description: ') + _short_descr(j['description'])
+    print __header('Implements PE: ') + parent_name
+    print __header('Code:')
+    print _pretty_code(j['code'])
+
+
+def display_fnimpl(j):
+    """
+    Display the PE information contained in the json object j.
+    :param j: the PE to display in json format.
+    """
+
+    # Get the parent sig
+    parent_name = 'Unknown!'
+    try:
+        p = regint._get_by_arbitrary_url(j['parent_sig'])
+        parent_name = p['pckg'] + '.' + p['name']
+    except:
+        pass
+    print __header('Name: ') + j['pckg'] + '.' + j['name']
+    print __header('URL: ') + j['url']
+    if j['description'].strip() != '':
+        print __header('Description: ') + _short_descr(j['description'])
+    print __header('Implements functio: ') + parent_name
+    print __header('Code:')
+    print _pretty_code(j['code'])
+
+
+def _pretty_code(c):
+    """
+    Pretty-print python code (or turn off pp for different applications).
+    """
+    return highlight(c, PythonLexer(), TerminalFormatter())
+
+
+def view(name):
+    """
+    Print details of the given component identified by `name` within the
+    currently active workspace.
+    :param name: the pckg.name of the component to view.
+    """
+    j = None
+    try:
+        j = regint.get_by_name(name)
+    except:
+        print 'Item ' + name + \
+              ' could not be retrieved from the active workspace'
+        return
+
+    type = regint._extract_kind_from_json_object(j)
+    type == RegistryInterface.TYPE_PE and display_pe(j)
+    type == RegistryInterface.TYPE_FN and display_fn(j)
+    type == RegistryInterface.TYPE_LIT and display_lit(j)
+    type == RegistryInterface.TYPE_PEIMPL and display_peimpl(j)
+    type == RegistryInterface.TYPE_FNIMPL and display_fnimpl(j)
 
 
 def _short_descr(s, length=30):
     ret = str(s).strip()
     ret = ret.replace('\n', ' ').replace('\r', '')
     if len(ret) > length:
-        ret = ret[:length].strip() + ' ...'
+        ret = ret[:length].strip() + ' [...]'
     return ret
 
 

@@ -16,6 +16,7 @@ import sys
 import imp
 
 
+# FIXME: Make this first look things up locally before it goes to the registry
 class RegistryImporter(object):
     """A custom module importer to work with the dispel4py Registry."""
 

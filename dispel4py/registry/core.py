@@ -191,6 +191,7 @@ class RegistryInterface(object):
     TYPE_FN = 1
     TYPE_PEIMPL = 2
     TYPE_FNIMPL = 3
+    TYPE_LIT = 4
     TYPE_NOT_RECOGNISED = 100
 
     # Connection types
@@ -278,6 +279,12 @@ class RegistryInterface(object):
             return RegistryInterface.TYPE_PE
         elif kind == 'functions':
             return RegistryInterface.TYPE_FN
+        elif kind == 'literals':
+            return RegistryInterface.TYPE_LIT
+        elif kind == 'peimpls':
+            return RegistryInterface.TYPE_PEIMPL
+        elif kind == 'fnimpls':
+            return RegistryInterface.TYPE_FNIMPL
         else:
             return RegistryInterface.TYPE_NOT_RECOGNISED
 
@@ -381,7 +388,7 @@ class RegistryInterface(object):
         """
         workspace_id = workspace_id or self.workspace
 
-        toks = fullname.split('.')
+        toks = fullname.rsplit('.', 1)
         pckg = toks[0]
         name = toks[1]
 
@@ -543,11 +550,11 @@ class RegistryInterface(object):
         r = requests.get(url,
                          headers=self._get_auth_header(),
                          verify=RegistryInterface.SSL_CERT_VERIFY)
-
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
 
         try:
+            # print r.json().get('code')
             return r.json().get('code')
         except:
             raise ImplementationNotFound()
@@ -768,7 +775,7 @@ class RegistryInterface(object):
         if not self.logged_in:
             raise NotLoggedInError()
 
-        url = self.get_base_url() + self.URL_PES + peid + '/'
+        url = self.get_base_url() + self.URL_PES + str(peid) + '/'
         r = requests.get(url,
                          headers=self._get_auth_header(),
                          verify=RegistryInterface.SSL_CERT_VERIFY)
@@ -804,7 +811,7 @@ class RegistryInterface(object):
         if not self.logged_in:
             raise NotLoggedInError()
 
-        url = self.get_base_url() + self.URL_FNS + fnid + '/'
+        url = self.get_base_url() + self.URL_FNS + str(fnid) + '/'
         r = requests.get(url,
                          headers=self._get_auth_header(),
                          verify=RegistryInterface.SSL_CERT_VERIFY)
