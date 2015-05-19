@@ -282,7 +282,7 @@ class RegistryInterface(object):
             return RegistryInterface.TYPE_PEIMPL
         elif '/fnimpls/' in url:
             return RegistryInterface.TYPE_FNIMPL
-        else: 
+        else:
             return RegistryInterface.TYPE_NOT_RECOGNISED
 
     def login(self, username, password):
