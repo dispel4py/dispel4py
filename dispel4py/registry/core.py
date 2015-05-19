@@ -940,16 +940,13 @@ class RegistryInterface(object):
             name = fnreq.json()['name'] + '_IMPL_' + str(datetime.date.today())
 
         workspace = fnreq.json()['workspace']
-        print 'workspace:', str(workspace)
         url = self.get_base_url() + self.URL_FNIMPLS
-        print 'url:', url
         data = {'description': description,
                 'code': code,
                 'parent_sig': fn_url,
                 'pckg': pckg,
                 'name': name,
                 'workspace': workspace}
-        print '\n\nDATA:', str(data)
         r = requests.post(url,
                           headers=self._get_auth_header(),
                           data=data,

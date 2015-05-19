@@ -19,6 +19,7 @@ from registry_importer import RegistryImporter
 
 import importlib
 import inspect
+import requests  # for exceptions and errors
 
 
 regconf = RegistryConfiguration()
@@ -41,7 +42,7 @@ class bcolors:
 
 
 general_help = """
-Commands:
+\033[1mCommands:\033[0m
     help([command]): outputs help for the dispel4py registry's interactive
                      interface.
     set_workspace(name [, owner]): change the active workspace to the one
@@ -157,7 +158,7 @@ def wls(name=None, owner=None, startswith=''):
     for t in ['pes', 'peimpls', 'functions',
               'fnimpls', 'literals', 'packages']:
         if len(listing[t]) > 0:
-            print '[' + _prntbln(t) + ']'
+            print __header('[' + _prntbln(t) + ']')
             for i in listing[t]:
                 if t == 'packages':
                     print i
@@ -227,7 +228,6 @@ def _reload_module(modulestr):
     mods.append(modulestr)
 
     for mstr in mods:
-        # print 'Importing and reloading "' + mstr + '"'
         m = importlib.import_module(mstr)
         reload(m)
     return m
@@ -462,22 +462,39 @@ def register_fn(name, impl_subpackage='_impls'):
     meta = _extract_meta_by_docstr(doc)
     already_present = False
     try:
+        if not meta['return']['type']:
+            raise KeyError()  # to signify a documentation error
         fns = regint.register_fn_spec(meta['type']['name']['pckg'],
                                       meta['type']['name']['name'],
                                       meta['return']['type'],
                                       descr=meta['description'])
 
         # The parameters:
+
         fnid = fns['id']
         for p in meta['params']:
             regint.add_fn_param(p['name'], str(fnid), p['type'])
-    except:
+    except KeyError:
+        print 'Incomplete function documentation.'
+        return
+    except requests.HTTPError as e:
+        if e.response.status_code == 403:
+            print 'Insufficient permissions'
+            return  # Abort the registration completely:
+        # elif e.response.status_code == 400:
+        #     print 'Failure possibly due to incomplete documentation.'
+        #     return
+
         # The function could already be registered, so retrieve it
         fqn = (meta['type']['name']['pckg'] + '.' +
                meta['type']['name']['name'])
+        # try:
         fns = regint.get_by_name(fqn, kind=RegistryInterface.TYPE_FN)
         fnid = fns['id']
         already_present = True
+        # except:
+        #     print 'Registration failed.'
+        #     return
 
     # Register the implementation and associate it to the spec above
     try:
@@ -541,13 +558,24 @@ def register_pe(name, impl_subpackage='_impls'):
                 comment=c['description'],
                 is_array=c['isArray'],
                 modifiers=None)
-    except:
+    except KeyError:
+        print 'Incomplete function documentation.'
+        return
+    except requests.HTTPError as e:
+        if e.response.status_code == 403:
+            print 'Insufficient permissions'
+            return  # Abort the registration completely
+
         #  The PE could already be registered; attempt to fetch it
         fqn = (meta['type']['name']['pckg'] + '.' +
                meta['type']['name']['name'])
-        pes = regint.get_by_name(fqn, kind=RegistryInterface.TYPE_PE)
-        peid = pes['id']
-        already_present = True
+        try:
+            pes = regint.get_by_name(fqn, kind=RegistryInterface.TYPE_PE)
+            peid = pes['id']
+            already_present = True
+        except:
+            print 'Registration failed.'
+            return
 
     # The implementation:
     code = inspect.getsource(m)

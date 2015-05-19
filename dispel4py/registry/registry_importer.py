@@ -31,7 +31,6 @@ class RegistryImporter(object):
             sys.meta_path.append(self)
 
     def find_module(self, fullname, path=None):
-        # print 'find module', str(self)
         workspace_ls = self.reg_int.get_workspace_ls(startswith=fullname)
 
         # maybe it's a package
@@ -47,7 +46,6 @@ class RegistryImporter(object):
             return None
 
     def load_module(self, fullname):
-        # print ">>>> load_module " + fullname
         if fullname in sys.modules:
             return sys.modules[fullname]
 
