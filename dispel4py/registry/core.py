@@ -269,23 +269,20 @@ class RegistryInterface(object):
         """
         The kind/type is inferred based on the URL. Assumes this is called for
         single objects.
-        Return one of the TYPE* values defined in VerceRegManager.
+        :return one of the TYPE* values defined in RegistryInterface.
         """
-        # logger.info(j)
-        rhs = j['url'][len(self.get_base_url())+1:]
-        kind = rhs[:rhs.find('/')]
-
-        if kind == 'pes':
+        url = j['url']
+        if '/pes/' in url:
             return RegistryInterface.TYPE_PE
-        elif kind == 'functions':
+        elif '/functions/' in url:
             return RegistryInterface.TYPE_FN
-        elif kind == 'literals':
+        elif '/literals/' in url:
             return RegistryInterface.TYPE_LIT
-        elif kind == 'peimpls':
+        elif '/peimpls/' in url:
             return RegistryInterface.TYPE_PEIMPL
-        elif kind == 'fnimpls':
+        elif '/fnimpls/' in url:
             return RegistryInterface.TYPE_FNIMPL
-        else:
+        else: 
             return RegistryInterface.TYPE_NOT_RECOGNISED
 
     def login(self, username, password):
@@ -979,9 +976,11 @@ class RegistryInterface(object):
         workspace = workspace or self.workspace
         url = (self.get_base_url() + self.URL_WORKSPACES + str(workspace) +
                '/?fqn=' + fqn)
+
         r = requests.get(url,
                          headers=self._get_auth_header(),
                          verify=RegistryInterface.SSL_CERT_VERIFY)
+
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
 

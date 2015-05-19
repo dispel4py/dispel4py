@@ -19,15 +19,22 @@ from registry_importer import RegistryImporter
 
 import importlib
 import inspect
+import sys
 import requests  # for exceptions and errors
 
 from pygments import highlight
 from pygments.lexers import PythonLexer
 from pygments.formatters import TerminalFormatter
 
-regconf = RegistryConfiguration()
-regint = RegistryInterface(regconf)
-regimporter = RegistryImporter(regint)
+try:
+    regconf = RegistryConfiguration()
+    regint = RegistryInterface(regconf)
+    regimporter = RegistryImporter(regint)
+except:
+    print 'Error when instantiating the registry interface.'
+    print 'Please check your configuration and credentials are correct and try'
+    print 'again.'
+    sys.exit(1)
 
 
 class bcolors:
