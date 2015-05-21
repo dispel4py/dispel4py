@@ -728,22 +728,27 @@ def create_inputs(args, graph):
 
     return inputs
 
+def load_graph_and_inputs(args):
+    from dispel4py.utils import load_graph
+
+    graph = load_graph(args.module, args.attr)
+    if graph is None:
+        return None, None
+        
+    graph.flatten()
+    inputs = create_inputs(args, graph)
+    return graph, inputs
+
 
 def main():
     from importlib import import_module
 
-    from dispel4py.utils import load_graph
-
     parser = create_arg_parser()
     args, remaining = parser.parse_known_args()
-    # args = parser.parse_args()
-
-    graph = load_graph(args.module, args.attr)
+    
+    graph, inputs = load_graph_and_inputs(args)
     if graph is None:
         return
-    graph.flatten()
-
-    inputs = create_inputs(args, graph)
 
     try:
         # see if platform is in the mappings file as a simple name

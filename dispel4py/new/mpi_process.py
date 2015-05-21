@@ -190,3 +190,17 @@ class MPIWrapper(GenericWrapper):
                 for i in communication.destinations:
                     # self.pe.log('Terminating consumer %s' % i)
                     comm.isend(None, tag=STATUS_TERMINATED, dest=i)
+
+
+def main():
+    from dispel4py.new.processor import load_graph_and_inputs, create_arg_parser
+    
+    parser = create_arg_parser()
+    args, remaining = parser.parse_known_args()
+    args = parse_args(remaining, args)
+    
+    graph, inputs = load_graph_and_inputs(args)
+    if graph is not None:
+        errormsg = process(graph, inputs, args)
+        if errormsg:
+            print errormsg

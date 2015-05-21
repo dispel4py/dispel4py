@@ -220,7 +220,7 @@ def process(sc, workflow, inputs, args):
             print x
 
 
-def main():
+def run():
     from pyspark import SparkContext, SparkConf
 
     conf = SparkConf()
@@ -242,6 +242,23 @@ def main():
     inputs = processor.create_inputs(args, graph)
 
     process(sc, graph, inputs=inputs, args=args)
+
+
+def main():
+    import os
+    try:
+        spark_home = os.environ['SPARK_HOME']
+    except:
+        print 'Please set SPARK_HOME.'
+        sys.exit(1)
+    
+    parser = argparse.ArgumentParser(
+        description='Submit a dispel4py graph for processing.')
+    parser.add_argument('target', help='target execution platform')
+    args, remaining = parser.parse_known_args()
+    print remaining
+    command = '%s/bin/spark-submit %s' % (spark_home," ".join(remaining))
+    print command
 
 if __name__ == '__main__':
     main()
