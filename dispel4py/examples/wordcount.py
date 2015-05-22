@@ -46,14 +46,14 @@ class Print(ConsumerPE):
 
 
 def count_by_group():
-    graph = CompositePE()
+    composite = CompositePE()
     count = CountByGroup()
     merge = CountByGroup()
     merge._add_input('input', grouping='global')
-    graph.connect(count, 'output', merge, 'input')
-    graph._map_input('input', count, 'input')
-    graph._map_output('output', merge, 'output')
-    return graph
+    composite.connect(count, 'output', merge, 'input')
+    composite._map_input('input', count, 'input')
+    composite._map_output('output', merge, 'output')
+    return composite
 
 
 from dispel4py.workflow_graph import WorkflowGraph
