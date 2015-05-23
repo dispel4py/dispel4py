@@ -663,13 +663,12 @@ class RegistryInterface(object):
                          verify=RegistryInterface.SSL_CERT_VERIFY)
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
-        
+
         j = r.json()
         kind = self._extract_kind_from_json_object(j)
         if kind != RegistryInterface.TYPE_LIT:
             raise LiteralNotFound()
-        
-        code = j['name'] + ' = "' + j['value'] + '"'
+
         return j['name'] + ' = "' + j['value'] + '"'
 
     def get_fn_implementation_code(self, workspace_id, pckg, name,
@@ -737,7 +736,6 @@ class RegistryInterface(object):
             r.raise_for_status()
 
         return r.json()
-        
 
     def register_pe_spec(self, pckg, name, workspace_id=None, descr=''):
         """

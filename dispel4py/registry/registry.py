@@ -172,7 +172,7 @@ def wls(name=None, owner=None, startswith=''):
             print 'Cannot resolve workspace with name "' +\
                   name + '" owned by "' + owner + '"'
             return
-    
+
     try:
         listing = regint.get_workspace_ls(wid, startswith)
     except:
@@ -671,7 +671,7 @@ def register_literal(pckg, name, value, description=''):
     name = name.strip()
     description = description.strip()
     value = str(value)
-    
+
     ret = None
     try:
         ret = regint.register_literal(pckg, name, value, None, description)
@@ -683,7 +683,7 @@ def register_literal(pckg, name, value, description=''):
                 # Check if it's already present
                 lit = regint.get_by_name(pckg + '.' + name,
                                          kind=RegistryInterface.TYPE_LIT)
-                litid = lit['id']
+                lit['id']
                 print 'Literal already registered.'
             except:
                 print 'An unknown error has occurred.'
@@ -692,6 +692,7 @@ def register_literal(pckg, name, value, description=''):
         print 'An unknown error has occurred'
         return
     print 'Registered literal: ' + ret['url']
+
 
 def rm(name):
     """
