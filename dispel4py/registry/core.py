@@ -271,7 +271,11 @@ class RegistryInterface(object):
         single objects.
         :return one of the TYPE* values defined in RegistryInterface.
         """
-        url = j['url']
+        try:
+            url = j['url']
+        except:
+            return RegistryInterface.TYPE_NOT_RECOGNISED
+
         if '/pes/' in url:
             return RegistryInterface.TYPE_PE
         elif '/functions/' in url:
@@ -361,7 +365,6 @@ class RegistryInterface(object):
         """
         if not self.logged_in:
             raise NotLoggedInError()
-            return
 
         orig_workspace_id = orig_workspace_id or self.workspace
 
@@ -374,6 +377,26 @@ class RegistryInterface(object):
                           verify=RegistryInterface.SSL_CERT_VERIFY)
 
         if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
+
+    def put_item(self, url, content):
+        """
+        PUTs/replaces the content of the resource at `url` with `content`.
+        :param url: the URL of the resource to alter
+        :param content: the new content in JSON format
+        """
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        r = requests.put(url,
+                         data=content,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
+
+        if r.status_code != requests.codes.ok:
+            print 'STATUS: ', str(r.status_code), ': ' + r.text
             r.raise_for_status()
 
         return r.json()
@@ -396,6 +419,11 @@ class RegistryInterface(object):
 
         try:
             return self.get_fn_implementation_code(workspace_id, pckg, name)
+        except:
+            pass
+
+        try:
+            return self.get_lit_implementation_code(workspace_id, pckg, name)
         except:
             pass
 
@@ -476,6 +504,28 @@ class RegistryInterface(object):
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
 
+        return r.json()
+
+    def get_workspaces_by_user_and_name(self, username, name=None):
+        """
+        Return the json list of workspaces owned by the specified user and,
+        optionally, workspace name
+        :param username: the username of the owner to filter
+        :param name: the name of the workspace to filter
+        :return a json object
+        """
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        url = (self.get_base_url() + self.URL_WORKSPACES +
+               '?username=' + username)
+        if name and name.strip() != '':
+            url += '&name=' + name
+        r = requests.get(url,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
         return r.json()
 
     def search_for_workspace_contents(self, search_str, workspace_id=None):
@@ -597,6 +647,31 @@ class RegistryInterface(object):
 
         return r.json()
 
+    def get_lit_implementation_code(self, workspace_id, pckg, name):
+        """
+        Generate on the fly and return code corresponding to the given
+        literal identified by `pckg`.`name`. The code to be returned will be
+        of the type `name` = `value`.
+        """
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        url = (self.get_base_url() + self.URL_WORKSPACES + str(workspace_id) +
+               '/?fqn=' + pckg + '.' + name)
+        r = requests.get(url,
+                         headers=self._get_auth_header(),
+                         verify=RegistryInterface.SSL_CERT_VERIFY)
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+        
+        j = r.json()
+        kind = self._extract_kind_from_json_object(j)
+        if kind != RegistryInterface.TYPE_LIT:
+            raise LiteralNotFound()
+        
+        code = j['name'] + ' = "' + j['value'] + '"'
+        return j['name'] + ' = "' + j['value'] + '"'
+
     def get_fn_implementation_code(self, workspace_id, pckg, name,
                                    impl_index=0):
         """
@@ -614,7 +689,6 @@ class RegistryInterface(object):
 
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
-            return
 
         if self.PROP_FNIMPLS not in r.json():
             raise NotFunctionError()
@@ -631,9 +705,43 @@ class RegistryInterface(object):
                          verify=RegistryInterface.SSL_CERT_VERIFY)
         return r.json().get('code')
 
+    def register_literal(self, pckg, name, value, workspace_id=None, descr=''):
+        """
+        Register a new literal.
+        :param pckg: a string denoting the package of the literal.
+        :param name: the name of the literal.
+        :param value: the literal value - will be turned to a str
+        :param workspace_id: the id of the workspace; defaults to the default
+        workspace
+        :param descr: a textual description of the PE specification.
+        """
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        workspace_id = workspace_id or self.workspace
+        workspace_url = self.get_base_url() + self.URL_WORKSPACES + \
+            str(workspace_id) + '/'
+
+        data = {'workspace': workspace_url,
+                'pckg': pckg,
+                'name': name,
+                'value': value,
+                'description': descr}
+        url = self.get_base_url() + self.URL_LITS
+
+        r = requests.post(url,
+                          headers=self._get_auth_header(),
+                          data=data,
+                          verify=RegistryInterface.SSL_CERT_VERIFY)
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
+        
+
     def register_pe_spec(self, pckg, name, workspace_id=None, descr=''):
         """
-        Register a new PE specification or update an existing one.
+        Register a new PE specification.
         :param workspace_id: the id of the workspace; defaults to the default
         workspace
         :param pckg: a string denoting the package of the PE to register.
@@ -763,83 +871,14 @@ class RegistryInterface(object):
 
         return r.json()
 
-    def delete_pespec(self, peid):
+    def delete_by_url(self, url):
         """
-        Delete the PE specification identified by the given id.
-        :param peid: the id of the PE spec to be deleted.
-        :return the id of the deleted PE specification.
-        """
-        if not self.logged_in:
-            raise NotLoggedInError()
-
-        url = self.get_base_url() + self.URL_PES + str(peid) + '/'
-        r = requests.get(url,
-                         headers=self._get_auth_header(),
-                         verify=RegistryInterface.SSL_CERT_VERIFY)
-
-        if r.status_code != requests.codes.ok:
-            r.raise_for_status()
-
-        for c in r.json()['connections']:
-            requests.delete(c,
-                            headers=self._get_auth_header(),
-                            verify=RegistryInterface.SSL_CERT_VERIFY)
-
-        for i in r.json()['peimpls']:
-            requests.delete(i,
-                            headers=self._get_auth_header(),
-                            verify=RegistryInterface.SSL_CERT_VERIFY)
-
-        r = requests.delete(r.json()['url'],
-                            headers=self._get_auth_header(),
-                            verify=RegistryInterface.SSL_CERT_VERIFY)
-
-        if r.status_code != requests.codes.ok:
-            r.raise_for_status()
-
-        return peid
-
-    def delete_fnspec(self, fnid):
-        """
-        Delete the function specification identified by fnid.
-        :param fnid: the if of the function to be deleted.
-        :return the id of the deleted function specification.
+        Delete an arbitrary resource by URL.
+        :param url: the URL (in string form) of the resource to delete.
         """
         if not self.logged_in:
             raise NotLoggedInError()
 
-        url = self.get_base_url() + self.URL_FNS + str(fnid) + '/'
-        r = requests.get(url,
-                         headers=self._get_auth_header(),
-                         verify=RegistryInterface.SSL_CERT_VERIFY)
-
-        if r.status_code != requests.codes.ok:
-            r.raise_for_status()
-
-        for c in r.json()['parameters']:
-            requests.delete(c,
-                            headers=self._get_auth_header(),
-                            verify=RegistryInterface.SSL_CERT_VERIFY)
-
-        for i in r.json()['fnimpls']:
-            requests.delete(i,
-                            headers=self._get_auth_header(),
-                            verify=RegistryInterface.SSL_CERT_VERIFY)
-
-        r = requests.delete(r.json()['url'],
-                            headers=self._get_auth_header(),
-                            verify=RegistryInterface.SSL_CERT_VERIFY)
-
-        if r.status_code != requests.codes.ok:
-            r.raise_for_status()
-
-        return fnid
-
-    def delete_peimpl(self, peimpl_id):
-        if not self.logged_in:
-            raise NotLoggedInError()
-
-        url = self.get_base_url() + self.URL_PEIMPLS + peimpl_id + '/'
         r = requests.delete(url,
                             headers=self._get_auth_header(),
                             verify=RegistryInterface.SSL_CERT_VERIFY)
@@ -847,37 +886,7 @@ class RegistryInterface(object):
         if r.status_code != requests.codes.ok:
             r.raise_for_status()
 
-        return peimpl_id
-
-    # TODO: Test
-    def delete_fnimpl(self, fnimpl_id):
-        if not self.logged_in:
-            raise NotLoggedInError()
-
-        url = self.get_base_url() + self.URL_FNIMPLS + fnimpl_id + '/'
-        r = requests.delete(url,
-                            headers=self._get_auth_header(),
-                            verify=RegistryInterface.SSL_CERT_VERIFY)
-
-        if r.status_code != requests.codes.ok:
-            r.raise_for_status()
-
-        return fnimpl_id
-
-    def delete_pe_connection(self, conn_id):
-        """Delete the named connection from the given pe"""
-        if not self.logged_in:
-            raise NotLoggedInError()
-
-        conn_url = self.get_base_url() + self.URL_CONNS + conn_id + '/'
-        r = requests.delete(conn_url,
-                            headers=self._get_auth_header(),
-                            verify=RegistryInterface.SSL_CERT_VERIFY)
-
-        if r.status_code != requests.codes.ok:
-            r.raise_for_status()
-
-        return conn_id
+        return url
 
     def add_pe_implementation(
             self,
@@ -1098,6 +1107,10 @@ class VerceRegClientLibError(Exception):
 
 
 class ImplementationNotFound(VerceRegClientLibError):
+    pass
+
+
+class LiteralNotFound(VerceRegClientLibError):
     pass
 
 

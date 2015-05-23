@@ -53,32 +53,37 @@ class bcolors:
 
 general_help = """
 \033[1mCommands:\033[0m
-    help([command]): outputs help for the dispel4py registry's interactive
+    help([command]): Outputs help for the dispel4py registry's interactive
                      interface.
-    info(): outputs information about the current session.
-    set_workspace(name [, owner]): change the active workspace to the one
+    info(): Outputs information about the current session.
+    set_workspace(name [, owner]): Change the active workspace to the one
                                    identified by name and optionally owner.
-    set_workspace_by_id(wspcid): change the active workspace to the one
+    set_workspace_by_id(wspcid): Change the active workspace to the one
                                  indicated by wspcid.
-    clone(name): clone the currently active workspace into a new one with the
+    clone(name): Clone the currently active workspace into a new one with the
                  given name.
-    wls([name, owner, startswith]): list the contents of a workspace; defaults
+    copy(item_name, to_workspace_name[, username, target_name]): Copy the
+        given item into another workspace. It works for PEs, functions and
+        literals.
+    wls([name, owner, startswith]): List the contents of a workspace; defaults
                                     to the currently active one.
-    find_workspaces(str): searches for workspaces that satisfy the given text
+    find_my_workspaces: Find the workspaces owned by the logged in user.
+    find_workspaces(str): Searches for workspaces that satisfy the given text
                           query.
-    find_in_workspace(str): searches inside the currently active workspace for
+    find_in_workspace(str): Searches inside the currently active workspace for
                             entities that satisfy the given text query.
-    register_fn(name, impl_subpackage): register a function. The name should be
+    register_fn(name, impl_subpackage): Register a function. The name should be
                                         the full python name and it should be
                                         importable by Python.
-    register_pe(name, impl_subpackage): register a processing element. The name
+    register_pe(name, impl_subpackage): Register a processing element. The name
                                         should be the full python name and it
                                         should be importable by Python.
-    rm_pe(name): delete the given PE and its associated implementations in the
-                 currently active workspace.
-    rm_fn(name): delete the given function and its associated implementations
-                 in the currently active workspace.
-    view(name): view details about the given named item.
+    register_literal(pckg, name, value[, description]): register a new literal
+        under pckg.name. This is equivalent to registering a module pckg.name
+        containing `name` = "`value`".
+    rm(name): Delete the given named item, as well as its associated items, in
+              the currently active workspace.
+    view(name): View details about the given named item.
 """
 
 
@@ -167,8 +172,12 @@ def wls(name=None, owner=None, startswith=''):
             print 'Cannot resolve workspace with name "' +\
                   name + '" owned by "' + owner + '"'
             return
-
-    listing = regint.get_workspace_ls(wid, startswith)
+    
+    try:
+        listing = regint.get_workspace_ls(wid, startswith)
+    except:
+        print 'Unable to get the workspace listing'
+        return
 
     for t in ['pes', 'peimpls', 'functions',
               'fnimpls', 'literals', 'packages']:
@@ -184,6 +193,10 @@ def wls(name=None, owner=None, startswith=''):
 
 def __header(s):
     return bcolors.BOLD + s + bcolors.ENDC
+
+
+def __ul(s):
+    return bcolors.UNDERLINE + s + bcolors.ENDC
 
 
 def info():
@@ -251,6 +264,13 @@ def _reload_module(modulestr):
         m = importlib.import_module(mstr)
         reload(m)
     return m
+
+
+def _reload():
+    _reload_module('dispel4py.registry')
+    _reload_module('dispel4py.registry.core')
+    _reload_module('dispel4py.registry.registry_importer')
+    _reload_module('dispel4py.registry.registry')
 
 
 def _clean_gen_docstr(s):
@@ -433,21 +453,37 @@ def find_workspaces(search_str=''):
     Find workspaces that match the given search string.
     :param search_str: the search string to search for.
     """
+    search_str = str(search_str)
     res = regint.search_for_workspaces(search_str)
     for i in res:
-        # print i['url']
         print '(' + i['url'] + ') ' + i['name'] + ': ' +\
               _short_descr(i['description'])
     print 'Total:', str(len(res))
 
 
-def find_in_workspace(search_str):
+def find_my_workspaces():
+    """
+    Find the workspaces owned by the logged in user.
+    """
+    res = regint.get_workspaces_by_user_and_name(regconf.username)
+    for i in res:
+        print '(' + i['url'] + ') ' + i['name'] + ': ' +\
+              _short_descr(i['description'])
+
+
+def find_in_workspace(search_str=''):
     """
     Search for workspace contents in the given workspace. If a workspace
     if is not given, search in the currently selected workspace.
     :param search_str: the string to search for in the workspace items.
     """
+    search_str = str(search_str)
+    if search_str.strip() == '':
+        print 'Empty search string provided. ' + \
+              'Please provide text to search for.'
+        return
     res = regint.search_for_workspace_contents(search_str)
+
     for i in res:
         print '(' + str(i['url']) + ')', i['pckg'] + '.' +\
               i['name'] + ':', _short_descr(i['description'])
@@ -553,7 +589,11 @@ def register_pe(name, impl_subpackage='_impls'):
 
     module = name[:dotpos]
     pename = name[dotpos+1:]
-    m = _reload_module(module)
+    try:
+        m = _reload_module(module)
+    except ImportError:
+        print 'Cannot find module ' + module
+        return
     pe = getattr(m, pename)
     doc = pe.__doc__.strip()
 
@@ -596,6 +636,9 @@ def register_pe(name, impl_subpackage='_impls'):
         except:
             print 'Registration failed.'
             return
+    except:
+        print 'An unknown error has occurred.'
+        return
 
     # The implementation:
     code = inspect.getsource(m)
@@ -616,65 +659,101 @@ def register_pe(name, impl_subpackage='_impls'):
         print 'Registered PE: ' + pes['url']
 
 
-def rm_pe(name):
+def register_literal(pckg, name, value, description=''):
     """
-    Remove the PE identified by `name` in the currently active workspace.
-    :param name: The pckg.name for the PE to remove.
+    Register a new literal.
+    :param pckg: the package
+    :param name: the name of the literal
+    :param value: the value of the literal - this will be turned into a str
+    :param description: a description for the literal
     """
+    pckg = pckg.strip()
+    name = name.strip()
+    description = description.strip()
+    value = str(value)
+    
+    ret = None
     try:
-        r = regint.get_by_name(name, kind=RegistryInterface.TYPE_PE)
-    except:
-        print 'PE ' + name + ' could not be found inside the active workspace.'
-        return
-    if 'id' in r:
-        try:
-            regint.delete_pespec(r['id'])
-        except requests.HTTPError as e:
-            if e.response.status_code == 403:
-                print 'Insufficient permissions'
-            else:
-                print 'An unknown error has occurred'
-            return
-        print 'Deleted PE ' + name
-    else:  # Should not reach here
-        print 'PE ' + name + ' could not be found inside the active workspace.'
-
-
-def rm_fn(name):
-    """
-    Remove the PE identified by `name` in the currently active workspace.
-    :param name: The pckg.name for the function to remove.
-    """
-    try:
-        r = regint.get_by_name(name, kind=RegistryInterface.TYPE_FN)
+        ret = regint.register_literal(pckg, name, value, None, description)
     except requests.HTTPError as e:
-        print 'Function ' + name + \
-              ' could not be found inside the active workspace.'
+        if e.response.status_code == 403:
+            print 'Insufficient permissions'
+        else:
+            try:
+                # Check if it's already present
+                lit = regint.get_by_name(pckg + '.' + name,
+                                         kind=RegistryInterface.TYPE_LIT)
+                litid = lit['id']
+                print 'Literal already registered.'
+            except:
+                print 'An unknown error has occurred.'
         return
-    if 'id' in r:
+    except:
+        print 'An unknown error has occurred'
+        return
+    print 'Registered literal: ' + ret['url']
+
+def rm(name):
+    """
+    Delete the given named item, as well as its associated items, in the
+    currently active workspace.
+    :param name: the pckg.name name of the item to delete.
+    """
+    name = str(name).strip()
+    if name == '':
+        print 'Item name not provided.'
+        return
+    j = None
+    try:
+        j = regint.get_by_name(name)
+    except:
+        print 'Item ' + name + \
+              ' could not be found in the active workspace.'
+        return
+
+    type = regint._extract_kind_from_json_object(j)
+    if type != RegistryInterface.TYPE_NOT_RECOGNISED:
         try:
-            regint.delete_fnspec(r['id'])
+            regint.delete_by_url(j['url'])
+            print 'Deleted ' + name + ' (' + j['url'] + ')'
         except requests.HTTPError as e:
             if e.response.status_code == 403:
                 print 'Insufficient permissions'
             else:
                 print 'An unknown error has occurred'
             return
-        print 'Deleted function ' + name
+        except:
+            print 'An unknown error has occurred'
+            return
     else:
-        print 'Function ' + name + \
-              ' could not be found inside the active workspace.'
+        print 'Could not recognise the type of ' +\
+              name + ' (' + j['url'] + ')'
 
 
-def clone(name):
+def clone(name, description=None, append=False):
     """
     Clone the currently active workspace into a new one named `name`.
     :param name: the name of the new workspace to clone the currently active
     one into.
+    :param description: optionally, of the description the new workspace.
+    :param append: whether to append to the existing documentation of replace
+    it completely.
     """
     try:
         r = regint.clone(name)
+        if description:  # Update/replace the description accordingly
+            if not append:
+                r['description'] = description
+            else:
+                r['description'] += '\n\n' + description
+            r = regint.put_item(r['url'], r)
         print 'New workspace created: ' + str(r['url'])
+    except requests.HTTPError as e:
+        if e.response.status_code == 403:
+            print 'Insufficient permissions'
+            return
+        else:
+            print 'Workspace cloning failed.'
     except:
         # See if there is already a workspace with the same name under the
         # current user and notify accordingly
@@ -683,6 +762,8 @@ def clone(name):
             if 'id' in w:
                 print 'Workspace ' + name + ' (' + regconf.username + ')' +\
                     ' already exists.'
+            else:
+                print 'Workspace cloning failed.'
         except:
             print 'Workspace cloning failed.'
 
@@ -696,6 +777,8 @@ def display_pe(j):
     print __header('URL: ') + j['url']
     if j['description'].strip() != '':
         print __header('Description: ') + _short_descr(j['description'])
+    if j['clone_of'] and j['clone_of'].strip() != '':
+        print __header('Origin: ') + j['clone_of']
     print __header('Implementations:')
     for i in j['peimpls']:
         try:
@@ -715,6 +798,8 @@ def display_fn(j):
     print __header('URL: ') + j['url']
     if j['description'].strip() != '':
         print __header('Description: ') + _short_descr(j['description'])
+    if j['clone_of'] and j['clone_of'].strip() != '':
+        print __header('Origin: ') + j['clone_of']
     print __header('Implementations:')
     for i in j['fnimpls']:
         try:
@@ -734,6 +819,8 @@ def display_lit(j):
     print __header('URL: ') + j['url']
     if j['description'].strip() != '':
         print __header('Description: ') + _short_descr(j['description'])
+    if j['clone_of'] and j['clone_of'].strip() != '':
+        print __header('Origin: ') + j['clone_of']
     print __header('Value: ') + j['value']
 
 
@@ -753,6 +840,8 @@ def display_peimpl(j):
     print __header('URL: ') + j['url']
     if j['description'].strip() != '':
         print __header('Description: ') + _short_descr(j['description'])
+    if j['clone_of'] and j['clone_of'].strip() != '':
+        print __header('Origin: ') + j['clone_of']
     print __header('Implements PE: ') + parent_name
     print __header('Code:')
     print _pretty_code(j['code'])
@@ -775,7 +864,9 @@ def display_fnimpl(j):
     print __header('URL: ') + j['url']
     if j['description'].strip() != '':
         print __header('Description: ') + _short_descr(j['description'])
-    print __header('Implements functio: ') + parent_name
+    if j['clone_of'] and j['clone_of'].strip() != '':
+        print __header('Origin: ') + j['clone_of']
+    print __header('Implements function: ') + parent_name
     print __header('Code:')
     print _pretty_code(j['code'])
 
@@ -815,6 +906,63 @@ def _short_descr(s, length=30):
     if len(ret) > length:
         ret = ret[:length].strip() + ' [...]'
     return ret
+
+
+def copy(item_name, to_wspc, wspc_owner=None, target_name=None):
+    """
+    Copy an item - a Literal, a PE or a function - as well as its associated
+    objects (PE and function implementations) to another workspace.
+    :param item_name: The pckg.name of the item to copy
+    :param to_wspc: The name of the target workspace.
+    :param wspc_owner: The username of the target workspace owner; defaults
+    to the current user.
+    :param target_name: Optionally, an alternative pckg.name of the item to
+    copy. In the current registry implementation, in the case of functions and
+    PEs, their respective implementations will be stored under the package
+    pckg.implementations in order to avoid name clashes.
+    """
+    wspc_owner = wspc_owner or regconf.username
+
+    target_wspc_id = None
+    try:
+        target_wspc = regint._get_workspace_by_name(wspc_owner, to_wspc)
+        target_wspc_id = target_wspc['id']
+    except:
+        print 'Invalid or inaccessible target workspace'
+        return
+
+    src = None
+    src_url = None
+    try:
+        src = regint.get_by_name(item_name)
+        src_url = src['url']
+    except:
+        print 'Could not find item ' + item_name + ' in the active workspace'
+        return
+    src_type = regint._extract_kind_from_json_object(src)
+    if (src_type != RegistryInterface.TYPE_PE and
+            src_type != RegistryInterface.TYPE_FN and
+            src_type != RegistryInterface.TYPE_LIT):
+        print 'Item ' + item_name + ' cannot be copied.'
+        print 'It needs to be a PE or a function or a literal.'
+        return
+
+    copy_url = src_url + '?copy_to=' + str(target_wspc_id)
+    if target_name:
+        copy_url += '&target_name=' + target_name
+
+    clone = None
+    try:
+        clone = regint._get_by_arbitrary_url(copy_url)
+        print 'Created ' + clone['pckg'] + '.' + clone['name'] + \
+              ' in workspace ' + to_wspc + ' (' + wspc_owner + ')'
+    except requests.HTTPError as e:
+        if e.response.status_code == 500:
+            print 'Copying of ' + item_name + \
+                  ' failed due to an integrity error.'
+            print 'Please check for naming clashes in the target workspace.'
+        else:
+            print 'Copying of ' + item_name + ' failed.'
 
 
 # main() is only for quick tests

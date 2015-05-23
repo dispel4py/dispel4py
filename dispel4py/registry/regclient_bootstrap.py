@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Copyright (c) The University of Edinburgh 2014
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-python -i regclient_bootstrap.py
+import dispel4py.registry.registry as r
+import sys
 
+sys.ps1 = '\001\033[96m\002>>> \001\033[0m\002'
+sys.ps2 = '\001\033[96m\002... \001\033[0m\002'
 
