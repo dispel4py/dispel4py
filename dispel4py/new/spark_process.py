@@ -215,12 +215,12 @@ def process(sc, workflow, inputs, args):
     # print "RESULT PROCESSES: %s" % result_rdd.keys()
     for p in result_rdd:
         result = result_rdd[p].foreach(lambda x: None)
-        print 'RESULT FROM %s: %s' % (p, result)
-        for x in result:
-            print x
+        # result = result_rdd[p].foreach(lambda x:
+        #                                simpleLogger(process_to_pes[p], x))
+        # print 'RESULT FROM %s: %s' % (p, result)
 
 
-def main():
+def run():
     from pyspark import SparkContext, SparkConf
 
     conf = SparkConf()
@@ -238,10 +238,34 @@ def main():
     if graph is None:
         return
     graph.flatten()
-
+    
     inputs = processor.create_inputs(args, graph)
 
     process(sc, graph, inputs=inputs, args=args)
 
+
+def main():
+    import os
+    import subprocess
+    import sys
+    try:
+        spark_home = os.environ['SPARK_HOME']
+    except:
+        print 'Please set SPARK_HOME.'
+        sys.exit(1)
+
+    parser = argparse.ArgumentParser(
+        description='Submit a dispel4py graph for processing.')
+    parser.add_argument('target', help='target execution platform')
+    args, remaining = parser.parse_known_args()
+    this_path = os.path.abspath(__file__)
+    if this_path.endswith('pyc'):
+        this_path = this_path[:-1]
+    command = ['%s/bin/spark-submit' % spark_home,
+               '--py-files=dist/dispel4py-1.0.1-py2.7.egg',
+               this_path] + remaining
+    print command
+    subprocess.call(command)
+
 if __name__ == '__main__':
-    main()
+    run()

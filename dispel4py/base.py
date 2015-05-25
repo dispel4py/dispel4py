@@ -197,3 +197,66 @@ def create_iterative_chain(functions,
     graph.outputmappings = {'output': (prev, IterativePE.OUTPUT_NAME)}
 
     return graph
+
+
+class CompositePE(WorkflowGraph):
+    '''
+    Super class for composite PEs. When extending or instantiating this PE
+    a function may be provided to populate the graph. For example::
+
+        def create_graph(graph):
+            prod = Producer()
+            cons = Consumer()
+            graph.connect(prod, 'output', cons, 'input')
+            graph._map_output('output', cons, 'output')
+
+
+        class MyCompositePE(CompositePE):
+            def __init__(self):
+                CompositePE.__init__(self, create_graph)
+
+    This composite PE can be created with the usual command::
+
+        comp = MyCompositeTestPE()
+
+    It is also possible to pass parameters to the composite PE when
+    instantiating::
+
+        def create_graph(limit):
+            prod = Producer(limit)
+            cons = Consumer()
+            graph.connect(prod, 'output', cons, 'input')
+            graph._map_output('output', cons, 'output')
+
+        class ParameterisedCompositePE(CompositePE):
+            def __init__(self, limit)
+                CompositePE.__init__(self, create_graph, limit)
+    '''
+    def __init__(self, create_graph=None, params=None):
+        '''
+        Instantiate and populate the graph, if the function provided. 
+        Otherwise, the graph must be populated explicitly by the subclass or
+        after instantiating the object.
+        '''
+        WorkflowGraph.__init__(self)
+        self.inputmappings = {}
+        self.outputmappings = {}
+        if create_graph:
+            if params is not None:
+                create_graph(self, None)
+            else:
+                create_graph(self)
+
+    def _map_input(self, input_name, internal_pe, internal_input):
+        '''
+        Map the composite PE input to the named input of a PE that is contained
+        in the graph.
+        '''
+        self.inputmappings[input_name] = (internal_pe, internal_input)
+
+    def _map_output(self, output_name, internal_pe, internal_output):
+        '''
+        Map the composite PE output to the named output of a PE that is
+        contained in the graph.
+        '''
+        self.outputmappings[output_name] = (internal_pe, internal_output)

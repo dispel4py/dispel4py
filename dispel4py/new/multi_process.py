@@ -61,10 +61,11 @@ def _processWorker(wrapper):
 
 def parse_args(args, namespace):
     parser = argparse.ArgumentParser(
+        prog='dispel4py',
         description='Submit a dispel4py graph to multiprocessing.')
     parser.add_argument('-s', '--simple', help='force simple processing',
                         action='store_true')
-    parser.add_argument('-n', '--num', metavar='num_processes',
+    parser.add_argument('-n', '--num', metavar='num_processes', required=True,
                         type=int, help='number of processes to run')
     result = parser.parse_args(args, namespace)
     return result
@@ -72,9 +73,6 @@ def parse_args(args, namespace):
 
 def process(workflow, inputs, args):
     size = args.num
-    if not size:
-        return 'dispel4py.multi_process: ' \
-               'error: missing required argument -n num_processes'
     success = True
     nodes = [node.getContainedObject() for node in workflow.graph.nodes()]
     if not args.simple:
@@ -199,3 +197,16 @@ class MultiProcessingWrapper(GenericWrapper):
             for (inputName, communication) in targets:
                 for i in communication.destinations:
                     self.output_queues[i].put((None, STATUS_TERMINATED))
+
+
+def main():
+    from dispel4py.new.processor import load_graph_and_inputs, parse_common_args
+    
+    args, remaining = parse_common_args()
+    args = parse_args(remaining, args)
+    
+    graph, inputs = load_graph_and_inputs(args)
+    if graph is not None:
+        errormsg = process(graph, inputs, args)
+        if errormsg:
+            print errormsg

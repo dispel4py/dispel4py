@@ -728,22 +728,30 @@ def create_inputs(args, graph):
 
     return inputs
 
+def load_graph_and_inputs(args):
+    from dispel4py.utils import load_graph
+
+    graph = load_graph(args.module, args.attr)
+    if graph is None:
+        return None, None
+        
+    graph.flatten()
+    inputs = create_inputs(args, graph)
+    return graph, inputs
+
+
+def parse_common_args():
+    parser = create_arg_parser()
+    return parser.parse_known_args()
+
 
 def main():
     from importlib import import_module
 
-    from dispel4py.utils import load_graph
-
-    parser = create_arg_parser()
-    args, remaining = parser.parse_known_args()
-    # args = parser.parse_args()
-
-    graph = load_graph(args.module, args.attr)
+    args, remaining = parse_common_args()
+    graph, inputs = load_graph_and_inputs(args)
     if graph is None:
         return
-    graph.flatten()
-
-    inputs = create_inputs(args, graph)
 
     try:
         # see if platform is in the mappings file as a simple name
@@ -754,13 +762,15 @@ def main():
     try:
         parse_args = getattr(import_module(target), 'parse_args')
         args = parse_args(remaining, args)
+    except SystemExit:
+        # the sub parser raised an error
+        raise
     except:
         # no other arguments required for target
         pass
     process = getattr(import_module(target), 'process')
     error_message = process(graph, inputs=inputs, args=args)
     if error_message:
-        parser.print_usage()
         print error_message
 
 if __name__ == "__main__":
