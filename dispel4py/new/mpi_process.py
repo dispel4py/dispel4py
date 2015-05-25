@@ -63,7 +63,7 @@ import types
 import traceback
 
 
-def parse_my_args(args, namespace):
+def parse_args(args, namespace):
     parser = argparse.ArgumentParser(
         description='Submit a dispel4py graph to MPI processes.')
     parser.add_argument('-s', '--simple', help='force simple processing',
@@ -196,7 +196,10 @@ def main():
     from dispel4py.new.processor import load_graph_and_inputs, parse_common_args
     
     args, remaining = parse_common_args()
-    args = parse_my_args(remaining, args)
+    try:
+        args = parse_args(remaining, args)
+    except SystemExit:
+        raise
     
     graph, inputs = load_graph_and_inputs(args)
     if graph is not None:
