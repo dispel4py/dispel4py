@@ -20,11 +20,11 @@ def main(args=None):
         target = args.target
     try:
         process = getattr(import_module(target), 'main')
-        process()
     except:
-        print traceback.format_exc()
+        # print traceback.format_exc()
         print 'Unknown target: %s' % target
-        
+        return
+    process()
 
 
 if __name__ == "__main__":

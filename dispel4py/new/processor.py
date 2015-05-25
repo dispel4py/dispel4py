@@ -740,6 +740,11 @@ def load_graph_and_inputs(args):
     return graph, inputs
 
 
+def parse_common_args():
+    parser = create_arg_parser()
+    return parser.parse_known_args()
+
+
 def main():
     from importlib import import_module
 

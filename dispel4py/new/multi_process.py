@@ -200,10 +200,9 @@ class MultiProcessingWrapper(GenericWrapper):
 
 
 def main():
-    from dispel4py.new.processor import load_graph_and_inputs, create_arg_parser
+    from dispel4py.new.processor import load_graph_and_inputs, parse_common_args
     
-    parser = create_arg_parser()
-    args, remaining = parser.parse_known_args()
+    args, remaining = parse_common_args()
     args = parse_args(remaining, args)
     
     graph, inputs = load_graph_and_inputs(args)
