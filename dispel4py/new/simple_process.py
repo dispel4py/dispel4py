@@ -119,11 +119,12 @@ class SimpleProcessingWrapper(GenericWrapper):
 
 
 def main():
-    from dispel4py.new.processor import load_graph_and_inputs, create_arg_parser
-    
+    from dispel4py.new.processor \
+        import load_graph_and_inputs, create_arg_parser
+
     parser = create_arg_parser()
     args = parser.parse_args()
-    
+
     graph, inputs = load_graph_and_inputs(args)
     if graph is not None:
         process(graph, inputs)

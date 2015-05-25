@@ -234,7 +234,7 @@ class CompositePE(WorkflowGraph):
     '''
     def __init__(self, create_graph=None, params=None):
         '''
-        Instantiate and populate the graph, if the function provided. 
+        Instantiate and populate the graph, if the function provided.
         Otherwise, the graph must be populated explicitly by the subclass or
         after instantiating the object.
         '''

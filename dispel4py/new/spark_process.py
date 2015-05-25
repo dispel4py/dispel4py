@@ -238,7 +238,7 @@ def run():
     if graph is None:
         return
     graph.flatten()
-    
+
     inputs = processor.create_inputs(args, graph)
 
     process(sc, graph, inputs=inputs, args=args)

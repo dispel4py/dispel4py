@@ -728,13 +728,14 @@ def create_inputs(args, graph):
 
     return inputs
 
+
 def load_graph_and_inputs(args):
     from dispel4py.utils import load_graph
 
     graph = load_graph(args.module, args.attr)
     if graph is None:
         return None, None
-        
+
     graph.flatten()
     inputs = create_inputs(args, graph)
     return graph, inputs

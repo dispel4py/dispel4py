@@ -200,11 +200,12 @@ class MultiProcessingWrapper(GenericWrapper):
 
 
 def main():
-    from dispel4py.new.processor import load_graph_and_inputs, parse_common_args
-    
+    from dispel4py.new.processor \
+        import load_graph_and_inputs, parse_common_args
+
     args, remaining = parse_common_args()
     args = parse_args(remaining, args)
-    
+
     graph, inputs = load_graph_and_inputs(args)
     if graph is not None:
         errormsg = process(graph, inputs, args)
