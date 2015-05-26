@@ -764,6 +764,7 @@ def rm(name):
         print 'Could not recognise the type of ' +\
               name + ' (' + j['url'] + ')'
 
+
 def mk_workspace(name, description=None):
     """
     Create a new, empty workspace.
@@ -791,6 +792,7 @@ def mk_workspace(name, description=None):
                       str(e.response.status_code) + ')'
     except:
         print 'Could not create workspace.'
+
 
 def clone(name, description=None, append=False):
     """
@@ -949,7 +951,7 @@ def view(name):
     :param name: the pckg.name of the component to view.
     """
     name = name.strip()
-    
+
     j = None
     try:
         j = regint.get_by_name(name)
