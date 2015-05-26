@@ -53,42 +53,59 @@ class bcolors:
 
 general_help = """
 \033[1mCommands:\033[0m
-    help([command]): Outputs help for the dispel4py registry's interactive
-                     interface.
-    info(): Outputs information about the current session.
-    set_workspace(name [, owner]): Change the active workspace to the one
-                                   identified by name and optionally owner.
-    set_workspace_by_id(wspcid): Change the active workspace to the one
-                                 indicated by wspcid.
-    clone(name): Clone the currently active workspace into a new one with the
-                 given name.
-    copy(item_name, to_workspace_name[, username, target_name]): Copy the
+    \033[4mhelp([command])\033[0m\
+: Outputs help for the dispel4py registry's interactive interface.
+    \033[4minfo()\033[0m: Outputs information about the current session.
+    \033[4mset_workspace(name [, owner])\033[0m\
+: Change the active workspace to the one
+        identified by name and optionally owner.
+    \033[4mset_workspace_by_id(wspcid)\033[0m\
+: Change the active workspace to the one
+        indicated by wspcid.
+    \033[4mmk_workspace(name[, description])\033[0m\
+: Create a new, empty workspace.
+        Optionally, provide a description.
+    \033[4mclone(name[, description, append])\033[0m\
+: Clone the currently active workspace
+        into a new one with the given name. Optionally provide a description
+        as well as choose whether the description to replace the existing one,
+        or to be appended to it.
+    \033[4mcopy(item_name, to_workspace_name[, username, target_name])\033[0m\
+: Copy the
         given item into another workspace. It works for PEs, functions and
         literals.
-    wls([name, owner, startswith]): List the contents of a workspace; defaults
-                                    to the currently active one.
-    find_my_workspaces: Find the workspaces owned by the logged in user.
-    find_workspaces(str): Searches for workspaces that satisfy the given text
-                          query.
-    find_in_workspace(str): Searches inside the currently active workspace for
-                            entities that satisfy the given text query.
-    register_fn(name, impl_subpackage): Register a function. The name should be
-                                        the full python name and it should be
-                                        importable by Python.
-    register_pe(name, impl_subpackage): Register a processing element. The name
-                                        should be the full python name and it
-                                        should be importable by Python.
-    register_literal(pckg, name, value[, description]): register a new literal
+    \033[4mwls([name, owner, startswith])\033[0m\
+: List the contents of a workspace; defaults
+        to the currently active one.
+    \033[4mfind_my_workspaces\033[0m\
+: Find the workspaces owned by the logged in user.
+    \033[4mfind_workspaces(str)\033[0m\
+: Searches for workspaces that satisfy the given text
+        query.
+    \033[4mfind_in_workspace(str)\033[0m\
+: Searches inside the currently active workspace for
+        entities that satisfy the given text query.
+    \033[4mregister_fn(name, impl_subpackage)\033[0m\
+: Register a function. The name should be
+        the full python name and it should be importable by Python.
+    \033[4mregister_pe(name, impl_subpackage)\033[0m\
+: Register a processing element. The name
+        should be the full python name and it should be importable by Python.
+    \033[4mregister_literal(pckg, name, value[, description])\033[0m\
+: register a new literal
         under pckg.name. This is equivalent to registering a module pckg.name
         containing `name` = "`value`".
-    rm(name): Delete the given named item, as well as its associated items, in
-              the currently active workspace.
-    view(name): View details about the given named item.
+    \033[4mrm(name)\033[0m\
+: Delete the given named item, as well as its associated items, in
+        the currently active workspace.
+    \033[4mview(name)\033[0m\
+: View details about the given named item.
 """
 
 
 def help(command=None):
     """
+    Usage: help(['command'])
     Print help text.
     """
     # Voodooesque but it works for now.
@@ -114,7 +131,7 @@ def set_workspace(name, owner=None):
     owner = owner or regconf.username
     try:
         regint.set_workspace(name, owner)
-        print 'Default workspaces set to: ' + name + ' (' + owner + ') ' +\
+        print 'Default workspace set to: ' + name + ' (' + owner + ') ' +\
               '[' + str(regint.workspace) + ']'
     except:
         print 'Workspace ' + name + ' (' + owner + ') not found.'
@@ -466,9 +483,12 @@ def find_my_workspaces():
     Find the workspaces owned by the logged in user.
     """
     res = regint.get_workspaces_by_user_and_name(regconf.username)
+    count = 0
     for i in res:
         print '(' + i['url'] + ') ' + i['name'] + ': ' +\
               _short_descr(i['description'])
+        count += 1
+    print 'Total: ' + str(count)
 
 
 def find_in_workspace(search_str=''):
@@ -510,9 +530,17 @@ def register_fn(name, impl_subpackage='_impls'):
 
     module = name[:dotpos]
     fnname = name[dotpos+1:]
-    m = _reload_module(module)
-    code = inspect.getsource(m)
-    fn = getattr(m, fnname)
+    try:
+        m = _reload_module(module)
+        code = inspect.getsource(m)
+        fn = getattr(m, fnname)
+    except ImportError:
+        print 'Cannot find module ' + module
+        return
+    except AttributeError:
+        print 'Cannot find ' + fnname + ' in ' + module
+        return
+
     doc = fn.__doc__.strip()
 
     meta = _extract_meta_by_docstr(doc)
@@ -591,10 +619,14 @@ def register_pe(name, impl_subpackage='_impls'):
     pename = name[dotpos+1:]
     try:
         m = _reload_module(module)
+        pe = getattr(m, pename)
     except ImportError:
         print 'Cannot find module ' + module
         return
-    pe = getattr(m, pename)
+    except AttributeError:
+        print 'Cannot find ' + pename + ' in ' + module
+        return
+
     doc = pe.__doc__.strip()
 
     meta = _extract_meta_by_docstr(doc)
@@ -686,7 +718,8 @@ def register_literal(pckg, name, value, description=''):
                 lit['id']
                 print 'Literal already registered.'
             except:
-                print 'An unknown error has occurred.'
+                print 'An unknown error has occurred (' +\
+                      str(e.response.status_code) + ')'
         return
     except:
         print 'An unknown error has occurred'
@@ -721,7 +754,8 @@ def rm(name):
             if e.response.status_code == 403:
                 print 'Insufficient permissions'
             else:
-                print 'An unknown error has occurred'
+                print 'An unknown error has occurred (' +\
+                      str(e.response.status_code) + ')'
             return
         except:
             print 'An unknown error has occurred'
@@ -730,6 +764,33 @@ def rm(name):
         print 'Could not recognise the type of ' +\
               name + ' (' + j['url'] + ')'
 
+def mk_workspace(name, description=None):
+    """
+    Create a new, empty workspace.
+    :param name: The name of the workspace
+    :param description: The description of the workspace
+    """
+    try:
+        r = regint.mk_workspace(name, description)
+        print 'New workspace created: ' + str(r['url'])
+    except requests.HTTPError as e:
+        if e.response.status_code == 403:
+            print 'Insufficient permissions'
+            return
+        else:
+            try:
+                w = regint._get_workspace_by_name(regconf.username, name)
+                if 'id' in w:
+                    print 'Workspace ' + name + ' (' + regconf.username + ')' +\
+                        ' already exists.'
+                else:
+                    print 'Could not create workspace (' +\
+                          str(e.response.status_code) + ')'
+            except:
+                print 'Could not create workspace (' +\
+                      str(e.response.status_code) + ')'
+    except:
+        print 'Could not create workspace.'
 
 def clone(name, description=None, append=False):
     """
@@ -754,7 +815,9 @@ def clone(name, description=None, append=False):
             print 'Insufficient permissions'
             return
         else:
-            print 'Workspace cloning failed.'
+            print 'Workspace cloning failed (' +\
+                  str(e.response.status_code) + ')'
+            return
     except:
         # See if there is already a workspace with the same name under the
         # current user and notify accordingly
@@ -885,6 +948,8 @@ def view(name):
     currently active workspace.
     :param name: the pckg.name of the component to view.
     """
+    name = name.strip()
+    
     j = None
     try:
         j = regint.get_by_name(name)

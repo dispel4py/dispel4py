@@ -355,6 +355,30 @@ class RegistryInterface(object):
         wspc = self._get_workspace_by_name(owner, name)
         self.workspace = wspc['id']
 
+    def mk_workspace(self, name, description=None):
+        """
+        Create a new, empty workspace.
+        :param name: The name of the workspace
+        :param description: The description of the workspace
+        """
+        if not self.logged_in:
+            raise NotLoggedInError()
+
+        if not description:
+            description = ''
+        data = {'name': name,
+                'description': description}
+        url = self.get_base_url() + self.URL_WORKSPACES
+        r = requests.post(url,
+                          data=data,
+                          headers=self._get_auth_header(),
+                          verify=RegistryInterface.SSL_CERT_VERIFY)
+
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+
+        return r.json()
+
     def clone(self, name, orig_workspace_id=None):
         """
         Clone the given workspace into a new one with the name `name`.
