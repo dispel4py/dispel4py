@@ -6,8 +6,8 @@ The dispel4py framework has been designed with modularity, reusability and colla
 The dispel4py Registry Interface is a set of Python methods which allow end-users to interact with the registry in useful ways, should they choose to use a registry for their work. Via the registry interface users can:
 
 * Create workspaces either from scratch or by cloning existing ones
-* Copy items across workspaces
-* Search for and list items of workspaces
+* Copy items between workspaces
+* Search for and list items in workspaces
 * Search for and list workspaces
 * Register PEs, functions and literals
 * Delete PEs, functions and literals
@@ -50,7 +50,7 @@ The ``workspace`` configuration (``D4P_REG_WORKSPACE`` environment variable) wil
 Starting the registry interface
 -------------------------------
 
-Once the dispel4py registry interface has been configured, it can be run inside a Python interpreter via executing::
+Once the dispel4py registry interface has been configured, it can be run inside a Python interpreter by executing::
 
     import dispel4py.registry.registry as r
 
@@ -137,7 +137,7 @@ More detailed inspection of registered elements can be achieved by the ``view`` 
 
 Deleting Workspace Elements
 ```````````````````````````
-Registered elements be removed by the ``rm`` command::
+Registered elements can be removed by the ``rm`` command::
 
     >>> r.rm('my_package.name')
     Deleted my_package.name (https://registry.server/literals/2/)
@@ -163,7 +163,7 @@ Users of the registry interface can also search within the currently active work
 
 Switching Workspaces
 ````````````````````
-At any given time the registry interface maintains a currently active workspace, which is the default workspace within operations take place. Users can switch the active workspace by name and, if the workspace to switch to is not owned by the current user, owner username::
+At any given time the registry interface maintains a currently active workspace, which is the default workspace within which operations take place. Users can switch the active workspace by name and, if the workspace to switch to is not owned by the current user, owner username::
 
     >>> r.set_workspace('root', 'admin')
     Default workspaces set to: root (admin) [1]
@@ -179,7 +179,7 @@ Apart from cloning, users can copy individual registry components to a different
     New workspace created: https://registry.server/workspaces/10/
     
     >>> r.find_workspaces()
-    (https://registry.server/workspaces/1/) root: The root workspace. It contain [...]
+    (https://registry.server/workspaces/1/) root: The root workspace. [...]
     (https://registry.server/workspaces/10/) bob_wspc: my sample workspace
     Total: 2
     
