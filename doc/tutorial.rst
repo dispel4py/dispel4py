@@ -1,10 +1,10 @@
-Tutorial
-========
+Introduction
+============
 
 This tutorial is an introduction to dispel4py. We will see how to write dispel4py PEs, how to connect them together to form a workflow and how this workflow is executed in different environments.
 
 How to write a PE
------------------
+=================
 
 In this section we are going to implement our first PE.
 
@@ -12,7 +12,7 @@ First you need to decide what kind of processing the PE will do and what the dat
 
 
 Create a PE class
-^^^^^^^^^^^^^^^^^
+-----------------
 
 To start with we create a PE that does only very few things::
 
@@ -28,7 +28,7 @@ In this case we extend the base class :py:class:`dispel4py.base.IterativePE` whi
 
 
 Implement the processing method
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------
 
 Now the actual work begins: We have to implement the processing method. This is done by overriding the method of the superclass::
 
@@ -56,7 +56,7 @@ That's it! Our first PE is complete::
                 return data
 
 Create a simple workflow
-------------------------
+========================
 
 In this section we are going to create a workflow, using the PE that we implemented in the previous section. There's a useful PE in the library of dispel4py PEs that just produces a sequence of numbers. 
 
@@ -77,7 +77,7 @@ Now save the whole file as ``myfirstgraph.py``.
 
 
 Execute the workflow
---------------------
+====================
 
 To run this workflow you can use the sequential simple processor::
 
@@ -104,10 +104,10 @@ The output of this workflow are the numbers in the range from 1 to 20 which are 
 
 
 Write a data producer PE
-------------------------
+========================
 
 Producing the input
-^^^^^^^^^^^^^^^^^^^
+-------------------
 
 Next we will create a ProducerPE that creates the input for our sieve of Eratosthenes. The test producer that we were using above only produces one number per iteration. In our case we would like to create a PE that produces all the numbers up to a certain limit.
 
@@ -129,7 +129,7 @@ In the process method we iterate over the range of numbers up to the upper bound
 
 
 Using the producer in the workflow
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------------
 
 Now we hook our own producer into the workflow, replacing the TestProducer from the dispel4py library::
 
@@ -155,7 +155,7 @@ The output is the list of numbers in the range from 2 to 99 that are not divisib
 
 
 Parallel processing
--------------------
+===================
 
 For this very simple case we can easily parallelise the execution of the workflow. To do this we use the dispel4py multi mapping that executes a workflow in multiple processes using the Python multiprocessing [#]_ library::
 
@@ -184,7 +184,7 @@ shows which PE is assigned to which processes. In this case, ``MyFirstPE`` is as
 -----
 
 References
-----------
+==========
 
 .. [#] https://docs.python.org/2/library/multiprocessing.html
 

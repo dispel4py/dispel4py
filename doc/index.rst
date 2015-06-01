@@ -30,8 +30,8 @@ dispel4py provides executable **mappings** to a number of enactment systems.
 * **multiprocessing**: a Python implementation leveraging multiple processors on shared memory systems.
 
 
-Contents
---------
+Documentation
+-------------
 
 .. toctree::
    :maxdepth: 2
@@ -40,7 +40,21 @@ Contents
    concepts
    enactment
    tools
+   
+Tutorial
+--------
+   
+.. toctree::
+   :maxdepth: 2
+
    tutorial
+   
+Developer Resources
+-------------------
+
+.. toctree::
+   :maxdepth: 2
+   
    moduleref
 
 

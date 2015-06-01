@@ -23,10 +23,13 @@ For example, to declare a graph with one input ``in1`` and one output ``out1``::
         self._add_output('out1')
 
 A PE *may* implement custom processing by overriding the :py:func:`~dispel4py.core.GenericPE._process` method. 
-This method is called for each data unit in an input stream.
+This method is called for each data unit in an input stream. If the PE has no inputs the method is called at least once, and the number of iterations is controlled by the mapping when enacting the graph (see the chapter :doc:`/enactment` for more details).
+
 The inputs parameter is a dictionary which maps the name of an input connection to the corresponding input data unit.
-Note that at least one input will have input data when :py:func:`~dispel4py.core.GenericPE._process` is called, but some inputs may be empty.
-The output data must be a dictionary mapping names of output connections to the corresponding output data units.
+Note that at least one input will have input data when :py:func:`~dispel4py.core.GenericPE._process` is called (unless the PE has no inputs), but some inputs may be empty.
+
+The (optional) return value is a dictionary mapping names of output connections to the corresponding output data units. If the PE produces no data in an iteration it must return ``None``. If the PE produces up to one data item per output in an iteration, it may be returned as a dictionary. If a PE produces one or more data units in an iteration these may be written to the target output streams at any time during :py:func:`~dispel4py.core.GenericPE._process` by calling :py:func:`~dispel4py.core.GenericPE.write`.
+
 
 The example shows show how to produce output after applying ``myfunc`` to the input::
 
@@ -35,7 +38,12 @@ The example shows show how to produce output after applying ``myfunc`` to the in
         result = myfunc(data)
         return { 'out1' : result }
 
-If a PE produces more than one output data unit in an iteration these can be written to output streams at any time during :py:func:`~dispel4py.core.GenericPE._process` by calling :py:func:`~dispel4py.core.GenericPE.write`.
+Alternatively the data item may be written to the output streams like this::
+
+    def _process(self, inputs):
+        data = inputs['in1']
+        result = myfunc(data)
+        self.write('out1', result)
 
 The method :py:func:`~dispel4py.core.GenericPE.log` can be used for log statements when implementing custom PEs. 
 The enactment engine takes care of providing a logging mechanism for a particular environment.
