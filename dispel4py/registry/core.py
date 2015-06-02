@@ -32,6 +32,9 @@ logger.setLevel(logging.INFO)
 
 from urlparse import urlparse
 
+from import_cache import ImportCache
+from import_cache import ImportCacheException
+
 
 class RegistryConfiguration(object):
     """An encapsulation of the configuration of the interface with the
@@ -202,7 +205,7 @@ class RegistryInterface(object):
     # registry_url = DEF_URL
     workspace = DEF_WORKSPACE_ID
     # user = None
-    registered_entities = {}  # In-memory cache
+    # registered_entities = {}  # In-memory cache
     # token = None
     # ###########################
     conf = None
@@ -241,6 +244,8 @@ class RegistryInterface(object):
                 RegistryInterface.ROOT_OWNER,
                 RegistryInterface.ROOT_WSPC)['id']
         self.workspace = wspc_id
+
+        self.cache = ImportCache()
 
     def get_auth_token(self):
         if not self.logged_in:
@@ -585,6 +590,13 @@ class RegistryInterface(object):
         if not self.logged_in:
             raise NotLoggedInError()
 
+        try:
+            code = self.cache.get(pckg + '.' + name)
+            # print '> Fetched ' + pckg + '.' + name + ' from cache.'
+            return code
+        except ImportCacheException:
+            pass
+
         url = (self.get_base_url() + self.URL_WORKSPACES + str(workspace_id) +
                '/?fqn=' + pckg + '.' + name)
         r = requests.get(url,
@@ -606,7 +618,9 @@ class RegistryInterface(object):
         r = requests.get(impl_url,
                          headers=self._get_auth_header(),
                          verify=RegistryInterface.SSL_CERT_VERIFY)
-        return r.json().get('code')
+        code = r.json().get('code')
+        self.cache.add(pckg + '.' + name, code)
+        return code
 
     def get_direct_implementation_code(self, workspace_id, pckg, name):
         """
@@ -615,6 +629,13 @@ class RegistryInterface(object):
         """
         if not self.logged_in:
             raise NotLoggedInError()
+
+        try:
+            code = self.cache.get(pckg + '.' + name)
+            print '> Fetched ' + pckg + '.' + name + ' from cache.'
+            return code
+        except ImportCacheException:
+            pass
 
         url = (self.get_base_url() + self.URL_WORKSPACES + str(workspace_id) +
                '/?fqn=' + pckg + '.' + name)
@@ -625,8 +646,9 @@ class RegistryInterface(object):
             r.raise_for_status()
 
         try:
-            # print r.json().get('code')
-            return r.json().get('code')
+            code = r.json().get('code')
+            self.cache.add(pckg + '.' + name, code)
+            return code
         except:
             raise ImplementationNotFound()
 
@@ -704,6 +726,13 @@ class RegistryInterface(object):
         if not self.logged_in:
             raise NotLoggedInError()
 
+        try:
+            code = self.cache.get(pckg + '.' + name)
+            # print '> Fetched ' + pckg + '.' + name + ' from cache.'
+            return code
+        except ImportCacheException:
+            pass
+
         url = (self.get_base_url() + self.URL_WORKSPACES + str(workspace_id) +
                '/?fqn=' + pckg + '.' + name)
         r = requests.get(url,
@@ -726,7 +755,9 @@ class RegistryInterface(object):
         r = requests.get(impl_url,
                          headers=self._get_auth_header(),
                          verify=RegistryInterface.SSL_CERT_VERIFY)
-        return r.json().get('code')
+        code = r.json().get('code')
+        self.cache.add(pckg + '.' + name, code)
+        return code
 
     def register_literal(self, pckg, name, value, workspace_id=None, descr=''):
         """
@@ -1175,7 +1206,8 @@ def createResources(resources_dir, registry):
     if not registry:
         return
     for mod, code in registry.registered_entities.iteritems():
-        store_resource(resources_dir, mod, code)
+        print str(mod), str(code)
+        store_resource(resources_dir, mod, code[0])
 
 
 def store_resource(resources_dir, mod, code):

@@ -14,7 +14,7 @@
 
 import sys
 import imp
-
+import datetime
 
 # FIXME: Make this first look things up locally before it goes to the registry
 class RegistryImporter(object):
@@ -31,32 +31,40 @@ class RegistryImporter(object):
         if self not in sys.meta_path:
             sys.meta_path.append(self)
 
-    def find_module(self, fullname, path=None):
-        workspace_ls = self.reg_int.get_workspace_ls(startswith=fullname)
+    def __call__(self, path):
+        return self
 
+    def find_module(self, fullname, path=None):
         # maybe it's a package
+        # print 'find_module ', str(fullname), str(path)
+        workspace_ls = self.reg_int.get_workspace_ls(startswith=fullname)
         if len(workspace_ls['packages']) > 0:
             return self
 
         # maybe it's an object?
         try:
-            code = self.reg_int.get_code(fullname)
-            self.reg_int.registered_entities[fullname] = code
+            self.reg_int.get_code(fullname)
             return self
         except:
             return None
 
     def load_module(self, fullname):
+        # print 'load_module', str(fullname)
         if fullname in sys.modules:
+            print '   > sys'
             return sys.modules[fullname]
 
         mod = imp.new_module(fullname)
         mod.__loader__ = self
         sys.modules[fullname] = mod
-        if fullname in self.reg_int.registered_entities:
-            code = self.reg_int.registered_entities[fullname]
-            # print "compiling code for module " + fullname
+        # print '    > mod ' + str(mod)
+
+        try:
+            code = self.reg_int.get_code(fullname)
             exec code in mod.__dict__
+        except:
+            pass  # return None
+            
         mod.__file__ = "[%r]" % fullname
         mod.__path__ = []
         return mod
