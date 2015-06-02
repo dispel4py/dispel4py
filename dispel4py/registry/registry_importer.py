@@ -14,7 +14,7 @@
 
 import sys
 import imp
-import datetime
+
 
 # FIXME: Make this first look things up locally before it goes to the registry
 class RegistryImporter(object):
@@ -64,7 +64,7 @@ class RegistryImporter(object):
             exec code in mod.__dict__
         except:
             pass  # return None
-            
+
         mod.__file__ = "[%r]" % fullname
         mod.__path__ = []
         return mod

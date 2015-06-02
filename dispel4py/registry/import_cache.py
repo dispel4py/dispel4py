@@ -1,5 +1,6 @@
 from datetime import datetime as d
 
+
 class ImportCache(object):
     """
     A cache for import code and packages
@@ -24,7 +25,7 @@ class ImportCache(object):
             return self.cache[name][0]
         else:
             raise ImportCacheException()
-    
+
     def is_recent(self, name):
         """
         Return true if the entry `name` is still valid.
@@ -32,7 +33,7 @@ class ImportCache(object):
         """
         return (d.now() - self.cache[name][1]).seconds <=\
             ImportCache.EXPIRATION_SECS
-    
+
     def contains(self, name):
         """
         If the cache contains the given name and it is recent, return True;
@@ -48,6 +49,7 @@ class ImportCache(object):
     def __str__(self):
         return str(self.cache)
 
+
 class ImportCacheException(Exception):
     pass
 
@@ -56,8 +58,8 @@ if __name__ == '__main__':
     c = ImportCache()
     ImportCache.EXPIRATION_SECS = 5
     c.add('Hello')
-    for i in range(0,10):
+    for i in range(0, 10):
         print '(' + str(i) + ') ' + str(c.contains('Hello'))
         sleep(1)
-        
+
     print c
