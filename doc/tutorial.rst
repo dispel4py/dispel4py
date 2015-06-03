@@ -8,7 +8,7 @@ How to write a PE
 
 In this section we are going to implement our first PE.
 
-First you need to decide what kind of processing the PE will do and what the data units are that it processes. In our example we are implementing a PE that decides if a number is divisible by another number. The PE is configured with this divisor and for each input data item it tests whether the number can be divided by this divisor. It returns the input data item if it is not divisible.
+First you need to decide what kind of processing the PE will do and what the data units are that it processes. In our example we are implementing a PE that decides if a number is divisible by another number. The PE is configured with this divisor and for each input data item it tests whether the number can be divided by this divisor. It sends the input data item to its output if it is not divisible.
 
 
 Create a PE class
