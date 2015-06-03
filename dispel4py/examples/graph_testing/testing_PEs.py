@@ -175,7 +175,7 @@ class WordCounter(GenericPE):
         self._add_output('output', tuple_type=['word', 'count'])
         self.mywords = {}
 
-    def process(self, inputs):
+    def _process(self, inputs):
         word = inputs['input'][0]
         try:
             self.mywords[word] += 1
