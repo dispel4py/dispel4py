@@ -3,14 +3,14 @@ dispel4py
 
 dispel4py is a Python library used to describe abstract workflows for distributed data-intensive applications. These workflows are compositions of processing elements representing knowledge discovery activities (such as batch database querying, noise filtering and data aggregation) through which significant volumes of data can be streamed in order to manufacture a useful knowledge artefact. Such processing elements may themselves be defined by compositions of other, more fundamental computational elements, in essence having their own internal workflows. Users can construct workflows importing existing processing elements from a registry, or can define their own, recording them in a registry for later use by themselves or others.
 
-Abstract dataflows described in Dispel4Py can be executed in numerous environments, for example using a Storm cluster or as an MPI job. Thus Dispel4Py allows to construct workflows without particular knowledge of the specific context in which they are to be executed, granting them greater generic applicability.
+Abstract dataflows described in dispel4py can be executed in numerous environments, for example using a Storm cluster or as an MPI job. Thus dispel4py allows to construct workflows without particular knowledge of the specific context in which they are to be executed, granting them greater generic applicability.
 
 Dependencies 
 ------------
 
-Dispel4Py has been tested with Python versions *2.7.5*, *2.7.2* and *2.6.6*.
+dispel4py has been tested with Python versions *2.7.5*, *2.7.2* and *2.6.6*.
 
-The following Python packages are required to run Dispel4Py:
+The following Python packages are required to run dispel4py:
 
 - networkx (https://networkx.github.io/)
 
@@ -43,14 +43,16 @@ from the dispel4py root directory.
 Docker image
 ------------
 
-A Docker image with the latest Dispel4Py installation is available from the Docker Hub: https://registry.hub.docker.com/u/akrause2014/dispel4py/
+A Docker image with the latest dispel4py installation is available from the Docker Hub: https://registry.hub.docker.com/u/akrause2014/dispel4py/
 
 Documentation
 -------------
 
-The wiki documentation explains how to install and test Dispel4Py: https://github.com/dispel4py/dispel4py/wiki
+The wiki documentation explains how to install and test dispel4py: https://github.com/dispel4py/dispel4py/wiki
 
-Dispel4Py user documentation: http://dispel4py.org/
+dispel4py user documentation: http://dispel4py.org/documentation
+
+The dispel4py website is http://dispel4py.org
 
 Travis CI
 ---------
