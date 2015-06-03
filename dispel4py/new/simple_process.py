@@ -36,8 +36,8 @@ with parameters
 :-i iter:   number of iterations to compute (default is 1)
 :-h:      print this help page
 
-The input data must be a dictionary mapping either a PE name or an PE 
-identifier to a list of input data or the number of iterations which is a 
+The input data must be a dictionary mapping either a PE name or an PE
+identifier to a list of input data or the number of iterations which is a
 non-negative integer.
 
 For example::
@@ -50,7 +50,7 @@ For example::
     Outputs: {'TestOneInOneOut5': {'output': [1, 2, 3, 4, 5]}}
 
 The simple processor can also be called from an interactive Python session.
-For example, the following source creates a simple graph with a producer and a 
+For example, the following source creates a simple graph with a producer and a
 consumer PE and executes 5 iterations::
 
     from dispel4py.workflow_graph import WorkflowGraph
@@ -65,7 +65,7 @@ consumer PE and executes 5 iterations::
     from dispel4py.new.simple_process import process_and_return
     results = process_and_return(graph, { prod : 5 })
 
-The return value is the collection the output data of the consumer PE as this 
+The return value is the collection the output data of the consumer PE as this
 output stream is not connected::
 
     print results
@@ -85,10 +85,10 @@ def process_and_return(workflow, inputs, resultmappings=None):
     '''
     Executes the simple sequential processor for dispel4py graphs and returns
     the data collected from any unconnected output streams.
-    
+
     :param workflow: the dispel4py graph to be enacted
-    :param inputs: inputs for root PEs of the graphs. 
-        This is a dictionary mapping a PE to either a non-negative integer 
+    :param inputs: inputs for root PEs of the graphs.
+        This is a dictionary mapping a PE to either a non-negative integer
         (the number of iterations) or a list of input data items.
     :rtype: a dictionary mapping PE ids to the output data produced by that PE
 
@@ -132,13 +132,13 @@ def process(workflow, inputs, args=None, resultmappings=None):
     Executes the simple sequential processor for dispel4py graphs and prints
     out the input and output data. This is the default target when invoking
     the simple mapping with `dispel4py simple <module>`.
-    
+
     :param workflow: the dispel4py graph to be enacted
     :param inputs: inputs for root PEs of the graphs. This is a dictionary
-        mapping a PE id to either a non-negative integer 
+        mapping a PE id to either a non-negative integer
         (the number of iterations) or a list of input data items.
     '''
-    
+
     try:
         print 'Inputs: %s' % {pe.id: data for pe, data in inputs.iteritems()}
     except:
