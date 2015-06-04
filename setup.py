@@ -29,8 +29,9 @@ setup(
     version="1.0.1",
     author="The University of Edinburgh",
     author_email="a.krause@epcc.ed.ac.uk",
-    description=("Dispel4py is a Python library used to describe abstract \
-        workflows for distributed data-intensive applications."),
+    description=("dispel4py is a free and open-source Python library for \
+        describing abstract stream-based workflows for distributed \
+        data-intensive applications."),
     license="Apache 2",
     keywords="dispel4py dispel workflows processing elements data intensive",
     url="http://dispel4py.org",
