@@ -38,7 +38,7 @@ Now the actual work begins: We have to implement the processing method. This is 
 We fill in the processing commands, in our case this means that we test if the input data item is divisible by our divisor, and return it if it is not divisible::
 
         def _process(self, data):
-            if not data % self.divisor == 0:
+            if not data % self.divisor:
                 return data
 
 That's it! Our first PE is complete::
@@ -52,7 +52,7 @@ That's it! Our first PE is complete::
             self.divisor = divisor
 
         def _process(self, data):
-            if not data % self.divisor == 0:
+            if not data % self.divisor:
                 return data
 
 Create a simple workflow
@@ -90,7 +90,9 @@ This produces the following output::
     SimplePE: Processed 1 iteration.
     Outputs: {'MyFirstPE3': {'output': [1]}}
 
-By default, without providing any input, the producer PE only processes once and only produces one number, the number 1 which is not divisible by 3 so this is the result of our workflow.
+By default, without providing any input, the producer PE only processes once and only produces one number, the number 1 which is not divisible by 3 so this is the output stream of our workflow.
+
+In the output above, you can see that PEs are assigned an integer ID to uniquely identify them within the graph, as you can use more than one PE of the same kind in a graph. In this graph the producer PE is assigned the ID ``TestProducer2`` which is a combination of its class name and a number, and ``MyFirstPE3`` is the ID of our own PE.
 
 To run more than one iteration, you can specify the number with the parameter ``-i``, say 20 times::
 
@@ -109,23 +111,24 @@ Write a data producer PE
 Producing the input
 -------------------
 
-Next we will create a ProducerPE that creates the input for our sieve of Eratosthenes. The test producer that we were using above only produces one number per iteration. In our case we would like to create a PE that produces all the numbers up to a certain limit.
+Next we will create a ProducerPE that creates the input for our sieve of Eratosthenes. The test producer that we were using above only produces one number per iteration. In our case we would like to create a PE that produces all the integers from a start value up to (and excluding) an upper bound.
 
 The implementation looks like this::
 
     from dispel4py.base import ProducerPE
 
-    class NumberProducer(ProducerPE):
-        def __init__(self, limit):
+    class IntegerProducer(ProducerPE):
+        def __init__(self, start, limit):
             ProducerPE.__init__(self)
+            self.start = start
             self.limit = limit
         def _process(self):
-            for i in xrange(2, self.limit):
+            for i in xrange(self.start, self.limit):
                 self.write(ProducerPE.OUTPUT_NAME, i)
 
-This introduces several new concepts. The ProducerPE is a base class which has no inputs and one output. We initialise an instance of the NumberProducer PE with the upper bound of the range of numbers that we want to produce.
+This introduces several new concepts. The ProducerPE is a base class which has no inputs and one output named ``output``. We initialise the IntegerProducer PE with the lower and upper bounds of the range that we want to produce.
 
-In the process method we iterate over the range of numbers up to the upper bound. Since the processing method generates more than one data item we have to write them to the output data stream using the ``write`` method.
+In the ``_process`` method we iterate over the range of integers from the lower bound up to the upper bound. Since the processing method generates more than one data item we have to write them to the output data stream using the ``write`` method.
 
 
 Using the producer in the workflow
@@ -135,24 +138,37 @@ Now we hook our own producer into the workflow, replacing the TestProducer from 
 
     from dispel4py.workflow_graph import WorkflowGraph
 
-    producer = NumberProducer(100)
+    producer = IntegerProducer(2, 100)
     divide = MyFirstPE(3)
 
     graph = WorkflowGraph()
     graph.connect(producer, 'output', divide, 'input')
 
-Everything else stays the same. We create an instance of the NumberProducer that outputs the range of numbers from 2 to 99 (excluding the upper bound of 100).
+Everything else stays the same. We create an instance of the IntegerProducer that outputs the range of numbers from 2 to 99 (excluding the upper bound of 100).
 
 Now execute the new workflow using the simple mapping::
 
     $ dispel4py simple myfirstgraph.py
     Processing 1 iteration.
-    Inputs: {'NumberProducer2': 1}
+    Inputs: {'IntegerProducer2': 1}
     SimplePE: Processed 1 iteration.
     Outputs: {'MyFirstPE3': {'output': [2, 4, 5, 7, 8, 10, 11, 13, 14, 16, 17, 19, 20, 22, 23, 25, 26, 28, 29, 31, 32, 34, 35, 37, 38, 40, 41, 43, 44, 46, 47, 49, 50, 52, 53, 55, 56, 58, 59, 61, 62, 64, 65, 67, 68, 70, 71, 73, 74, 76, 77, 79, 80, 82, 83, 85, 86, 88, 89, 91, 92, 94, 95, 97, 98]}}
 
-The output is the list of numbers in the range from 2 to 99 that are not divisible by 3.
+The data generated by ``MyFirstPE`` is the list of integers in the range from 2 to 99 that are not divisible by 3.
 
+Custom PE names
+===============
+
+You can assign a custom name to your PE instead of using the class name to aid readability of the output logs, in particular if there are several PEs of the same type in the graph. For example::
+
+    divide2 = MyFirstPE(2)
+    divide2.name = 'Div(2)_'
+    divide3 = MyFirstPE(3)
+    divide3.name = 'Div(3)_'
+
+and the output would look like this::
+
+    Outputs: {'Div(2)_4': {'output': [3, 5, 7, 9 ... 97, 99]}, 'Div(3)_5': {'output': [2, 4, 5, 7, ... 95, 97, 98]}}
 
 Parallel processing
 ===================
@@ -161,17 +177,20 @@ For this very simple case we can easily parallelise the execution of the workflo
 
     $ dispel4py multi myfirstgraph.py -n 4
     Processing 1 iteration.
-    Processes: {'MyFirstPE3': [1, 2, 3], 'NumberProducer2': [0]}
-    MyFirstPE3 (rank 1): Processed 33 iterations.
-    NumberProducer2 (rank 0): Processed 1 iteration.
+    Processes: {''IntegerProducer2': [0], 'MyFirstPE3': [1, 2, 3]}
+    Range(2,99)_2 (rank 0): Processed 1 iteration.
     MyFirstPE3 (rank 3): Processed 32 iterations.
+    MyFirstPE3 (rank 1): Processed 33 iterations.
     MyFirstPE3 (rank 2): Processed 33 iterations.
 
-This example executes the workflow using 4 processes. This line::
 
-    Processes: {'MyFirstPE3': [1, 2, 3], 'NumberProducer2': [0]}
+.. note:: No changes or additional instructions were necessary in order to execute the graph in a parallel environment.
 
-shows which PE is assigned to which processes. In this case, ``MyFirstPE`` is assigned to processes 1, 2 and 3, so there three parallel instances. These instances each process about a third of the data, as you can see from the output of the instances when processing is complete::
+This example executes the workflow using 4 processes as indicated by the command line parameter "``-n 4``". The output shows which PE is assigned to which processes::
+
+    Processes: {'IntegerProducer2': [0], 'MyFirstPE3': [1, 2, 3]}
+
+In this case, ``MyFirstPE`` is assigned to processes 1, 2 and 3, so there are three parallel instances, and ``IntegerProducer`` is assigned to process 0. (Root PEs always have only one instance to avoid generating duplicate data.) The instances of ``MyFirstPE`` each process about a third of the data, as you can see from their output when processing is complete::
 
     MyFirstPE3 (rank 1): Processed 33 iterations.
     MyFirstPE3 (rank 2): Processed 33 iterations.
