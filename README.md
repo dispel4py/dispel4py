@@ -20,8 +20,8 @@ If using the MPI mapping:
 
 If using the Storm mapping:
 
-- Python Storm module, available here: https://github.com/apache/incubator-storm/tree/master/storm-core/src/multilang/py, to be placed in directory `resources`.
-- Python Storm thrift generated code, available here: https://github.com/apache/incubator-storm/tree/master/storm-core/src/py
+- Python Storm module, available here: https://github.com/apache/storm/tree/master/storm-multilang/python/src/main/resources/resources, to be placed in directory `resources`.
+- Python Storm thrift generated code, available here: https://github.com/apache/storm/tree/master/storm-core/src/py
 
 Installation
 ------------
