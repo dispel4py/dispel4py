@@ -30,7 +30,7 @@ The easiest way to install dispel4py is via pip (https://pypi.python.org/pypi/pi
 
 `pip install dispel4py`
 
-Or you can install the latest version directly from github:
+Or, if you have git installed, you can install the latest version directly from github:
 
 `pip install git+git://github.com/dispel4py/dispel4py.git@master`
 
