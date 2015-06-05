@@ -8,7 +8,7 @@ Abstract dataflows described in dispel4py can be executed in numerous environmen
 Dependencies 
 ------------
 
-dispel4py has been tested with Python versions *2.7.5*, *2.7.2* and *2.6.6*.
+dispel4py has been tested with Python versions *2.7.6*, *2.7.5*, *2.7.2* and *2.6.6*.
 
 The following Python packages are required to run dispel4py:
 
