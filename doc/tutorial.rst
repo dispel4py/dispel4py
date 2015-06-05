@@ -41,6 +41,8 @@ We fill in the processing commands, in our case this means that we test if the i
             if not data % self.divisor:
                 return data
 
+The data returned by ``_process`` is written to the output stream of the PE.
+
 That's it! Our first PE is complete::
 
     from dispel4py.base import IterativePE
@@ -128,7 +130,7 @@ The implementation looks like this::
 
 This introduces several new concepts. The ProducerPE is a base class which has no inputs and one output named ``output``. We initialise the IntegerProducer PE with the lower and upper bounds of the range that we want to produce.
 
-In the ``_process`` method we iterate over the range of integers from the lower bound up to the upper bound. Since the processing method generates more than one data item we have to write them to the output data stream using the ``write`` method.
+In the implementation of the ``_process`` method we iterate over the range of integers from the lower bound up to the upper bound. Since the processing method generates more than one data item we have to write them one at a time to the output data stream using the :py:func:`~dispel4py.core.GenericPE.write` method.
 
 
 Using the producer in the workflow
