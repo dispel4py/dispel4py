@@ -50,7 +50,7 @@ class BasePE(GenericPE):
             self.outputconnections[name] = {NAME: name}
 
 
-class IterativePE(BasePE):
+class IterativePE(GenericPE):
     '''
     An iterative PE that has one input and one output stream.
     When executed, this PE produces one output data block for each input block.
@@ -61,7 +61,7 @@ class IterativePE(BasePE):
     OUTPUT_NAME = 'output'
 
     def __init__(self):
-        BasePE.__init__(self)
+        GenericPE.__init__(self)
         self._add_input(IterativePE.INPUT_NAME)
         self._add_output(IterativePE.OUTPUT_NAME)
 
@@ -86,7 +86,7 @@ class IterativePE(BasePE):
         return None
 
 
-class ProducerPE(BasePE):
+class ProducerPE(GenericPE):
     '''
     A PE that has no input and one output named "output".
     Subclasses are expected to override
@@ -95,7 +95,7 @@ class ProducerPE(BasePE):
     OUTPUT_NAME = 'output'
 
     def __init__(self):
-        BasePE.__init__(self)
+        GenericPE.__init__(self)
         self._add_output(ProducerPE.OUTPUT_NAME)
 
     def process(self, inputs):
@@ -111,7 +111,7 @@ class ProducerPE(BasePE):
         return None
 
 
-class ConsumerPE(BasePE):
+class ConsumerPE(GenericPE):
     '''
     A PE that has one input named "input" and no outputs.
     Subclasses are expected to override
@@ -120,7 +120,7 @@ class ConsumerPE(BasePE):
     INPUT_NAME = 'input'
 
     def __init__(self):
-        BasePE.__init__(self)
+        GenericPE.__init__(self)
         self._add_input(ConsumerPE.INPUT_NAME)
 
     def process(self, inputs):

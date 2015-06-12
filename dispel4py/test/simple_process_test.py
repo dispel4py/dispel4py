@@ -26,8 +26,8 @@ Using nose (https://nose.readthedocs.org/en/latest/) run as follows::
 '''
 
 from dispel4py.examples.graph_testing.testing_PEs\
-    import TestProducer, TestOneInOneOut,\
-    TestOneInOneOutWriter, TestTwoInOneOut
+    import TestProducer, TestOneInOneOut, TestOneInOneOutWriter, \
+    TestTwoInOneOut, TestIterative, IntegerProducer, PrintDataConsumer
 
 from dispel4py.new import simple_process
 from dispel4py.workflow_graph import WorkflowGraph
@@ -42,10 +42,8 @@ def testPipeline():
     graph = WorkflowGraph()
     graph.connect(prod, 'output', cons1, 'input')
     graph.connect(cons1, 'output', cons2, 'input')
-    results = simple_process.process_and_return(
-        graph,
-        inputs={prod: [{}, {}, {}, {}, {}]})
-    tools.eq_({cons2.id: {'output': [1, 2, 3, 4, 5]}}, results)
+    results = simple_process.process_and_return(graph, inputs={prod: 5})
+    tools.eq_({cons2.id: {'output': range(1, 6)}}, results)
 
 
 def testSquare():
@@ -58,7 +56,7 @@ def testSquare():
     graph.connect(prod, 'output1', cons2, 'input')
     graph.connect(cons1, 'output', last, 'input0')
     graph.connect(cons2, 'output', last, 'input1')
-    results = simple_process.process_and_return(graph, {prod: [{}]})
+    results = simple_process.process_and_return(graph, {prod: 1})
     tools.eq_({last.id: {'output': ['1', '1']}}, results)
 
 
@@ -69,12 +67,10 @@ def testTee():
     cons2 = TestOneInOneOut()
     graph.connect(prod, 'output', cons1, 'input')
     graph.connect(prod, 'output', cons2, 'input')
-    results = simple_process.process_and_return(
-        graph,
-        {prod: [{}, {}, {}, {}, {}]})
+    results = simple_process.process_and_return(graph, {prod: 5})
     tools.eq_(
-        {cons1.id: {'output': [1, 2, 3, 4, 5]},
-         cons2.id: {'output': [1, 2, 3, 4, 5]}},
+        {cons1.id: {'output': range(1, 6)},
+         cons2.id: {'output': range(1, 6)}},
         results)
 
 
@@ -83,7 +79,32 @@ def testWriter():
     prod = TestProducer()
     cons1 = TestOneInOneOutWriter()
     graph.connect(prod, 'output', cons1, 'input')
-    results = simple_process.process_and_return(
-        graph,
-        {prod: [{}, {}, {}, {}, {}]})
-    tools.eq_({cons1.id: {'output': [1, 2, 3, 4, 5]}}, results)
+    results = simple_process.process_and_return(graph, {prod: 5})
+    tools.eq_({cons1.id: {'output': range(1, 6)}}, results)
+
+
+def testIterative():
+    graph = WorkflowGraph()
+    prod = TestProducer()
+    cons = TestIterative()
+    graph.connect(prod, 'output', cons, 'input')
+    results = simple_process.process_and_return(graph, {prod: 25})
+    tools.eq_({cons.id: {'output': range(1, 26)}}, results)
+
+
+def testProducer():
+    graph = WorkflowGraph()
+    prod = IntegerProducer(5, 234)
+    cons = TestIterative()
+    graph.connect(prod, 'output', cons, 'input')
+    results = simple_process.process_and_return(graph, {prod: 1})
+    tools.eq_({cons.id: {'output': range(5, 234)}}, results)
+
+
+def testConsumer():
+    graph = WorkflowGraph()
+    prod = TestProducer()
+    cons = PrintDataConsumer()
+    graph.connect(prod, 'output', cons, 'input')
+    results = simple_process.process_and_return(graph, {prod: 10})
+    tools.eq_({}, results)

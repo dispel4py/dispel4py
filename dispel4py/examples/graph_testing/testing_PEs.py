@@ -18,6 +18,7 @@ Example PEs for test workflows, implementing various patterns.
 '''
 
 from dispel4py.core import GenericPE
+from dispel4py.base import IterativePE, ProducerPE, ConsumerPE
 import random
 import time
 
@@ -60,6 +61,18 @@ class NumberProducer(GenericPE):
         self.counter += 1
 
 
+class IntegerProducer(ProducerPE):
+
+    def __init__(self, start, limit):
+        ProducerPE.__init__(self)
+        self.start = start
+        self.limit = limit
+
+    def process(self, inputs):
+        for i in xrange(self.start, self.limit):
+            self.write('output', i)
+
+
 class TestOneInOneOut(GenericPE):
     '''
     This PE outputs the input data.
@@ -73,6 +86,18 @@ class TestOneInOneOut(GenericPE):
     def process(self, inputs):
         # self.log('Processing inputs %s' % inputs)
         return {'output': inputs['input']}
+
+
+class TestIterative(IterativePE):
+    '''
+    This PE outputs the input data.
+    '''
+
+    def __init__(self):
+        IterativePE.__init__(self)
+
+    def _process(self, data):
+        return data
 
 
 class TestDelayOneInOneOut(GenericPE):
@@ -140,6 +165,15 @@ class TestMultiProducer(GenericPE):
     def _process(self, inputs):
         for i in range(self.num_output):
             self.write('output', i)
+
+
+class PrintDataConsumer(ConsumerPE):
+
+    def __init__(self):
+        ConsumerPE.__init__(self)
+
+    def _process(self, data):
+        print data
 
 
 class RandomFilter(GenericPE):
