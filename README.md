@@ -43,9 +43,9 @@ from the dispel4py root directory.
 Docker image
 ------------
 
-A Docker image with the latest dispel4py installation is available from the Docker Hub: https://registry.hub.docker.com/u/dispel4py/dispel4py/
+A Docker image with the latest dispel4py development version, installed on Ubuntu 14.04 with OpenMPI, is available from the Docker Hub. For more details see: https://registry.hub.docker.com/u/dispel4py/dispel4py/
 
-Install this image by calling:
+Deploy the dispel4py image by calling:
 
 `docker pull dispel4py/dispel4py`
 
