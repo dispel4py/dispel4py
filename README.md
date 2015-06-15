@@ -43,7 +43,11 @@ from the dispel4py root directory.
 Docker image
 ------------
 
-A Docker image with the latest dispel4py installation is available from the Docker Hub: https://registry.hub.docker.com/u/akrause2014/dispel4py/
+A Docker image with the latest dispel4py installation is available from the Docker Hub: https://registry.hub.docker.com/u/dispel4py/dispel4py/
+
+Install this image by calling:
+
+`docker pull dispel4py/dispel4py`
 
 Documentation
 -------------
