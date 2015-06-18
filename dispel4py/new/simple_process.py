@@ -117,7 +117,7 @@ def process_and_return(workflow, inputs, resultmappings=None):
 
     # now collect output data into a single list for each PE
     outputs = {}
-    for (pe_id, output_name), data in wrapper.outputs.iteritems():
+    for (pe_id, output_name), data in wrapper.outputs.items():
         if pe_id not in outputs:
             outputs[pe_id] = {}
         try:
@@ -140,9 +140,9 @@ def process(workflow, inputs, args=None, resultmappings=None):
     '''
 
     try:
-        print('Inputs: %s' % {pe.id: data for pe, data in inputs.iteritems()})
+        print('Inputs: %s' % {pe.id: data for pe, data in inputs.items()})
     except:
-        print('Inputs: %s' % {pe: data for pe, data in inputs.iteritems()})
+        print('Inputs: %s' % {pe: data for pe, data in inputs.items()})
     results = process_and_return(workflow, inputs, resultmappings)
     print('Outputs: %s' % results)
 

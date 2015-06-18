@@ -193,7 +193,7 @@ class MultiProcessingWrapper(GenericWrapper):
                     self.pe.log("Failed to write item to output '%s'" % name)
 
     def _terminate(self):
-        for output, targets in self.targets.iteritems():
+        for output, targets in self.targets.items():
             for (inputName, communication) in targets:
                 for i in communication.destinations:
                     self.output_queues[i].put((None, STATUS_TERMINATED))

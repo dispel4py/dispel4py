@@ -106,13 +106,13 @@ def buildTopology(workflow):
             raise Exception(
                 "Unexpected workflow node of type '%s'" % node.nodeType)
         streams = {}
-        for output, outtype in pe.getOutputTypes().iteritems():
+        for output, outtype in pe.getOutputTypes().items():
             streams[output] = tt.StreamInfo(outtype, False)
 
         # name of the file created in temporary directory resources
         module_name = pe.__module__
         pe_config = {}
-        for key, value in vars(pe).iteritems():
+        for key, value in vars(pe).items():
             if key not in pe.pickleIgnore:
                 pe_config[key] = value
 

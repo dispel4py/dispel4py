@@ -114,7 +114,7 @@ def process(workflow, inputs, args):
         return
 
     try:
-        inputs = {pe.id: v for pe, v in inputs.iteritems()}
+        inputs = {pe.id: v for pe, v in inputs.items()}
     except AttributeError:
         pass
     processes = comm.bcast(processes, root=0)
@@ -185,7 +185,7 @@ class MPIWrapper(GenericWrapper):
                         % (name, i, traceback.format_exc()))
 
     def _terminate(self):
-        for output, targets in self.targets.iteritems():
+        for output, targets in self.targets.items():
             for (inputName, communication) in targets:
                 for i in communication.destinations:
                     # self.pe.log('Terminating consumer %s' % i)

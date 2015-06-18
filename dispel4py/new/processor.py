@@ -120,7 +120,7 @@ class GenericWrapper(object):
                 num_iterations += 1
                 if outputs is not None:
                     # self.pe.log('Produced output: %s' % outputs)
-                    for key, value in outputs.iteritems():
+                    for key, value in outputs.items():
                         self._write(key, value)
             inputs, status = self._read()
             # self.pe.log('Result: %s, status=%s' % (inputs, STATUS[status]))
@@ -344,7 +344,7 @@ def get_partitions(workflow):
 def create_partitioned(workflow_all):
     processes_all, inputmappings_all, outputmappings_all = \
         assign_and_connect(workflow_all, len(workflow_all.graph.nodes()))
-    proc_to_pe_all = {v[0]: k for k, v in processes_all.iteritems()}
+    proc_to_pe_all = {v[0]: k for k, v in processes_all.items()}
     partitions = get_partitions(workflow_all)
     external_connections = []
     pe_to_partition = {}
@@ -438,7 +438,7 @@ def map_inputs_to_partitions(ubergraph, inputs):
             mapped_pe_input = []
             for i in inputs[pe]:
                 mapped_data = {(pe_id, name):
-                               [data] for name, data in i.iteritems()}
+                               [data] for name, data in i.items()}
                 mapped_pe_input.append(mapped_data)
         except TypeError:
             mapped_pe_input = inputs[pe]
@@ -485,7 +485,7 @@ def _is_root(node, workflow):
 
 def _get_dependencies(proc, inputmappings):
     dep = []
-    for input_name, sources in inputmappings[proc].iteritems():
+    for input_name, sources in inputmappings[proc].items():
         for s in sources:
             sdep = _get_dependencies(s, inputmappings)
             for n in sdep:
@@ -558,7 +558,7 @@ class SimpleProcessingPE(GenericPE):
             # once all the input data is processed this PE can finish
             pe.postprocess()
             # PE might write data during postprocessing
-            for p, input_data in pe.writer.all_inputs.iteritems():
+            for p, input_data in pe.writer.all_inputs.items():
                 try:
                     all_inputs[p].extend(input_data)
                 except:
@@ -568,7 +568,7 @@ class SimpleProcessingPE(GenericPE):
             pe.writer.all_inputs = {}
             pe.writer.results = {}
         results = self.map_outputs(results)
-        for key, value in results.iteritems():
+        for key, value in results.items():
             self._write(key, value)
 
     def _process(self, inputs):
@@ -607,7 +607,7 @@ class SimpleProcessingPE(GenericPE):
                 for data in provided_inputs:
                     _process_data(pe, data)
 
-            for p, input_data in pe.writer.all_inputs.iteritems():
+            for p, input_data in pe.writer.all_inputs.items():
                 try:
                     all_inputs[p].extend(input_data)
                 except:

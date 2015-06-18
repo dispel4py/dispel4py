@@ -154,12 +154,12 @@ def process(sc, workflow, inputs, args):
         pe = process_to_pes[proc]
         if inps:
             if len(inps) == 1:
-                for input_name, sources in inps.iteritems():
+                for input_name, sources in inps.items():
                     inp_rdd = output_rdd[(sources[0], input_name)]
                 out_rdd = inp_rdd.flatMap(wrapper.process)
             else:
                 prev = None
-                for input_name, sources in inps.iteritems():
+                for input_name, sources in inps.items():
                     inp_rdd = output_rdd[(sources[0], input_name)]
                     if prev:
                         inp_rdd = prev.union(inp_rdd)

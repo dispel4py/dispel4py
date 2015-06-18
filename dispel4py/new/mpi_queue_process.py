@@ -66,7 +66,7 @@ def process(workflow, inputs, args):
     if not success:
         return
 
-    inputs = {pe.id: v for pe, v in inputs.iteritems()}
+    inputs = {pe.id: v for pe, v in inputs.items()}
     processes = comm.bcast(processes, root=0)
     inputmappings = comm.bcast(inputmappings, root=0)
     outputmappings = comm.bcast(outputmappings, root=0)
@@ -143,7 +143,7 @@ class MPIWrapper(GenericWrapper):
 
     def _terminate(self):
         self.reader.join()
-        for output, targets in self.targets.iteritems():
+        for output, targets in self.targets.items():
             for (inputName, communication) in targets:
                 for i in communication.destinations:
                     # self.pe.log('Terminating consumer %s' % i)
