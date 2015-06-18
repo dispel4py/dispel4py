@@ -22,6 +22,7 @@ from dispel4py.base import IterativePE, ProducerPE, ConsumerPE
 import random
 import time
 
+
 class TestProducer(GenericPE):
     '''
     This PE produces a range of numbers
