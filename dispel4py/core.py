@@ -115,7 +115,7 @@ Example implementation::
         self.outputconnections = {}
         self.wrapper = 'simple'
         self.pickleIgnore = []
-        self.pickleIgnore = vars(self).keys()
+        self.pickleIgnore = list(vars(self).keys())
         self.numprocesses = numprocesses
 
         def log(self, message):
