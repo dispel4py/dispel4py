@@ -37,7 +37,6 @@ setup(
     url="http://dispel4py.org",
     packages=['dispel4py',
               'dispel4py.new',
-              'dispel4py.seismo',
               'dispel4py.storm',
               'dispel4py.examples',
               'dispel4py.examples.graph_testing'],
