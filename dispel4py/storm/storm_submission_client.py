@@ -38,12 +38,12 @@ if __name__ == '__main__':
     conf = {'topology.workers': 10, 'topology.max.spout.pending': 20}
     client = StormClient(host, port)
     try:
-        print "Submitting topology '%s' to %s:%s ... "\
-            % (topology_name, host, port)
+        print("Submitting topology '%s' to %s:%s ... "
+              % (topology_name, host, port))
         client.submitTopology(topology_name,
                               uploaded_jar_location,
                               conf,
                               topology)
     except tt.AlreadyAliveException:
-        print "Submission failed: Topology '%s' already exists."\
-            % topology_name
+        print("Submission failed: Topology '%s' already exists."
+              % topology_name)

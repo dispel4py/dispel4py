@@ -19,7 +19,7 @@ Collection of dispel4py utilities.
 from dispel4py.workflow_graph import WorkflowGraph
 
 from importlib import import_module
-from imp import load_source, new_module
+from imp import load_source
 import __builtin__
 from types import ModuleType
 import traceback
@@ -93,31 +93,6 @@ def loadSource(module_name, path, attr_name):
     return attr
 
 
-def loadIgnoreImports(module_name, attr_name, code):
-    '''
-    Import a module from source and return the specified attribute.
-
-    :param module_name: name of the module to load
-    :param attr_name: name of the attribute within the module
-    :param code: source code of the module
-    '''
-    def tryimport(name, globals={}, locals={}, fromlist=[], level=-1):
-        try:
-            return realimport(name, globals, locals, fromlist, level)
-        except ImportError as exc:
-            print("Warning: %s" % exc)
-            return DummyModule(name)
-
-    realimport, __builtin__.__import__ = __builtin__.__import__, tryimport
-
-    mod = new_module(module_name)
-    exec code in mod.__dict__
-    attr = getattr(mod, attr_name)
-    __builtin__.__import__ = realimport
-
-    return attr
-
-
 def findWorkflowGraph(mod, attr):
     if attr is not None:
         # use the named attribute
@@ -135,13 +110,6 @@ def findWorkflowGraph(mod, attr):
 
 def loadGraphFromFile(module_name, path, attr=None):
     mod = load_source(module_name, path)
-    attr = findWorkflowGraph(mod, attr)
-    return attr
-
-
-def loadGraphFromSource(module_name, source, attr=None):
-    mod = new_module(module_name)
-    exec source in mod.__dict__
     attr = findWorkflowGraph(mod, attr)
     return attr
 
@@ -164,7 +132,7 @@ def load_graph(graph_source, attr=None):
         # it's not a module
         error_message += 'No module "%s"\n' % graph_source
         pass
-    except Exception as e:
+    except Exception:
         error_message += \
             'Error loading graph module:\n%s' % traceback.format_exc()
         pass
@@ -175,17 +143,9 @@ def load_graph(graph_source, attr=None):
     except IOError:
         # it's not a file
         error_message += 'No file "%s"\n' % graph_source
-        pass
-    except Exception as e:
+    except Exception:
         error_message += \
             'Error loading graph from file:\n%s' % traceback.format_exc()
-
-    # or the source code as a string
-    try:
-        return loadGraphFromSource('temp', graph_source, attr)
-    except Exception as e:
-        error_message += 'Error trying to parse as Python: %s' % e
-        pass
 
     # we don't know what it is
     print('Failed to load graph from "%s":\n%s' %

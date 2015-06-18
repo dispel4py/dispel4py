@@ -173,7 +173,7 @@ class PrintDataConsumer(ConsumerPE):
         ConsumerPE.__init__(self)
 
     def _process(self, data):
-        print data
+        print(data)
 
 
 class RandomFilter(GenericPE):
