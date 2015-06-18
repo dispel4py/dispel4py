@@ -45,7 +45,7 @@ class NumberProducer(ProducerPE):
         self.limit = limit
 
     def _process(self):
-        for i in xrange(2, self.limit):
+        for i in range(2, self.limit):
             self.write(ProducerPE.OUTPUT_NAME, i)
 
 

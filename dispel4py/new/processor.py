@@ -57,6 +57,7 @@ if sys.version_info < (3,):
     INTEGER_TYPES = (int, long,)
 else:
     INTEGER_TYPES = (int,)
+    xrange = range
 
 def simpleLogger(self, msg):
     try:
