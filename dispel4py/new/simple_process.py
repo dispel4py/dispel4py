@@ -73,8 +73,8 @@ output stream is not connected::
 '''
 
 import types
-from processor import GenericWrapper, SimpleProcessingPE
-import processor
+from dispel4py.new.processor import GenericWrapper, SimpleProcessingPE
+from dispel4py.new import processor
 
 
 def simpleLogger(self, msg):
