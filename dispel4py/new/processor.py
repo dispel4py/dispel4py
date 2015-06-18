@@ -59,6 +59,7 @@ else:
     INTEGER_TYPES = (int,)
     xrange = range
 
+
 def simpleLogger(self, msg):
     try:
         print("%s (rank %s): %s" % (self.id, self.rank, msg))
