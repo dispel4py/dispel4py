@@ -86,8 +86,6 @@ def createPackage(graph, args, static_input):
     :rtype: name of the temporary directory that contains the submission
     package
     '''
-    print ROOT_DIR
-
     res = args.resources
     if res is None:
         res = 'resources'
@@ -137,7 +135,7 @@ def createPackage(graph, args, static_input):
                 break
         if is_source:
             sources.append(pe)
-    print "Sources: %s" % [s.id for s in sources]
+    print("Sources: %s" % [s.id for s in sources])
     for pe in sources:
         pe._static_input = static_input[pe.id]
         pe._num_iterations = args.iter
@@ -163,8 +161,8 @@ def _getStormHome():
         STORM_HOME = os.environ['STORM_HOME']
         return STORM_HOME
     except KeyError:
-        print 'Error: Please provide the installation directory of Storm as \
-               environment variable STORM_HOME'
+        print('Error: Please provide the installation directory of Storm as \
+               environment variable STORM_HOME')
         sys.exit(1)
 
 
@@ -182,9 +180,9 @@ def submit(workflow, args, inputs):
     STORM_HOME = _getStormHome()
     topologyName = args.name
     tmpdir = createPackage(workflow, args, inputs)
-    print 'Created Storm submission package in %s' % tmpdir
+    print('Created Storm submission package in %s' % tmpdir)
     try:
-        print "Submitting topology '%s' to Storm" % topologyName
+        print("Submitting topology '%s' to Storm" % topologyName)
         stormshell = '%s/bin/storm' % STORM_HOME, 'shell',\
                      'resources/',\
                      'python', 'storm_submission_client.py',\
@@ -194,10 +192,10 @@ def submit(workflow, args, inputs):
     except:
         pass
     if args.save:
-        print tmpdir
+        print(tmpdir)
     else:
         shutil.rmtree(tmpdir)
-        print 'Deleted %s' % tmpdir
+        print('Deleted %s' % tmpdir)
 
 
 def runLocal(workflow, args, inputs):
@@ -216,14 +214,14 @@ def runLocal(workflow, args, inputs):
     STORM_HOME = _getStormHome()
     topologyName = args.name
     tmpdir = createPackage(workflow, args, inputs)
-    print 'Created Storm submission package in %s' % tmpdir
+    print('Created Storm submission package in %s' % tmpdir)
     try:
-        print 'Compiling java client'
+        print('Compiling java client')
         javacp = '.:%s/lib/*:%s/*' % (STORM_HOME, STORM_HOME)
         javacmd = 'javac', '-cp', javacp, 'dispel4py/storm/ThriftSubmit.java'
         proc = subprocess.Popen(javacmd, cwd=tmpdir)
         proc.wait()
-        print 'Running topology in local mode'
+        print('Running topology in local mode')
         javacmd = 'java', '-cp', javacp,\
                   'dispel4py.storm.ThriftSubmit',\
                   'topology.thrift',\
@@ -231,12 +229,12 @@ def runLocal(workflow, args, inputs):
         proc = subprocess.Popen(javacmd, cwd=tmpdir)
         proc.wait()
     except:
-        print traceback.format_exc()
+        print(traceback.format_exc())
         if args.save:
-            print tmpdir
+            print(tmpdir)
         else:
             shutil.rmtree(tmpdir)
-            print 'Deleted %s' % tmpdir
+            print('Deleted %s' % tmpdir)
 
 
 def create(workflow, args, inputs):
@@ -250,7 +248,7 @@ def create(workflow, args, inputs):
     :param res: resource directory
     '''
     tmpdir = createPackage(workflow, args, inputs)
-    print 'Created Storm submission package in %s' % tmpdir
+    print('Created Storm submission package in %s' % tmpdir)
 
 
 def process(workflow, inputs, args=None):

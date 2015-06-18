@@ -34,7 +34,7 @@ with parameters
 :-f file:   file containing input data in JSON format (optional)
 :-d data:   input data in JSON format (optional)
 :-i iter:   number of iterations to compute (default is 1)
-:-h:      print this help page
+:-h:        print this help page
 
 The input data must be a dictionary mapping either a PE name or an PE
 identifier to a list of input data or the number of iterations which is a
@@ -140,11 +140,11 @@ def process(workflow, inputs, args=None, resultmappings=None):
     '''
 
     try:
-        print 'Inputs: %s' % {pe.id: data for pe, data in inputs.iteritems()}
+        print('Inputs: %s' % {pe.id: data for pe, data in inputs.iteritems()})
     except:
-        print 'Inputs: %s' % {pe: data for pe, data in inputs.iteritems()}
+        print('Inputs: %s' % {pe: data for pe, data in inputs.iteritems()})
     results = process_and_return(workflow, inputs, resultmappings)
-    print 'Outputs: %s' % results
+    print('Outputs: %s' % results)
 
 
 class SimpleProcessingWrapper(GenericWrapper):

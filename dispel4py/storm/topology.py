@@ -97,7 +97,7 @@ def buildTopology(workflow):
     for node, data in graph.nodes(data=True):
         pe = node.getContainedObject()
         pe_name = node_names[pe]
-        print "Spec'ing %s" % pe_name
+        print("Spec'ing %s" % pe_name)
         # print pe
         # print pe.inputconnections
         # print pe.outputconnections
@@ -142,8 +142,8 @@ def buildTopology(workflow):
                     parallelism_hint=3,
                     json_conf=json.dumps(json_conf)))
 
-    print "spouts %s" % spout_specs
-    print "bolts  %s" % bolt_specs
+    print("spouts %s" % spout_specs)
+    print("bolts  %s" % bolt_specs)
 
     return tt.StormTopology(spouts=spout_specs,
                             bolts=bolt_specs,

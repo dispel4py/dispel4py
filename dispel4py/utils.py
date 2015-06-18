@@ -40,7 +40,7 @@ def loadGraphIgnoreImports(module_name, graph_var):
         try:
             return realimport(name, globals, locals, fromlist, level)
         except ImportError as exc:
-            print "Warning: %s" % exc
+            print("Warning: %s" % exc)
             return DummyModule(name)
 
     realimport, __builtin__.__import__ = __builtin__.__import__, tryimport
@@ -66,7 +66,7 @@ def loadSourceIgnoreImports(module_name, path, attr_name):
         try:
             return realimport(name, globals, locals, fromlist, level)
         except ImportError as exc:
-            print "Warning: %s" % exc
+            print("Warning: %s" % exc)
             return DummyModule(name)
 
     realimport, __builtin__.__import__ = __builtin__.__import__, tryimport
@@ -105,7 +105,7 @@ def loadIgnoreImports(module_name, attr_name, code):
         try:
             return realimport(name, globals, locals, fromlist, level)
         except ImportError as exc:
-            print "Warning: %s" % exc
+            print("Warning: %s" % exc)
             return DummyModule(name)
 
     realimport, __builtin__.__import__ = __builtin__.__import__, tryimport
@@ -188,7 +188,8 @@ def load_graph(graph_source, attr=None):
         pass
 
     # we don't know what it is
-    print 'Failed to load graph from "%s":\n%s' % (graph_source, error_message)
+    print('Failed to load graph from "%s":\n%s' %
+          (graph_source, error_message))
 
 
 from sys import getsizeof

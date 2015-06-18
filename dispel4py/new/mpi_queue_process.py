@@ -42,9 +42,9 @@ def process(workflow, inputs, args):
         ubergraph = processor.create_partitioned(workflow)
         nodes = [node.getContainedObject() for node in ubergraph.graph.nodes()]
         if rank == 0:
-            print 'Partitions: %s' % ', '.join(
+            print('Partitions: %s' % ', '.join(
                 ('[%s]' % ', '.join((pe.id for pe in part))
-                    for part in workflow.partitions))
+                    for part in workflow.partitions)))
             for node in ubergraph.graph.nodes():
                 wrapperPE = node.getContainedObject()
                 ns = [n.getContainedObject().id
@@ -57,8 +57,8 @@ def process(workflow, inputs, args):
                 inputs = processor.map_inputs_to_partitions(ubergraph, inputs)
                 success = True
             except:
-                print 'dispel4py.mpi_process: '\
-                      'Not enough processes for execution of graph'
+                print('dispel4py.mpi_process: '\
+                      'Not enough processes for execution of graph')
                 success = False
 
     success = comm.bcast(success, root=0)
@@ -73,8 +73,8 @@ def process(workflow, inputs, args):
     inputs = comm.bcast(inputs, root=0)
 
     if rank == 0:
-        print 'Processes: %s' % processes
-        # print 'Inputs: %s' % inputs
+        print('Processes: %s' % processes)
+        # print('Inputs: %s' % inputs)
 
     for pe in nodes:
         if rank in processes[pe.id]:
@@ -94,7 +94,7 @@ def receive(wrapper):
         status = MPI.Status()
         msg = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
         tag = status.Get_tag()
-        # print 'Received %s, %s' % (msg, tag)
+        # print('Received %s, %s' % (msg, tag))
         if tag == STATUS_TERMINATED:
             wrapper.terminated += 1
         else:

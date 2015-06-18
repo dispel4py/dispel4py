@@ -99,7 +99,6 @@ def testCount():
     results = simple_process.process_and_return(
         count_wf,
         inputs={'NumberProducer': [{}]})
-    print results
     tools.eq_(1, len(results))
     for key in results:
         tools.eq_({'output': [[1000]]}, results[key])
@@ -111,7 +110,6 @@ def testMinMax():
     results = simple_process.process_and_return(
         min_max_wf,
         inputs={'NumberProducer': [{}]})
-    print results
     tools.eq_(2, len(results))
     for key in results:
         if key.startswith('MinPE'):

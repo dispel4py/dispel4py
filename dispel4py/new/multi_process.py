@@ -84,8 +84,8 @@ def process(workflow, inputs, args):
 
     if args.simple or not success:
         ubergraph = processor.create_partitioned(workflow)
-        print 'Partitions: %s' % ', '.join(('[%s]' % ', '.join(
-            (pe.id for pe in part)) for part in workflow.partitions))
+        print('Partitions: %s' % ', '.join(('[%s]' % ', '.join(
+            (pe.id for pe in part)) for part in workflow.partitions)))
         for node in ubergraph.graph.nodes():
             wrapperPE = node.getContainedObject()
             pes = [n.getContainedObject().id for
@@ -100,11 +100,11 @@ def process(workflow, inputs, args):
             nodes = [node.getContainedObject()
                      for node in ubergraph.graph.nodes()]
         except:
-            print traceback.format_exc()
+            print(traceback.format_exc())
             return 'dispel4py.multi_process: ' \
                    'Not enough processes for execution of graph'
 
-    print 'Processes: %s' % processes
+    print('Processes: %s' % processes)
 
     process_pes = {}
     queues = {}
@@ -210,4 +210,4 @@ def main():
     if graph is not None:
         errormsg = process(graph, inputs, args)
         if errormsg:
-            print errormsg
+            print(errormsg)

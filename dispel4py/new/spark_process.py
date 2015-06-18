@@ -110,7 +110,7 @@ class Rename(object):
         self.mapping = mapping
 
     def rename(self, data):
-        # print 'renaming data: %s, mapping is: %s' % (data, self.mapping,)
+        # print('renaming data: %s, mapping is: %s' % (data, self.mapping,))
         result = {}
         for o, i in self.mapping.items():
             if o in data:
@@ -139,11 +139,11 @@ def process(sc, workflow, inputs, args):
         for p in processes[pe.id]:
             process_to_pes[p] = pe
             wrappers[p] = wrapper
-    # print 'Processes: %s' % processes
-    # print inputmappings
-    # print outputmappings
+    # print('Processes: %s' % processes)
+    # print(inputmappings)
+    # print(outputmappings)
     ordered = _order_by_dependency(inputmappings, outputmappings)
-    # print 'Ordered processes: %s' % ordered
+    # print('Ordered processes: %s' % ordered)
     output_rdd = {}
     result_rdd = {}
 
@@ -212,7 +212,7 @@ def process(sc, workflow, inputs, args):
                             out_rdd.flatMap(rename.rename)
             if not outs:
                 result_rdd[proc] = out_rdd
-    # print "RESULT PROCESSES: %s" % result_rdd.keys()
+    # print("RESULT PROCESSES: %s" % result_rdd.keys())
     for p in result_rdd:
         result = result_rdd[p].foreach(lambda x: None)
         # result = result_rdd[p].foreach(lambda x:
@@ -251,7 +251,7 @@ def main():
     try:
         spark_home = os.environ['SPARK_HOME']
     except:
-        print 'Please set SPARK_HOME.'
+        print('Please set SPARK_HOME.')
         sys.exit(1)
 
     parser = argparse.ArgumentParser(
@@ -264,7 +264,7 @@ def main():
     command = ['%s/bin/spark-submit' % spark_home,
                '--py-files=dist/dispel4py-1.0.1-py2.7.egg',
                this_path] + remaining
-    print command
+    print(command)
     subprocess.call(command)
 
 if __name__ == '__main__':

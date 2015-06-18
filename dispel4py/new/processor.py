@@ -56,9 +56,9 @@ STATUS = {STATUS_ACTIVE: 'ACTIVE',
 
 def simpleLogger(self, msg):
     try:
-        print "%s (rank %s): %s" % (self.id, self.rank, msg)
+        print("%s (rank %s): %s" % (self.id, self.rank, msg))
     except:
-        print "%s: %s" % (self.id, msg)
+        print("%s: %s" % (self.id, msg))
 
 
 def get_inputs(pe, inputs):
@@ -232,8 +232,8 @@ def _assign_processes(workflow, size):
     if totalProcesses > size:
         success = False
         # we need at least one process for each node in the graph
-        print 'Graph is larger than job size: %s > %s.' %\
-            (totalProcesses, size)
+        print('Graph is larger than job size: %s > %s.' %\
+            (totalProcesses, size))
     else:
         node_counter = 0
         for node in graph.nodes():
@@ -699,15 +699,15 @@ def create_inputs(args, graph):
             with open(args.file) as inputfile:
                 inputs = json.loads(inputfile.read())
         except Exception as e:
-            print "Error reading JSON file '%s': %s" % (args.file, str(e))
+            print("Error reading JSON file '%s': %s" % (args.file, str(e)))
             sys.exit(1)
     elif args.data:
         inputs = json.loads(args.data)
     else:
         if args.iter == 1:
-            print 'Processing 1 iteration.'
+            print('Processing 1 iteration.')
         else:
-            print 'Processing %s iterations.' % args.iter
+            print('Processing %s iterations.' % args.iter)
         for node in graph.graph.nodes():
             if _is_root(node, graph):
                 inputs[node.getContainedObject()] = args.iter
@@ -772,7 +772,7 @@ def main():
     process = getattr(import_module(target), 'process')
     error_message = process(graph, inputs=inputs, args=args)
     if error_message:
-        print error_message
+        print(error_message)
 
 if __name__ == "__main__":
     main()

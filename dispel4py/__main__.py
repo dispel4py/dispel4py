@@ -34,7 +34,7 @@ def main(args=None):
         process = getattr(import_module(target), 'main')
     except:
         # print traceback.format_exc()
-        print 'Unknown target: %s' % target
+        print('Unknown target: %s' % target)
         return
     process()
 
