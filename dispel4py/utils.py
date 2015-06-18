@@ -20,63 +20,7 @@ from dispel4py.workflow_graph import WorkflowGraph
 
 from importlib import import_module
 from imp import load_source
-import __builtin__
-from types import ModuleType
 import traceback
-
-
-class DummyModule(ModuleType):
-    def __getattr__(self, key):
-        return None
-    __all__ = []   # support wildcard imports
-
-
-def loadGraphIgnoreImports(module_name, graph_var):
-    '''
-    Loads a graph from the given module and ignores any import errors.
-    '''
-
-    def tryimport(name, globals={}, locals={}, fromlist=[], level=-1):
-        try:
-            return realimport(name, globals, locals, fromlist, level)
-        except ImportError as exc:
-            print("Warning: %s" % exc)
-            return DummyModule(name)
-
-    realimport, __builtin__.__import__ = __builtin__.__import__, tryimport
-
-    mod = import_module(module_name)
-    graph = getattr(mod, graph_var)
-
-    __builtin__.__import__ = realimport
-
-    return graph
-
-
-def loadSourceIgnoreImports(module_name, path, attr_name):
-    '''
-    Import a module from the given source file at 'path' and return the named
-    attribute 'attr_name'. Any import errors are being ignored.
-
-    :param module_name: name of the module to load
-    :param path: location of the source file
-    :param attr_name: name of the attribute within the module
-    '''
-    def tryimport(name, globals={}, locals={}, fromlist=[], level=-1):
-        try:
-            return realimport(name, globals, locals, fromlist, level)
-        except ImportError as exc:
-            print("Warning: %s" % exc)
-            return DummyModule(name)
-
-    realimport, __builtin__.__import__ = __builtin__.__import__, tryimport
-
-    mod = load_source(module_name, path)
-    attr = getattr(mod, attr_name)
-
-    __builtin__.__import__ = realimport
-
-    return attr
 
 
 def loadSource(module_name, path, attr_name):
