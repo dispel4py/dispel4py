@@ -232,8 +232,8 @@ def _assign_processes(workflow, size):
     if totalProcesses > size:
         success = False
         # we need at least one process for each node in the graph
-        print('Graph is larger than job size: %s > %s.' %\
-            (totalProcesses, size))
+        print('Graph is larger than job size: %s > %s.' %
+              (totalProcesses, size))
     else:
         node_counter = 0
         for node in graph.nodes():

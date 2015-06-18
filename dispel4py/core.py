@@ -199,7 +199,7 @@ Example implementation::
         '''
         ret = {}
         # print '%s: %s' % (self.id, self.outputconnections)
-        for name, output in self.outputconnections.iteritems():
+        for name, output in self.outputconnections.items():
             try:
                 ret[name] = output[TYPE]
             except KeyError:

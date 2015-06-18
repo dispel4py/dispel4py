@@ -57,7 +57,7 @@ def process(workflow, inputs, args):
                 inputs = processor.map_inputs_to_partitions(ubergraph, inputs)
                 success = True
             except:
-                print('dispel4py.mpi_process: '\
+                print('dispel4py.mpi_process: '
                       'Not enough processes for execution of graph')
                 success = False
 
