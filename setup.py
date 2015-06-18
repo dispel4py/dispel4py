@@ -26,7 +26,7 @@ def read(fname):
 
 setup(
     name="dispel4py",
-    version="1.1.2",
+    version="1.2.0",
     author="The University of Edinburgh",
     author_email="a.krause@epcc.ed.ac.uk",
     description=("dispel4py is a free and open-source Python library for \
