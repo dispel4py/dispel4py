@@ -52,7 +52,7 @@ import traceback
 import types
 from dispel4py.new.processor \
     import GenericWrapper, simpleLogger, STATUS_ACTIVE, STATUS_TERMINATED
-import processor
+from dispelp4y.new import processor
 
 
 def _processWorker(wrapper):
