@@ -53,6 +53,10 @@ STATUS = {STATUS_ACTIVE: 'ACTIVE',
           STATUS_INACTIVE: 'INACTIVE',
           STATUS_TERMINATED: 'TERMINATED'}
 
+if sys.version_info < (3,):
+    INTEGER_TYPES = (int, long,)
+else:
+    INTEGER_TYPES = (int,)
 
 def simpleLogger(self, msg):
     try:
@@ -134,7 +138,7 @@ class GenericWrapper(object):
     def _read(self):
         # check the provided inputs
         if self.provided_inputs is not None:
-            if isinstance(self.provided_inputs, (int, long)) and \
+            if isinstance(self.provided_inputs, INTEGER_TYPES) and \
                     self.provided_inputs > 0:
                 self.provided_inputs -= 1
                 return {}, STATUS_ACTIVE
@@ -591,7 +595,7 @@ class SimpleProcessingPE(GenericPE):
             except:
                 pass
 
-            if isinstance(provided_inputs, (int, long)):
+            if isinstance(provided_inputs, INTEGER_TYPES):
                 for i in xrange(0, provided_inputs):
                     _process_data(pe, {})
             else:
