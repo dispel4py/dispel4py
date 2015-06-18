@@ -54,9 +54,9 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
 
-from processor\
+from dispel4py.new.processor\
     import GenericWrapper, simpleLogger, STATUS_TERMINATED, STATUS_ACTIVE
-import processor
+from dispel4py.new import processor
 
 import argparse
 import types

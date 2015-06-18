@@ -50,8 +50,8 @@ import copy
 import multiprocessing
 import traceback
 import types
-from processor import GenericWrapper, simpleLogger
-from processor import STATUS_ACTIVE, STATUS_TERMINATED
+from dispel4py.new.processor \
+    import GenericWrapper, simpleLogger, STATUS_ACTIVE, STATUS_TERMINATED
 import processor
 
 
