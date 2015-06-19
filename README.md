@@ -1,9 +1,8 @@
 dispel4py
 =========
 
-dispel4py is a Python library used to describe abstract workflows for distributed data-intensive applications. These workflows are compositions of processing elements representing knowledge discovery activities (such as batch database querying, noise filtering and data aggregation) through which significant volumes of data can be streamed in order to manufacture a useful knowledge artefact. Such processing elements may themselves be defined by compositions of other, more fundamental computational elements, in essence having their own internal workflows. Users can construct workflows importing existing processing elements from a registry, or can define their own, recording them in a registry for later use by themselves or others.
-
-Abstract dataflows described in dispel4py can be executed in numerous environments, for example using a Storm cluster or as an MPI job. Thus dispel4py allows to construct workflows without particular knowledge of the specific context in which they are to be executed, granting them greater generic applicability.
+<img align="right" alt="dispel4py logo" width="350" src="http://dispel4py.org/images/DISPEL4PY_web.jpg">
+dispel4py is a free and open-source Python library for describing abstract stream-based workflows for distributed data-intensive applications. It enables users to focus on their scientific methods, avoiding distracting details and retaining flexibility over the computing infrastructure they use.  It delivers mappings to diverse computing infrastructures, including cloud technologies, HPC architectures and  specialised data-intensive machines, to move seamlessly into production with large-scale data loads. The dispel4py system maps workflows dynamically onto multiple enactment systems, such as MPI, STORM and Multiprocessing, without users having to modify their workflows.
 
 Dependencies 
 ------------
@@ -63,5 +62,5 @@ The dispel4py website is http://dispel4py.org
 [![PyPI version](https://badge.fury.io/py/dispel4py.svg)](http://badge.fury.io/py/dispel4py)
 
 
-![Logo](http://www2.epcc.ed.ac.uk/~amrey/VERCE/Dispel4Py/_static/DISPEL4PY_web_trans.png)
+![Logo](http://dispel4py.org/images/DISPEL4PY_web.jpg)
 
