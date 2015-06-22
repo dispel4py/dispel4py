@@ -37,7 +37,7 @@ class ContinuousReducePE(GenericPE):
         self.value = [0 for i in indexes]
 
     def process(self, inputs):
-        self._process(self, inputs)
+        self._process(inputs[self.INPUT_NAME])
         self.write(AggregatePE.OUTPUT_NAME, self.value)
 
 

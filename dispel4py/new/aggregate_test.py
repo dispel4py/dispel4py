@@ -25,9 +25,11 @@ Using nose (https://nose.readthedocs.org/en/latest/) run as follows::
     OK
 '''
 
-from dispel4py.examples.graph_testing.testing_PEs import NumberProducer
+from dispel4py.examples.graph_testing.testing_PEs \
+    import NumberProducer
 from dispel4py.new.aggregate \
-    import parallelSum, parallelCount, parallelMin, parallelMax, parallelAvg
+    import parallelSum, parallelCount, parallelMin, parallelMax, parallelAvg, \
+    parallelStdDev, ContinuousReducePE
 
 from dispel4py.new import simple_process
 from dispel4py.workflow_graph import WorkflowGraph
@@ -70,6 +72,14 @@ def graph_count():
     return graph
 
 
+def graph_stddev():
+    prod = NumberProducer(1000)
+    std = parallelStdDev()
+    graph = WorkflowGraph()
+    graph.connect(prod, 'output', std, 'input')
+    return graph
+
+
 def testSum():
     sum_wf = graph_sum()
     sum_wf.flatten()
@@ -91,6 +101,20 @@ def testAvg():
     tools.eq_(1, len(results))
     for key in results:
         tools.eq_({'output': [[499.5, 1000, 499500]]}, results[key])
+
+
+def testStdDev():
+    stddev_wf = graph_stddev()
+    stddev_wf.flatten()
+    results = simple_process.process_and_return(
+        stddev_wf,
+        inputs={'NumberProducer': [{}]})
+    tools.eq_(1, len(results))
+    print results
+    for key in results:
+        # (41.51433802981722, 288.8182819698227, 1000, 499500)
+        tools.eq_(1000, results[key]['output'][0][2]) # count
+        tools.eq_(499500, results[key]['output'][0][3]) # sum
 
 
 def testCount():
@@ -118,7 +142,27 @@ def testMinMax():
             tools.eq_({'output': [[999]]}, results[key])
 
 
+class TestPE(ContinuousReducePE):
+
+    def __init__(self, indexes=[0]):
+        ContinuousReducePE.__init__(self, indexes)
+
+    def _process(self, data):
+        print data
+        for i in self.indexes:
+            self.value[i] += data[i]
+
+def testContinuousReduce():
+    prod = NumberProducer()
+    test = TestPE()
+    graph = WorkflowGraph()
+    graph.connect(prod, 'output', test, 'input')
+    results = simple_process.process_and_return(graph, {prod: 5})
+    tools.eq_({test.id: {'output': [[0] for i in range(5)]}}, results)
+
+
 sum_wf = graph_sum()
 avg_wf = graph_avg()
 min_wf = graph_min_max()
 count_wf = graph_count()
+stddev_wf = graph_stddev()
