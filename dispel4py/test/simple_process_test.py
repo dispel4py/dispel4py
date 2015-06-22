@@ -210,3 +210,19 @@ def testCompositeWithCreateParams():
     for i in range(1, 11):
         expected += [i, i]
     tools.eq_({cons.id: {'output': expected}}, results)
+
+
+def test_process():
+    prod = TestProducer()
+    cons = PrintDataConsumer()
+    graph = WorkflowGraph()
+    graph.connect(prod, 'output', cons, 'input')
+    simple_process.process(graph, inputs={prod: 5})
+
+
+def test_process_input_by_id():
+    prod = TestProducer()
+    cons = PrintDataConsumer()
+    graph = WorkflowGraph()
+    graph.connect(prod, 'output', cons, 'input')
+    simple_process.process(graph, inputs={prod.id: 5})

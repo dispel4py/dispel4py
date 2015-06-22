@@ -157,10 +157,7 @@ class SimpleProcessingWrapper(GenericWrapper):
 
     def _read(self):
         result = super(SimpleProcessingWrapper, self)._read()
-        if result is not None:
-            return result
-        else:
-            return None, processor.STATUS_TERMINATED
+        return result
 
     def _write(self, name, data):
         # self.pe.log('Writing %s to %s' % (data, name))
