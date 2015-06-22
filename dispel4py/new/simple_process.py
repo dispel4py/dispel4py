@@ -167,7 +167,10 @@ class SimpleProcessingWrapper(GenericWrapper):
             self.outputs[name] = data
 
 
-def main():
+def main():                                                  # pragma: no cover
+    '''
+    This is the commandline entry point for the simple processor.
+    '''
     from dispel4py.new.processor \
         import load_graph_and_inputs, create_arg_parser
 
