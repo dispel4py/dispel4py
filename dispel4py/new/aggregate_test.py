@@ -110,7 +110,6 @@ def testStdDev():
         stddev_wf,
         inputs={'NumberProducer': [{}]})
     tools.eq_(1, len(results))
-    print results
     for key in results:
         # (41.51433802981722, 288.8182819698227, 1000, 499500)
         tools.eq_(1000, results[key]['output'][0][2])
@@ -148,7 +147,6 @@ class TestPE(ContinuousReducePE):
         ContinuousReducePE.__init__(self, indexes)
 
     def _process(self, data):
-        print data
         for i in self.indexes:
             self.value[i] += data[i]
 
