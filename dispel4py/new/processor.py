@@ -53,9 +53,6 @@ STATUS = {STATUS_ACTIVE: 'ACTIVE',
           STATUS_INACTIVE: 'INACTIVE',
           STATUS_TERMINATED: 'TERMINATED'}
 
-if sys.version_info == (3,):
-    xrange = range
-
 
 def simpleLogger(self, msg):
     try:
@@ -595,7 +592,7 @@ class SimpleProcessingPE(GenericPE):
                 pass
 
             if isinstance(provided_inputs, int):
-                for i in xrange(0, provided_inputs):
+                for i in range(0, provided_inputs):
                     _process_data(pe, {})
             else:
 
