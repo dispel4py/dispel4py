@@ -43,7 +43,7 @@ def testPipeline():
     graph.connect(prod, 'output', cons1, 'input')
     graph.connect(cons1, 'output', cons2, 'input')
     results = simple_process.process_and_return(graph, inputs={prod: 5})
-    tools.eq_({cons2.id: {'output': range(1, 6)}}, results)
+    tools.eq_({cons2.id: {'output': list(range(1, 6))}}, results)
 
 
 def testSquare():
@@ -69,8 +69,8 @@ def testTee():
     graph.connect(prod, 'output', cons2, 'input')
     results = simple_process.process_and_return(graph, {prod: 5})
     tools.eq_(
-        {cons1.id: {'output': range(1, 6)},
-         cons2.id: {'output': range(1, 6)}},
+        {cons1.id: {'output': list(range(1, 6))},
+         cons2.id: {'output': list(range(1, 6))}},
         results)
 
 
@@ -80,7 +80,7 @@ def testWriter():
     cons1 = TestOneInOneOutWriter()
     graph.connect(prod, 'output', cons1, 'input')
     results = simple_process.process_and_return(graph, {prod: 5})
-    tools.eq_({cons1.id: {'output': range(1, 6)}}, results)
+    tools.eq_({cons1.id: {'output': list(range(1, 6))}}, results)
 
 
 def testIterative():
@@ -89,7 +89,7 @@ def testIterative():
     cons = TestIterative()
     graph.connect(prod, 'output', cons, 'input')
     results = simple_process.process_and_return(graph, {prod: 25})
-    tools.eq_({cons.id: {'output': range(1, 26)}}, results)
+    tools.eq_({cons.id: {'output': list(range(1, 26))}}, results)
 
 
 def testProducer():
@@ -98,7 +98,7 @@ def testProducer():
     cons = TestIterative()
     graph.connect(prod, 'output', cons, 'input')
     results = simple_process.process_and_return(graph, {prod: 1})
-    tools.eq_({cons.id: {'output': range(5, 234)}}, results)
+    tools.eq_({cons.id: {'output': list(range(5, 234))}}, results)
 
 
 def testConsumer():
