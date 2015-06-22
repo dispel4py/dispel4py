@@ -117,11 +117,6 @@ Example implementation::
         self.pickleIgnore = []
         self.pickleIgnore = list(vars(self).keys())
         self.numprocesses = numprocesses
-
-        def log(self, message):
-            ''' To be implemented '''
-            pass
-        self.log = log
         self.name = self.__class__.__name__
         self.id = self.name + str(uuid.uuid4())
 
