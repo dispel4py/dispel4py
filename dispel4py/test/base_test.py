@@ -21,8 +21,7 @@ Using nose (https://nose.readthedocs.org/en/latest/) run as follows::
 '''
 
 from dispel4py.base import BasePE, IterativePE, ProducerPE, ConsumerPE, \
-                           SimpleFunctionPE
-from dispel4py.workflow_graph import WorkflowGraph
+    SimpleFunctionPE
 
 from nose import tools
 
@@ -50,6 +49,7 @@ class OneProducer(ProducerPE):
 
     def _process(self, data):
         return 1
+
 
 def testProducer():
     prod = OneProducer()
