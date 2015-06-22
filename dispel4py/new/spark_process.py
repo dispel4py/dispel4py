@@ -25,7 +25,12 @@ Spark textfile input with one record per line.
 '''
 
 import argparse
+import sys
 import types
+
+
+if sys.version_info == (3,):
+    xrange = range
 
 
 def simpleLogger(self, msg):
@@ -188,7 +193,7 @@ def process(sc, workflow, inputs, args):
             if type(pe_input) is list:
                 # only one slice so there no repetitions - not the best
                 start_rdd = sc.parallelize(pe_input, 1)
-            elif isinstance(pe_input, (int, long)):
+            elif isinstance(pe_input, int):
                 start_rdd = sc.parallelize(xrange(pe_input), 1)
             else:
                 # fingers crossed it's a string and the file exists!
