@@ -150,10 +150,6 @@ class GenericWrapper(object):
         None
 
 
-def _wrapper_write(self, name, data):
-    self.wrapper._write(name, data)
-
-
 class ShuffleCommunication(object):
     def __init__(self, rank, sources, destinations):
         self.destinations = destinations

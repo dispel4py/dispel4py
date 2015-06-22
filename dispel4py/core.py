@@ -276,32 +276,4 @@ Example implementation::
         '''
         This writes the 'data' to the output pipe with name 'name' of this PE.
         '''
-        try:
-            output = self.outputconnections[name]
-        except KeyError:
-            raise Exception("Can't write data: Unknown output connection\
-                            '%s' for PE '%s'" % (name, type(self).__name__))
-        output[WRITER].write(data)
-
-
-class LockstepPE(GenericPE):
-    '''
-    Representation of a PE which consumes its input in lockstep. The inputs
-    dictionary that is passed to the
-    :py:func:`~dispel4py.GenericPE.LockStepPE.process` function is guaranteed
-    to contain one data item from each of the connected input streams.
-    '''
-
-    def __init__(self):
-        GenericPE.__init__(self)
-        self.wrapper = 'lockstep'
-
-
-class SourcePE(GenericPE):
-    '''
-    Representation of data-producing PE, i.e. a PE with no input connections.
-    '''
-
-    def __init__(self):
-        GenericPE.__init__(self)
-        self.wrapper = 'source'
+        None

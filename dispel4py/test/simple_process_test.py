@@ -108,3 +108,21 @@ def testConsumer():
     graph.connect(prod, 'output', cons, 'input')
     results = simple_process.process_and_return(graph, {prod: 10})
     tools.eq_({}, results)
+
+
+def testInputsAndOutputs():
+    graph = WorkflowGraph()
+    prod = TestProducer()
+    cons = TestOneInOneOut()
+    cons._add_output('output', tuple_type=['integer'])
+    cons._add_input('input', grouping=[0], tuple_type=['integer'])
+    cons.setInputTypes({'input': ['number']})
+    tools.eq_({'output': ['integer']}, cons.getOutputTypes())
+    cons._add_output('output2')
+    try:
+        cons.getOutputTypes()
+    except Exception:
+        pass
+    graph.connect(prod, 'output', cons, 'input')
+    results = simple_process.process_and_return(graph, {prod: 10})
+    tools.eq_({cons.id: {'output': list(range(1, 11))}}, results)
