@@ -27,7 +27,7 @@ class BasePE(GenericPE):
     INPUT_NAME = 'input'
     OUTPUT_NAME = 'output'
 
-    def __init__(self, inputs=[], outputs=[], numInputs=0, numOutputs=0):
+    def __init__(self, inputs=[], outputs=[], num_inputs=0, num_outputs=0):
         '''
         :param inputs: a list of input names (optional)
         :param outputs: a list of output names (optional)
@@ -38,10 +38,10 @@ class BasePE(GenericPE):
         '''
         GenericPE.__init__(self)
 
-        for i in range(numInputs):
+        for i in range(num_inputs):
             name = '%s%s' % (BasePE.INPUT_NAME, i)
             self.inputconnections[name] = {NAME: name}
-        for i in range(numOutputs):
+        for i in range(num_outputs):
             name = '%s%s' % (BasePE.OUTPUT_NAME, i)
             self.outputconnections[name] = {NAME: name}
         for name in inputs:
@@ -103,12 +103,9 @@ class ProducerPE(GenericPE):
         Calls the implementation of
         :py:func:`~dispel4py.base.ProducerPE._process` of the subclass.
         '''
-        result = self._process()
+        result = self._process(inputs)
         if result is not None:
             return {self.OUTPUT_NAME: result}
-
-    def _process(self):
-        return None
 
 
 class ConsumerPE(GenericPE):
@@ -232,7 +229,7 @@ class CompositePE(WorkflowGraph):
             def __init__(self, limit)
                 CompositePE.__init__(self, create_graph, limit)
     '''
-    def __init__(self, create_graph=None, params=None):
+    def __init__(self, create_graph=None, params={}):
         '''
         Instantiate and populate the graph, if the function provided.
         Otherwise, the graph must be populated explicitly by the subclass or
@@ -242,10 +239,7 @@ class CompositePE(WorkflowGraph):
         self.inputmappings = {}
         self.outputmappings = {}
         if create_graph:
-            if params is not None:
-                create_graph(self, None)
-            else:
-                create_graph(self)
+            create_graph(self, **params)
 
     def _map_input(self, input_name, internal_pe, internal_input):
         '''

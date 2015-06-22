@@ -31,6 +31,7 @@ from dispel4py.examples.graph_testing.testing_PEs\
 
 from dispel4py.new import simple_process
 from dispel4py.workflow_graph import WorkflowGraph
+from dispel4py.base import create_iterative_chain, CompositePE
 
 from nose import tools
 
@@ -126,3 +127,86 @@ def testInputsAndOutputs():
     graph.connect(prod, 'output', cons, 'input')
     results = simple_process.process_and_return(graph, {prod: 10})
     tools.eq_({cons.id: {'output': list(range(1, 11))}}, results)
+
+
+def testCreateChain():
+
+    def add(a, b):
+        return a + b
+
+    def mult(a, b):
+        return a * b
+
+    def is_odd(a):
+        return a % 2 == 1
+
+    c = [(add, {'b': 1}), (mult, {'b': 3}), is_odd]
+    chain = create_iterative_chain(c)
+    prod = TestProducer()
+    graph = WorkflowGraph()
+    graph.connect(prod, 'output', chain, 'input')
+    graph.flatten()
+    results = simple_process.process_and_return(graph, {prod: 2})
+    for key, value in results.items():
+        tools.eq_({'output': [False, True]}, value)
+
+
+def testComposite():
+    comp = CompositePE()
+    cons1 = TestOneInOneOut()
+    cons2 = TestOneInOneOut()
+    comp.connect(cons1, 'output', cons2, 'input')
+    comp._map_input('comp_input', cons1, 'input')
+    comp._map_output('comp_output', cons2, 'output')
+    prod = TestProducer()
+    cons = TestOneInOneOut()
+    graph = WorkflowGraph()
+    graph.connect(prod, 'output', comp, 'comp_input')
+    graph.connect(comp, 'comp_output', cons, 'input')
+    graph.flatten()
+    results = simple_process.process_and_return(graph, {prod: 10})
+    tools.eq_({cons.id: {'output': list(range(1, 11))}}, results)
+
+
+def testCompositeWithCreate():
+
+    def create_graph(graph):
+        cons1 = TestOneInOneOut()
+        cons2 = TestOneInOneOut()
+        graph.connect(cons1, 'output', cons2, 'input')
+        graph._map_input('comp_input', cons1, 'input')
+        graph._map_output('comp_output', cons2, 'output')
+
+    comp = CompositePE(create_graph)
+    prod = TestProducer()
+    cons = TestOneInOneOut()
+    graph = WorkflowGraph()
+    graph.connect(prod, 'output', comp, 'comp_input')
+    graph.connect(comp, 'comp_output', cons, 'input')
+    graph.flatten()
+    results = simple_process.process_and_return(graph, {prod: 10})
+    tools.eq_({cons.id: {'output': list(range(1, 11))}}, results)
+
+
+def testCompositeWithCreateParams():
+    cons1 = TestOneInOneOut()
+    cons2 = TestOneInOneOut()
+
+    def create_graph(graph, connections):
+        for i in range(connections):
+            graph.connect(cons1, 'output', cons2, 'input')
+
+    comp = CompositePE(create_graph, {'connections': 2})
+    comp._map_input('comp_input', cons1, 'input')
+    comp._map_output('comp_output', cons2, 'output')
+    prod = TestProducer()
+    cons = TestOneInOneOut()
+    graph = WorkflowGraph()
+    graph.connect(prod, 'output', comp, 'comp_input')
+    graph.connect(comp, 'comp_output', cons, 'input')
+    graph.flatten()
+    results = simple_process.process_and_return(graph, {prod: 10})
+    expected = []
+    for i in range(1, 11):
+        expected += [i, i]
+    tools.eq_({cons.id: {'output': expected}}, results)

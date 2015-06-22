@@ -68,7 +68,7 @@ class IntegerProducer(ProducerPE):
         self.start = start
         self.limit = limit
 
-    def process(self, inputs):
+    def _process(self, inputs):
         for i in range(self.start, self.limit):
             self.write('output', i)
 
