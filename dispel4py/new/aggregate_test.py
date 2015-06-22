@@ -113,8 +113,8 @@ def testStdDev():
     print results
     for key in results:
         # (41.51433802981722, 288.8182819698227, 1000, 499500)
-        tools.eq_(1000, results[key]['output'][0][2]) # count
-        tools.eq_(499500, results[key]['output'][0][3]) # sum
+        tools.eq_(1000, results[key]['output'][0][2])
+        tools.eq_(499500, results[key]['output'][0][3])
 
 
 def testCount():
@@ -151,6 +151,7 @@ class TestPE(ContinuousReducePE):
         print data
         for i in self.indexes:
             self.value[i] += data[i]
+
 
 def testContinuousReduce():
     prod = NumberProducer()
