@@ -60,7 +60,7 @@ The dispel4py website is http://dispel4py.org
 
 [![Build Status](https://travis-ci.org/dispel4py/dispel4py.svg)](https://travis-ci.org/dispel4py/dispel4py)
 [![PyPI version](https://badge.fury.io/py/dispel4py.svg)](http://badge.fury.io/py/dispel4py)
-
+[![Coverage Status](https://coveralls.io/repos/dispel4py/dispel4py/badge.svg?branch=master)](https://coveralls.io/r/dispel4py/dispel4py?branch=master)
 
 ![Logo](http://dispel4py.org/images/DISPEL4PY_web.jpg)
 
