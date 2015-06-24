@@ -30,7 +30,7 @@ from collections import Counter, defaultdict
 from nose import tools
 
 from dispel4py.examples.graph_testing.testing_PEs\
-    import TestProducer, TestOneInOneOut, TestTwoInOneOut
+    import TestProducer, TestOneInOneOut, TestTwoInOneOut, NumberProducer
 from dispel4py.workflow_graph import WorkflowGraph
 from dispel4py.new.multi_process import process, STATUS_TERMINATED
 
@@ -170,6 +170,36 @@ def testNotEnoughProcesses():
     args.results = True
     message = process(graph, inputs={prod: 5}, args=args)
     tools.ok_('Not enough processes' in message)
+
+
+def testGroupings():
+    prod = NumberProducer(10)
+    cons1 = TestOneInOneOut()
+    cons1.inputconnections['input']['type'] = [0]
+    cons2 = TestOneInOneOut()
+    cons1.inputconnections['input']['type'] = 'all'
+    cons3 = TestOneInOneOut()
+    cons1.inputconnections['input']['type'] = 'global'
+    cons4 = TestOneInOneOut()
+    graph = WorkflowGraph()
+    graph.connect(prod, 'output', cons1, 'input')
+    graph.connect(cons1, 'output', cons2, 'input')
+    graph.connect(cons2, 'output', cons3, 'input')
+    graph.connect(cons3, 'output', cons4, 'input')
+    args = argparse.Namespace
+    args.num = 5
+    args.simple = False
+    args.results = True
+    result_queue = process(graph, inputs={prod: 1}, args=args)
+    results = []
+    item = result_queue.get()
+    while item != STATUS_TERMINATED:
+        name, output, data = item
+        tools.eq_(cons4.id, name)
+        tools.eq_('output', output)
+        results.extend(data)
+        item = result_queue.get()
+    tools.eq_(Counter(range(10)), Counter(results))
 
 
 # mokey patch multiprocessing to enable  code coverage
