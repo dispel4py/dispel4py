@@ -82,7 +82,11 @@ class TestOneInOneOut(GenericPE):
     def __init__(self):
         GenericPE.__init__(self)
         self._add_input('input')
-        self._add_output('output', tuple_type=['number'])
+        self._add_output('output')
+
+    def setInputTypes(self, inputtypes):
+        self.inputconnections['input']['type'] = inputtypes['input']
+        self.outputconnections['output']['type'] = inputtypes['input']
 
     def process(self, inputs):
         # self.log('Processing inputs %s' % inputs)

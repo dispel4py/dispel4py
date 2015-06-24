@@ -119,7 +119,7 @@ def testInputsAndOutputs():
     cons._add_output('output', tuple_type=['integer'])
     cons._add_input('input', grouping=[0], tuple_type=['integer'])
     cons.setInputTypes({'input': ['number']})
-    tools.eq_({'output': ['integer']}, cons.getOutputTypes())
+    tools.eq_({'output': ['number']}, cons.getOutputTypes())
     cons._add_output('output2')
     try:
         cons.getOutputTypes()

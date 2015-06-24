@@ -1,4 +1,4 @@
-# Copyright (c) The University of Edinburgh 2014
+# Copyright (c) The University of Edinburgh 2014-2015
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ The dispel4py workflow graph.
 '''
 
 import networkx as nx
-import inspect
 import sys
 
 from dispel4py.core import GenericPE
@@ -40,9 +39,7 @@ class WorkflowNode:
         self.outputs = []
         self.inputs = []
 
-        if inspect.isroutine(o):  # it's a 'function'
-            self.nodeType = self.WORKFLOW_NODE_FN
-        elif isinstance(o, GenericPE):
+        if isinstance(o, GenericPE):
             o.id = o.name + str(WorkflowNode.node_counter)
             WorkflowNode.node_counter += 1
             self.nodeType = self.WORKFLOW_NODE_PE
@@ -166,8 +163,8 @@ class WorkflowGraph(object):
         pe.setInputTypes(inputTypes)
         visited.add(node)
         # print "%s: Assigned inputs = %s, \
-        # received outputs = %s" % \
-        # (pe.__class__.__name__, inputTypes, pe.getOutputTypes())
+        #       received outputs = %s" % \
+        #       (pe.__class__.__name__, inputTypes, pe.getOutputTypes())
 
     def flatten(self):
         '''
@@ -319,7 +316,7 @@ def draw(graph):
     return dot
 
 
-def drawDot(graph):
+def drawDot(graph):   # pragma: no cover
     '''
     Draws the workflow as a graph and creates a PNG image using graphviz dot.
     '''
@@ -328,14 +325,3 @@ def drawDot(graph):
     p = Popen(['dot', '-T', 'png'], stdout=PIPE, stdin=PIPE, stderr=PIPE)
     stdout, stderr = p.communicate(dot.encode('utf-8'))
     return stdout
-
-
-def getConnectedInputs(node, graph):
-    names = []
-    for edge in graph.edges(node, data=True):
-        direction = edge[2]['DIRECTION']
-        dest = direction[1]
-        dest_input = edge[2]['TO_CONNECTION']
-        if dest == node.getContainedObject():
-            names.append(dest_input)
-    return names
