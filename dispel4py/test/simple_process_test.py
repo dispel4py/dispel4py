@@ -27,7 +27,8 @@ Using nose (https://nose.readthedocs.org/en/latest/) run as follows::
 
 from dispel4py.examples.graph_testing.testing_PEs\
     import TestProducer, TestOneInOneOut, TestOneInOneOutWriter, \
-    TestTwoInOneOut, TestIterative, IntegerProducer, PrintDataConsumer
+    TestTwoInOneOut, TestIterative, IntegerProducer, PrintDataConsumer, \
+    RandomWordProducer, RandomFilter, WordCounter
 
 from dispel4py.new import simple_process
 from dispel4py.workflow_graph import WorkflowGraph
@@ -226,3 +227,13 @@ def test_process_input_by_id():
     graph = WorkflowGraph()
     graph.connect(prod, 'output', cons, 'input')
     simple_process.process(graph, inputs={prod.id: 5})
+
+
+def testWordCount():
+    prod = RandomWordProducer()
+    filt = RandomFilter()
+    count = WordCounter()
+    graph = WorkflowGraph()
+    graph.connect(prod, 'output', filt, 'input')
+    graph.connect(filt, 'output', count, 'input')
+    simple_process.process(graph, inputs={prod: 100})

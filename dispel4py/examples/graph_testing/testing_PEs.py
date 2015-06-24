@@ -21,6 +21,7 @@ from dispel4py.core import GenericPE
 from dispel4py.base import IterativePE, ProducerPE, ConsumerPE
 import random
 import time
+from collections import defaultdict
 
 
 class TestProducer(GenericPE):
@@ -207,14 +208,11 @@ class WordCounter(GenericPE):
         GenericPE.__init__(self)
         self._add_input('input', grouping=[0])
         self._add_output('output', tuple_type=['word', 'count'])
-        self.mywords = {}
+        self.mywords = defaultdict(int)
 
     def _process(self, inputs):
         word = inputs['input'][0]
-        try:
-            self.mywords[word] += 1
-        except KeyError:
-            self.mywords[word] = 1
+        self.mywords[word] += 1
         return {'output': [word, self.mywords[word]]}
 
 
@@ -233,17 +231,3 @@ class RandomWordProducer(GenericPE):
         word = random.choice(RandomWordProducer.words)
         outputs = {'output': [word]}
         return outputs
-
-
-class ProvenanceLogger(GenericPE):
-    def __init__(self):
-        GenericPE.__init__(self)
-        self._add_input('metadata')
-
-    def process(self, inputs):
-        try:
-            metadata = inputs['metadata']
-            self.log('Logging metadata: %s' % str(metadata)[:300])
-        except:
-            import traceback
-            self.log(traceback.format_exc())

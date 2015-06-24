@@ -59,7 +59,7 @@ def _processWorker(wrapper):
     wrapper.process()
 
 
-def parse_args(args, namespace):
+def parse_args(args, namespace):    # pragma: no cover
     parser = argparse.ArgumentParser(
         prog='dispel4py',
         description='Submit a dispel4py graph to multiprocessing.')
@@ -93,8 +93,11 @@ def process(workflow, inputs, args):
             print('%s contains %s' % (wrapperPE.id, pes))
 
         try:
-            processes, inputmappings, outputmappings = \
-                processor.assign_and_connect(ubergraph, size)
+            result = processor.assign_and_connect(ubergraph, size)
+            if result is None:
+                return 'dispel4py.multi_process: ' \
+                       'Not enough processes for execution of graph'
+            processes, inputmappings, outputmappings = result
             inputs = processor.map_inputs_to_partitions(ubergraph, inputs)
             success = True
             nodes = [node.getContainedObject()
@@ -102,12 +105,15 @@ def process(workflow, inputs, args):
         except:
             print(traceback.format_exc())
             return 'dispel4py.multi_process: ' \
-                   'Not enough processes for execution of graph'
+                   'Could not create mapping for execution of graph'
 
     print('Processes: %s' % processes)
 
     process_pes = {}
     queues = {}
+    result_queue = None
+    if args.results:
+        result_queue = multiprocessing.Queue()
     for pe in nodes:
         provided_inputs = processor.get_inputs(pe, inputs)
         for proc in processes[pe.id]:
@@ -118,6 +124,7 @@ def process(workflow, inputs, args):
             process_pes[proc] = wrapper
             wrapper.input_queue = multiprocessing.Queue()
             wrapper.input_queue.name = 'Queue_%s_%s' % (cp.id, cp.rank)
+            wrapper.result_queue = result_queue
             queues[proc] = wrapper.input_queue
             wrapper.targets = outputmappings[proc]
             wrapper.sources = inputmappings[proc]
@@ -140,8 +147,12 @@ def process(workflow, inputs, args):
     for j in jobs:
         j.join()
 
+    if result_queue:
+        result_queue.put(STATUS_TERMINATED)
+    return result_queue
 
-class MultiProcessingWrapper(GenericWrapper):
+
+class MultiProcessingWrapper(GenericWrapper):   # pragma: no cover
 
     def __init__(self, rank, pe, provided_inputs=None):
         GenericWrapper.__init__(self, pe)
@@ -181,6 +192,8 @@ class MultiProcessingWrapper(GenericWrapper):
             targets = self.targets[name]
         except KeyError:
             # no targets
+            if self.result_queue:
+                self.result_queue.put((self.pe.id, name, data))
             return
         for (inputName, communication) in targets:
             output = {inputName: data}
@@ -199,7 +212,7 @@ class MultiProcessingWrapper(GenericWrapper):
                     self.output_queues[i].put((None, STATUS_TERMINATED))
 
 
-def main():
+def main():    # pragma: no cover
     from dispel4py.new.processor \
         import load_graph_and_inputs, parse_common_args
 
