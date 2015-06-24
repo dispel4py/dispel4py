@@ -152,7 +152,7 @@ def process(workflow, inputs, args):
     return result_queue
 
 
-class MultiProcessingWrapper(GenericWrapper):   # pragma: no cover
+class MultiProcessingWrapper(GenericWrapper):
 
     def __init__(self, rank, pe, provided_inputs=None):
         GenericWrapper.__init__(self, pe)
