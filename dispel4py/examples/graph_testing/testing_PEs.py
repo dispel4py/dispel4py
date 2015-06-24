@@ -56,7 +56,7 @@ class NumberProducer(GenericPE):
         self.counter = 0
         self.numIterations = numIterations
 
-    def process(self, inputs):
+    def _process(self, inputs):
         for i in range(self.numIterations):
             self.write('output', [self.counter*i+i])
         self.counter += 1

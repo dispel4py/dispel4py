@@ -271,4 +271,9 @@ Example implementation::
         '''
         This writes the 'data' to the output pipe with name 'name' of this PE.
         '''
-        None
+        try:
+            output = self.outputconnections[name]
+            output[WRITER].write(data)
+        except KeyError:
+            raise Exception("Can't write data: Unknown output connection\
+                            '%s' for PE '%s'" % (name, type(self).__name__))

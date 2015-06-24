@@ -36,7 +36,7 @@ def test_types():
     graph.connect(prod, 'output', cons, 'input')
     graph.propagate_types()
     tools.eq_(prod.outputconnections['output']['type'],
-        cons.inputconnections['input']['type'])
+              cons.inputconnections['input']['type'])
 
 
 def test_dot_pipeline():
@@ -44,8 +44,7 @@ def test_dot_pipeline():
     prod = TestProducer()
     cons = TestOneInOneOut()
     graph.connect(prod, 'output', cons, 'input')
-    instance_names = {}
-    dot = draw(graph)
+    draw(graph)
 
 
 def test_dot_composite():
@@ -55,7 +54,7 @@ def test_dot_composite():
 
     def dec(a):
         return a-1
-        
+
     graph = WorkflowGraph()
     prod = TestProducer()
     comp = create_iterative_chain([inc, dec])
