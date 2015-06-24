@@ -169,7 +169,6 @@ def testNotEnoughProcesses():
     args.simple = False
     args.results = True
     message = process(graph, inputs={prod: 5}, args=args)
-    print message
     tools.ok_('Not enough processes' in message)
 
 
