@@ -112,8 +112,11 @@ def process(workflow, inputs, args):
     process_pes = {}
     queues = {}
     result_queue = None
-    if args.results:
-        result_queue = multiprocessing.Queue()
+    try:
+        if args.results:
+            result_queue = multiprocessing.Queue()
+    except AttributeError:
+        pass
     for pe in nodes:
         provided_inputs = processor.get_inputs(pe, inputs)
         for proc in processes[pe.id]:
