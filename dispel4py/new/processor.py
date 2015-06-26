@@ -487,7 +487,8 @@ def _get_dependencies(proc, inputmappings):
             for n in sdep:
                 if n not in dep:
                     dep.append(n)
-            dep.append(s)
+            if s not in dep:
+                dep.append(s)
     return dep
 
 
@@ -643,9 +644,13 @@ class SimpleWriter(object):
         # self.pe.log('Writing %s to %s' % (data, output_name))
         try:
             destinations = self.output_mappings[output_name]
+            dest_data = data
             for input_name, comm in destinations:
+                copy_data = len(destinations) > 1 or len(comm.destinations) > 1
                 for p in comm.destinations:
-                    input_data = {input_name: data}
+                    if copy_data:
+                        dest_data = copy.deepcopy(dest_data)
+                    input_data = {input_name: dest_data}
                     try:
                         self.all_inputs[p].append(input_data)
                     except:
@@ -667,7 +672,7 @@ class SimpleWriter(object):
             pass
 
 
-def create_arg_parser():
+def create_arg_parser():  # pragma: no cover
     parser = argparse.ArgumentParser(
         description='Submit a dispel4py graph for processing.')
     parser.add_argument('target', help='target execution platform')
