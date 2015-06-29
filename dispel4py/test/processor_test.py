@@ -127,3 +127,33 @@ def test_load_graph():
     graph, inputs = p.load_graph_and_inputs(args)
     tools.ok_(graph)
     tools.eq_({'TestProducer0': 1}, inputs)
+
+
+def test_group_by():
+    destinations = list(range(5))
+    input_name = 'input'
+    groupby = [0]
+    comm = p.GroupByCommunication(destinations, input_name, groupby)
+    tools.eq_(comm.getDestination({'input': [1, 'b']}),
+              comm.getDestination({'input': [1, 1, 2]}))
+    tools.eq_(comm.getDestination({'input': [{'a': 1}, 'b']}),
+              comm.getDestination({'input': [{'a': 1}, 2]}))
+    tools.eq_(comm.getDestination({'input': [set(range(7)), 'b']}),
+              comm.getDestination({'input': [set(range(7)), '_', 10]}))
+    tools.eq_(comm.getDestination({'input': [range(1), 'x', 'y']}),
+              comm.getDestination({'input': [range(1), 1, 2]}))
+    tools.eq_(comm.getDestination({'input': [None, 'x', 'y']}),
+              comm.getDestination({'input': [None, 1, 2]}))
+
+def test_all_to_one():
+    destinations = list(range(5))
+    comm = p.AllToOneCommunication(destinations)
+    tools.eq_([0], comm.getDestination(None))
+    tools.eq_([0], comm.getDestination({'input': [1, 2, 3]}))
+
+
+def test_one_to_all():
+    destinations = list(range(5))
+    comm = p.OneToAllCommunication(destinations)
+    tools.eq_(destinations, comm.getDestination(None))
+    tools.eq_(destinations, comm.getDestination({'input': [1, 2, 3]}))
