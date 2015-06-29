@@ -78,7 +78,11 @@ def test_input_file():
     import tempfile
     namedfile = tempfile.NamedTemporaryFile()
     with namedfile as temp:
-        temp.write('{ "TestProducer": 20}')
+        data = '{ "TestProducer": 20}'
+        try:
+            temp.write(data)
+        except:
+            temp.write(bytes(data, 'UTF-8'))
         temp.flush()
         temp.seek(0)
         args.file = namedfile.name
@@ -97,7 +101,11 @@ def test_invalid_input_file():
     import tempfile
     namedfile = tempfile.NamedTemporaryFile()
     with namedfile as temp:
-        temp.write('{ bla')
+        data = '{ bla'
+        try:
+            temp.write(data)
+        except:
+            temp.write(bytes(data, 'UTF-8'))
         temp.flush()
         temp.seek(0)
         args.file = namedfile.name
