@@ -145,6 +145,7 @@ def test_group_by():
     tools.eq_(comm.getDestination({'input': [None, 'x', 'y']}),
               comm.getDestination({'input': [None, 1, 2]}))
 
+
 def test_all_to_one():
     destinations = list(range(5))
     comm = p.AllToOneCommunication(destinations)
