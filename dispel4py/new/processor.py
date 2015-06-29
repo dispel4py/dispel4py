@@ -38,7 +38,6 @@ number of processes if running in a parallel environment.
 
 import argparse
 import os
-import sys
 import types
 
 from dispel4py.core import GROUPING
@@ -157,7 +156,7 @@ class ShuffleCommunication(object):
         self.name = None
 
     def getDestination(self, data):
-        self.currentIndex = (self.currentIndex+1) % len(self.destinations)
+        self.currentIndex = (self.currentIndex + 1) % len(self.destinations)
         return [self.destinations[self.currentIndex]]
 
 
@@ -204,8 +203,8 @@ def _getConnectedInputs(node, graph):
 
 
 def _getNumProcesses(size, numSources, numProcesses, totalProcesses):
-    div = max(1, totalProcesses-numSources)
-    return int(numProcesses * (size - numSources)/div)
+    div = max(1, totalProcesses - numSources)
+    return int(numProcesses * (size - numSources) / div)
 
 
 def _assign_processes(workflow, size):
@@ -236,7 +235,7 @@ def _assign_processes(workflow, size):
             pe = node.getContainedObject()
             prcs = 1 if pe.id in sources else _getNumProcesses(
                 size, numSources, pe.numprocesses, totalProcesses)
-            processes[pe.id] = range(node_counter, node_counter+prcs)
+            processes[pe.id] = range(node_counter, node_counter + prcs)
             node_counter = node_counter + prcs
     return success, sources, processes
 
@@ -701,7 +700,7 @@ def create_inputs(args, graph):
                 inputs = json.loads(inputfile.read())
         except Exception as e:
             print("Error reading JSON file '%s': %s" % (args.file, str(e)))
-            sys.exit(1)
+            raise e
     elif args.data:
         inputs = json.loads(args.data)
     else:
@@ -742,12 +741,12 @@ def load_graph_and_inputs(args):
     return graph, inputs
 
 
-def parse_common_args():
+def parse_common_args():   # pragma: no cover
     parser = create_arg_parser()
     return parser.parse_known_args()
 
 
-def main():
+def main():   # pragma: no cover
     from importlib import import_module
 
     args, remaining = parse_common_args()
@@ -775,5 +774,5 @@ def main():
     if error_message:
         print(error_message)
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()
