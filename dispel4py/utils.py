@@ -23,20 +23,6 @@ from imp import load_source
 import traceback
 
 
-def loadSource(module_name, path, attr_name):
-    '''
-    Import a module from the given source file at 'path' and return
-    the named attribute 'attr_name'.
-
-    :param module_name: name of the module to load
-    :param path: location of the source file
-    :param attr_name: name of the attribute within the module
-    '''
-    mod = load_source(module_name, path)
-    attr = getattr(mod, attr_name)
-    return attr
-
-
 def findWorkflowGraph(mod, attr):
     if attr is not None:
         # use the named attribute
