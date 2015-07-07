@@ -150,6 +150,12 @@ class TimestampEventsWrapper(MonitoringWrapper):
         with EventTimestamp('read') as t:
             self.events.append(t)
             obj = self.baseObject._read()
+        try:
+            data, status = obj
+            t.data['input'] = list(data.keys())
+        except:
+            # if the data is not a dictionary (could be None)
+            pass
         self.write_events()
         # print('>>> %s READ: %.6f s' % (self.baseObject.pe.id,
         #                                 (t.end - t.start)))
