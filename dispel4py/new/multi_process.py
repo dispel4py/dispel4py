@@ -123,7 +123,6 @@ def process(workflow, inputs, args):
         pass
     try:
         if args.monitoring:
-            print args.monitoring
             monitoring_queue = multiprocessing.Queue()
             monitoring_outputs = []
             for fn in args.monitoring:
