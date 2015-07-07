@@ -181,7 +181,7 @@ def process(workflow, inputs, args):
     return result_queue
 
 
-from monitoring import TimestampEventsWrapper
+from dispel4py.new.monitoring import TimestampEventsWrapper
 
 
 def write_events(wrapper):
