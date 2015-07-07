@@ -48,6 +48,7 @@ For example::
 import argparse
 import copy
 import multiprocessing
+import sys
 import traceback
 import types
 from dispel4py.new.processor \
@@ -67,6 +68,8 @@ def parse_args(args, namespace):    # pragma: no cover
                         action='store_true')
     parser.add_argument('-n', '--num', metavar='num_processes', required=True,
                         type=int, help='number of processes to run')
+    parser.add_argument('--monitoring', nargs='?', action='append',
+                        help='monitor processing and write timestamps to file')
     result = parser.parse_args(args, namespace)
     return result
 
@@ -112,9 +115,22 @@ def process(workflow, inputs, args):
     process_pes = {}
     queues = {}
     result_queue = None
+    monitoring_queue = None
     try:
         if args.results:
             result_queue = multiprocessing.Queue()
+    except AttributeError:
+        pass
+    try:
+        if args.monitoring:
+            print args.monitoring
+            monitoring_queue = multiprocessing.Queue()
+            monitoring_outputs = []
+            for fn in args.monitoring:
+                if fn:
+                    monitoring_outputs.append(open(fn, 'w'))
+                else:
+                    monitoring_outputs.append(sys.stdout)
     except AttributeError:
         pass
     for pe in nodes:
@@ -124,6 +140,8 @@ def process(workflow, inputs, args):
             cp.rank = proc
             cp.log = types.MethodType(simpleLogger, cp)
             wrapper = MultiProcessingWrapper(proc, cp, provided_inputs)
+            if monitoring_queue:
+                wrapper = add_monitoring_wrapper(wrapper, monitoring_queue)
             process_pes[proc] = wrapper
             wrapper.input_queue = multiprocessing.Queue()
             wrapper.input_queue.name = 'Queue_%s_%s' % (cp.id, cp.rank)
@@ -144,15 +162,56 @@ def process(workflow, inputs, args):
         p = multiprocessing.Process(target=_processWorker, args=(wrapper,))
         jobs.append(p)
 
+    if monitoring_queue:
+        p = multiprocessing.Process(
+            target=print_monitoring,
+            args=(monitoring_queue, monitoring_outputs))
+        p.start()
+
     for j in jobs:
         j.start()
 
     for j in jobs:
         j.join()
 
+    if monitoring_queue:
+        monitoring_queue.put(STATUS_TERMINATED)
+
     if result_queue:
         result_queue.put(STATUS_TERMINATED)
     return result_queue
+
+
+from monitoring import TimestampEventsWrapper
+
+
+def write_events(wrapper):
+    while wrapper.events:
+        event = wrapper.events.pop(0)
+        wrapper.monitoring_queue.put((wrapper.baseObject.pe.id, event))
+    while wrapper.baseObject.pe._monitoring_events:
+        event = wrapper.baseObject.pe._monitoring_events.pop(0)
+        wrapper.monitoring_queue.put((wrapper.baseObject.pe.id, event))
+
+
+def add_monitoring_wrapper(wrapper, monitoring_queue,
+                           WrapperMonitor=TimestampEventsWrapper):
+    wrapper.monitoring_queue = monitoring_queue
+    wrapper.write_events = types.MethodType(write_events, wrapper)
+    return WrapperMonitor(wrapper)
+
+
+def print_monitoring(monitoring_queue, files):
+    obj = monitoring_queue.get()
+    while obj != STATUS_TERMINATED:
+        pe_id, event = obj
+        for f in files:
+            f.write('%s,%s,%s,%s,%s\n' %
+                    (pe_id, event.name, event.data, event.start, event.end))
+        obj = monitoring_queue.get()
+    for f in files:
+        if f != sys.stdout:
+            f.close()
 
 
 class MultiProcessingWrapper(GenericWrapper):
