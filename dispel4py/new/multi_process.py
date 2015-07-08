@@ -48,7 +48,6 @@ For example::
 import argparse
 import copy
 import multiprocessing
-import sys
 import traceback
 import types
 from dispel4py.new.processor \
@@ -125,14 +124,9 @@ def process(workflow, inputs, args):
         if args.monitoring:
             monitoring_queue = multiprocessing.Queue()
             monitoring_outputs = list(args.monitoring)
-            # monitoring_outputs = []
-            # for fn in args.monitoring:
-            #     if fn:
-            #         monitoring_outputs.append(open(fn, 'w'))
-            #     else:
-            #         monitoring_outputs.append(sys.stdout)
     except AttributeError:
         pass
+
     for pe in nodes:
         provided_inputs = processor.get_inputs(pe, inputs)
         for proc in processes[pe.id]:
@@ -163,21 +157,9 @@ def process(workflow, inputs, args):
         jobs.append(p)
 
     if monitoring_queue:
-        subscriptions = []
-        for m in monitoring_outputs:
-            subs = multiprocessing.Queue()
-            args = [subs]
-            command = m.split(' ')
-            method = command[0]
-            if len(command) > 1:
-                args += command[1:]
-            subscriptions.append(subs)
-            p = multiprocessing.Process(target=globals()[method], args=args)
-            p.start()
-        publisher = multiprocessing.Process(
-            target=publish,
-            args=(monitoring_queue, subscriptions,))
-        publisher.start()
+        from dispel4py.new.monitoring import publish_and_subscribe
+        publisher, subscription_procs = \
+            publish_and_subscribe(monitoring_queue, monitoring_outputs)
 
     for j in jobs:
         j.start()
@@ -187,6 +169,9 @@ def process(workflow, inputs, args):
 
     if monitoring_queue:
         monitoring_queue.put(STATUS_TERMINATED)
+        publisher.join()
+        for p in subscription_procs:
+            p.join()
 
     if result_queue:
         result_queue.put(STATUS_TERMINATED)
@@ -210,83 +195,6 @@ def add_monitoring_wrapper(wrapper, monitoring_queue,
     wrapper.monitoring_queue = monitoring_queue
     wrapper.write_events = types.MethodType(write_events, wrapper)
     return WrapperMonitor(wrapper)
-
-
-def publish(queue, subscriptions):
-    try:
-        for item in iter(queue.get, STATUS_TERMINATED):
-            for s in subscriptions:
-                s.put(item)
-    finally:
-        for s in subscriptions:
-            s.put(STATUS_TERMINATED)
-
-
-def write_stdout(input_queue):
-    for item in iter(input_queue.get, STATUS_TERMINATED):
-        pe_id, event = item
-        print('%s,%s,%s,%s,%s' %
-              (pe_id, event.name, event.data, event.start, event.end))
-
-
-def write_file(input_queue, file_name):
-    try:
-        with open(file_name, 'w') as f:
-            for item in iter(input_queue.get, STATUS_TERMINATED):
-                pe_id, event = item
-                f.write('%s,%s,%s,%s,%s\n' %
-                        (pe_id,
-                         event.name, event.data, event.start, event.end))
-    except Exception as exc:
-        sys.stderr.write(
-            'WARNING: Failed to write monitoring information to %s: %s\n' %
-            (file_name, exc))
-
-
-from collections import defaultdict
-
-
-def collect_timestamps(input_queue, collection):
-    for item in iter(input_queue.get, STATUS_TERMINATED):
-        pe_id, event = item
-        if pe_id not in collection:
-            collection[pe_id] = {'write': {},
-                                 'read': {},
-                                 'process': defaultdict(float)}
-        pe_data = collection[pe_id]
-
-        if event.name == 'write':
-            writes = pe_data['write']
-            output_name = event.data['output']
-            if output_name in writes:
-                writes[output_name]['count'] += 1
-                writes[output_name]['size'] += event.data['size']
-            else:
-                writes[output_name] = {'count': 1, 'size': event.data['size']}
-        elif event.name == 'read':
-            reads = pe_data['read']
-            if 'input' in event.data:
-                input_names = event.data['input']
-                for input_name in input_names:
-                    if input_name in reads:
-                        reads[input_name]['count'] += 1
-                        # reads[input_name]['size'] += event.data['size']
-                    else:
-                        reads[input_name] = {'count': 1}
-                        # reads[input_name]['size'] = event.data['size']
-        elif event.name == 'process':
-            procs = pe_data['process']
-            t_proc = event.end - event.start
-            procs['time'] += t_proc
-            procs['count'] += 1
-
-
-def print_stack(input_queue):
-    collection = {}
-    try:
-        collect_timestamps(input_queue, collection)
-    finally:
-        print(collection)
 
 
 class MultiProcessingWrapper(GenericWrapper):
