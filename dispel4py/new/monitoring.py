@@ -73,8 +73,9 @@ class ProcessTimingPE(MonitoringWrapper):
         return result
 
     def _postprocess(self):
-        self.log('Average processing time: %s' % (self.times_total /
-                                                  self.times_count))
+        if self.times_count:
+            self.log('Average processing time: %s' % (self.times_total /
+                                                      self.times_count))
 
 
 class EventTimestamp(object):

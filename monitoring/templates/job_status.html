@@ -9,10 +9,10 @@
       <ul>
         <li><b>Job started:</b> {{job.start_time}}
         <li><b>Job completed:</b> {{job.end_time}}
-        <li><b>Total processing time:</b> {{job.total_time|round(4)}}</li>
+        <li><b>Total PE processing time:</b> {{job.total_time|round(4)}} s</li>
         <li><b>Total data size:</b> {{job.total_write_size}} bytes</li>
-        <li><b>Total write:</b> {{job.total_write_count}}</li>
-        <li><b>Total read:</b> {{job.total_read_count|round|int}}</li>
+        <li><b>Total number of writes:</b> {{job.total_write_count}}</li>
+        <li><b>Total number of reads:</b> {{job.total_read_count|round|int}}</li>
       </ul>
 
       <table>
