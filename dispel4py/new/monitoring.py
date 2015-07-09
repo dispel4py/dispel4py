@@ -309,10 +309,16 @@ def publish_stack(input_queue, stack_file=None):
     starttime = datetime.now().strftime("%H:%M:%S.%f")[:-3]
     import json
     import os
+    import errno
     import uuid
     ROOT_DIR = os.path.expanduser('~') + '/.dispel4py/monitoring'
-    if not os.path.isdir(ROOT_DIR):
-        os.mkdir(ROOT_DIR)
+    try:
+        os.makedirs(ROOT_DIR)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(ROOT_DIR):
+            pass
+        else:
+            raise
     collection = create_monitoring_info()
     counter = 0
     if stack_file is None:
