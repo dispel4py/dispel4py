@@ -245,42 +245,88 @@ from collections import defaultdict
 
 def collect_timestamps(input_queue, collection):
     for item in iter(input_queue.get, STATUS_TERMINATED):
-        pe_id, event = item
-        if pe_id not in collection:
-            collection[pe_id] = {'write': {},
-                                 'read': {},
-                                 'process': defaultdict(float)}
-        pe_data = collection[pe_id]
+        add_to_collection(item, collection)
 
-        if event.name == 'write':
-            writes = pe_data['write']
-            output_name = event.data['output']
-            if output_name in writes:
-                writes[output_name]['count'] += 1
-                writes[output_name]['size'] += event.data['size']
-            else:
-                writes[output_name] = {'count': 1, 'size': event.data['size']}
-        elif event.name == 'read':
-            reads = pe_data['read']
-            if 'input' in event.data:
-                input_names = event.data['input']
-                for input_name in input_names:
-                    if input_name in reads:
-                        reads[input_name]['count'] += 1
-                        # reads[input_name]['size'] += event.data['size']
-                    else:
-                        reads[input_name] = {'count': 1}
-                        # reads[input_name]['size'] = event.data['size']
-        elif event.name == 'process':
-            procs = pe_data['process']
-            t_proc = event.end - event.start
-            procs['time'] += t_proc
-            procs['count'] += 1
+
+def add_to_collection(item, info):
+    collection = info['status']
+    pe_id, event = item
+    if pe_id not in collection:
+        collection[pe_id] = {'write': {},
+                             'read': {},
+                             'process': defaultdict(float)}
+    pe_data = collection[pe_id]
+
+    if event.name == 'write':
+        writes = pe_data['write']
+        output_name = event.data['output']
+        info['total_write_size'] += event.data['size']
+        info['total_write_count'] += 1
+        if output_name in writes:
+            writes[output_name]['count'] += 1
+            writes[output_name]['size'] += event.data['size']
+        else:
+            writes[output_name] = {'count': 1, 'size': event.data['size']}
+    elif event.name == 'read':
+        reads = pe_data['read']
+        if 'input' in event.data:
+            input_names = event.data['input']
+            for input_name in input_names:
+                info['total_read_count'] += 1
+                if input_name in reads:
+                    reads[input_name]['count'] += 1
+                    # reads[input_name]['size'] += event.data['size']
+                else:
+                    reads[input_name] = {'count': 1}
+                    # reads[input_name]['size'] = event.data['size']
+    elif event.name == 'process':
+        procs = pe_data['process']
+        t_proc = event.end - event.start
+        info['total_time'] += t_proc
+        procs['time'] += t_proc
+        procs['count'] += 1
+
+
+def create_monitoring_info():
+    return {'total_write_size': 0,
+            'total_write_count': 0,
+            'total_read_count': 0,
+            'total_time': 0,
+            'status': {}}
 
 
 def print_stack(input_queue):
-    collection = {}
+    collection = create_monitoring_info()
     try:
         collect_timestamps(input_queue, collection)
     finally:
         print(collection)
+
+
+def publish_stack(input_queue, stack_file=None):
+    import json
+    import os
+    import uuid
+    ROOT_DIR = os.path.expanduser('~') + '/.dispel4py/monitoring'
+    if not os.path.isdir(ROOT_DIR):
+        os.mkdir(ROOT_DIR)
+    collection = create_monitoring_info()
+    counter = 0
+    if stack_file is None:
+        stack_file = str(uuid.uuid4())
+    print('Monitoring job %s' % stack_file)
+    collection['name'] = stack_file
+    tst = time.time()
+    try:
+        for item in iter(input_queue.get, STATUS_TERMINATED):
+            counter += 1
+            add_to_collection(item, collection)
+            if time.time() - tst > 1 or counter > 10000:
+                with open(os.path.join(ROOT_DIR, stack_file), 'w') as f:
+                    f.write(json.dumps(collection))
+                counter = 0
+                tst = time.time()
+
+    finally:
+        with open(os.path.join(ROOT_DIR, stack_file), 'w') as f:
+            f.write(json.dumps(collection))

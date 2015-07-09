@@ -1,0 +1,30 @@
+<html>
+  <head>
+    <title>dispel4py monitoring</title>
+  </head>
+  <body>
+      <h2>{{ job.name }}</h2>
+      <ul>
+        <li><b>Total time:</b> {{job.total_time}}</li>
+        <li><b>Total data size:</b> {{job.total_write_size}}</li>
+        <li><b>Total write:</b> {{job.total_write_count}}</li>
+        <li><b>Total read:</b> {{job.total_read_count}}</li>
+      </ul>
+      <table>
+        <tr>
+          <th>PE</th>
+          <th>Total time</th>
+          <th>Iterations</th>
+        </tr>
+        {% for pe, info in job.status.items() %}
+        <tr>
+          <td>{{pe}}</td>
+          <td>{{info.process.time}}</td>
+          <td>{{info.process.count}}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      <hr />
+      <a href="http://dispel4py.org">dispel4py.org</a>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+<html>
+  <head>
+    <title>dispel4py monitoring</title>
+  </head>
+  <body>
+      <img src="http://dispel4py.org/images/DISPEL4PY_web.jpg" />
+      <h1>Job Monitoring</h1>
+      <ul>
+        {% for job in job_list %}
+        <li><a href="monitoring/{{ job }}">{{ job }}</a>
+        {% endfor %}
+      </ul>
+      <hr />
+      <a href="http://dispel4py.org">dispel4py.org</a>
+  </body>
+</html>
