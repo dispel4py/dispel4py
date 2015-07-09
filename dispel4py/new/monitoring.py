@@ -306,6 +306,7 @@ def print_stack(input_queue):
 
 def publish_stack(input_queue, stack_file=None):
     from datetime import datetime
+    starttime = datetime.now().strftime("%H:%M:%S.%f")[:-3]
     import json
     import os
     import uuid
@@ -318,7 +319,7 @@ def publish_stack(input_queue, stack_file=None):
         stack_file = str(uuid.uuid4())
     print('Monitoring job %s' % stack_file)
     collection['name'] = stack_file
-    collection['start_time'] = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+    collection['start_time'] = starttime
     tst = time.time()
     try:
         for item in iter(input_queue.get, STATUS_TERMINATED):

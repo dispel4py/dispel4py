@@ -1,15 +1,24 @@
 <html>
   <head>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
     <title>dispel4py monitoring</title>
   </head>
   <body>
       <img src="http://dispel4py.org/images/DISPEL4PY_web.jpg" />
       <h1>Job Monitoring</h1>
-      <ul>
-        {% for job in job_list %}
-        <li><a href="monitoring/{{ job }}">{{ job }}</a>
-        {% endfor %}
-      </ul>
+      <table>
+        <thead>
+          <tr><th>Job ID</th><th>Start time</th></tr>
+        </thead>
+        <tbody>
+          {% for job in job_list %}
+          <tr>
+            <td><a href="monitoring/{{ job.name }}">{{ job.name }}</a></td>
+            <td>{{job.start_time}}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
       <hr />
       <a href="http://dispel4py.org">dispel4py.org</a>
   </body>

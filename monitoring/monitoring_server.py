@@ -22,8 +22,17 @@ def show_status(job):
 
 @app.route('/monitoring')
 def list_jobs():
-    jobs = [f for f in os.listdir(ROOT_DIR)
-            if os.path.isfile(os.path.join(ROOT_DIR, f))]
+    # jobs = [f for f in os.listdir(ROOT_DIR)
+    #         if os.path.isfile(os.path.join(ROOT_DIR, f))]
+    jobs = []
+    for fn in os.listdir(ROOT_DIR):
+        filename = os.path.join(ROOT_DIR, fn)
+        if os.path.isfile(filename):
+            with open(filename, 'r') as f:
+                job_status = json.load(f)
+                jobs.append({'name': job_status['name'],
+                             'start_time': job_status['start_time']})
+
     return render_template("index.html", job_list=jobs)
 
 
