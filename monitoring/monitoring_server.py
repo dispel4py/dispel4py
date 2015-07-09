@@ -16,8 +16,8 @@ def show_status(job):
         print(job_status)
         return render_template("job_status.html", job=job_status)
     except:
-        print traceback.format_exc()
-        return "No information"
+        print(traceback.format_exc())
+        raise
 
 
 @app.route('/monitoring')

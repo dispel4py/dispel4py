@@ -304,6 +304,7 @@ def print_stack(input_queue):
 
 
 def publish_stack(input_queue, stack_file=None):
+    from datetime import datetime
     import json
     import os
     import uuid
@@ -316,6 +317,7 @@ def publish_stack(input_queue, stack_file=None):
         stack_file = str(uuid.uuid4())
     print('Monitoring job %s' % stack_file)
     collection['name'] = stack_file
+    collection['start_time'] = datetime.now().strftime("%H:%M:%S.%f")[:-3]
     tst = time.time()
     try:
         for item in iter(input_queue.get, STATUS_TERMINATED):
@@ -328,5 +330,6 @@ def publish_stack(input_queue, stack_file=None):
                 tst = time.time()
 
     finally:
+        collection['end_time'] = datetime.now().strftime("%H:%M:%S.%f")[:-3]
         with open(os.path.join(ROOT_DIR, stack_file), 'w') as f:
             f.write(json.dumps(collection))
