@@ -1,29 +1,71 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
   <head>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
     <title>dispel4py monitoring</title>
   </head>
   <body>
       <h2>{{ job.name }}</h2>
       <ul>
-        <li><b>Total time:</b> {{job.total_time}}</li>
-        <li><b>Total data size:</b> {{job.total_write_size}}</li>
+        <li><b>Total time:</b> {{job.total_time|round(4)}}</li>
+        <li><b>Total data size:</b> {{job.total_write_size}} bytes</li>
         <li><b>Total write:</b> {{job.total_write_count}}</li>
-        <li><b>Total read:</b> {{job.total_read_count}}</li>
+        <li><b>Total read:</b> {{job.total_read_count|round|int}}</li>
       </ul>
+
       <table>
-        <tr>
-          <th>PE</th>
-          <th>Total time</th>
-          <th>Iterations</th>
-        </tr>
-        {% for pe, info in job.status.items() %}
-        <tr>
-          <td>{{pe}}</td>
-          <td>{{info.process.time}}</td>
-          <td>{{info.process.count}}</td>
-        </tr>
-        {% endfor %}
+        <thead>
+          <tr>
+            <th>PE</th>
+            <th>Total time</th>
+            <th>Iterations</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pe, info in job.status.items() %}
+          <tr>
+            <td>{{pe}}</td>
+            <td align="right">{{info.process.time|round(4)}} s</td>
+            <td align="right">{{info.process.count|round|int}}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
       </table>
+
+      {% for pe, info in job.status.items() %}
+      <h3> {{ pe }} </h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Iterations</th>
+            <th>Average data size</th>
+            <th>Total data</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for input_name, input_info in info.read.items() %}
+          <tr>
+            <td>Input</td>
+            <td>{{input_name}}</td>
+            <td align="right">{{input_info.count}}</td>
+            <td align="right">{{input_info.size}}</td>
+          </tr>
+          {% endfor %}
+          {% for output_name, output_info in info.write.items() %}
+          <tr>
+            <td>Output</td>
+            <td>{{output_name}}</td>
+            <td align="right">{{output_info.count}}</td>
+            <td align="right">{{output_info.size/output_info.count}}</td>
+            <td align="right">{{output_info.size}}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endfor %}
+
       <hr />
       <a href="http://dispel4py.org">dispel4py.org</a>
   </body>
