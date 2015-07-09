@@ -194,7 +194,12 @@ def add_monitoring_wrapper(wrapper, monitoring_queue,
                            WrapperMonitor=TimestampEventsWrapper):
     wrapper.monitoring_queue = monitoring_queue
     wrapper.write_events = types.MethodType(write_events, wrapper)
-    return WrapperMonitor(wrapper)
+    monitor = WrapperMonitor(wrapper)
+    # now point the PE output writers to the new monitoring wrapper
+    # otherwise any output written with self.write() is not captured
+    for output in wrapper.pe.outputconnections.values():
+        output['writer'].wrapper = monitor
+    return monitor
 
 
 class MultiProcessingWrapper(GenericWrapper):
