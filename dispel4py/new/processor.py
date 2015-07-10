@@ -115,12 +115,16 @@ class GenericWrapper(object):
         # self.pe.log('Result: %s, status=%s' % (inputs, STATUS[status]))
         while status != STATUS_TERMINATED:
             if inputs is not None:
-                outputs = self.pe.process(inputs)
-                num_iterations += 1
-                if outputs is not None:
-                    # self.pe.log('Produced output: %s' % outputs)
-                    for key, value in outputs.items():
-                        self._write(key, value)
+                try:
+                    outputs = self.pe.process(inputs)
+                    num_iterations += 1
+                    if outputs is not None:
+                        # self.pe.log('Produced output: %s' % outputs)
+                        for key, value in outputs.items():
+                            self._write(key, value)
+                except:
+                    # ignore exceptions in each processing iteration
+                    pass
             inputs, status = self._read()
             # self.pe.log('Result: %s, status=%s' % (inputs, STATUS[status]))
         self.pe.postprocess()
