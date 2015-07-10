@@ -66,7 +66,7 @@ def commandChain(commands,envhpc,queue=None):
             return stdoutdata, stderrdata
 
 def toW3Cprov(prov,format='w3c-prov-json'):
-        from prov.model import ProvDocument, Namespace, Literal, PROV, Identifier
+        from dispel4py.prov.model import ProvDocument, Namespace, Literal, PROV, Identifier
         g = ProvDocument()
         vc = Namespace("verce", "http://verce.eu")  # namespaces do not need to be explicitly added to a document
         g.add_namespace("dcterms", "http://purl.org/dc/terms/")
