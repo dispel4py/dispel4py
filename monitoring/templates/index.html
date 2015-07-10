@@ -12,8 +12,13 @@
     <script type="text/javascript">
     $(document).ready( function () {
         $('#job_list').DataTable(
-          {order: [[ 1, "desc" ]],
-           pageLength: 50}
+          {
+            order: [[ 1, "desc" ]],
+            pageLength: 50,
+            "language": {
+              "emptyTable": "No monitoring data available"
+            }
+           }
         );
     } )
     </script>
