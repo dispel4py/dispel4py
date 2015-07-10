@@ -1,12 +1,27 @@
 <html>
   <head>
     <link rel="stylesheet" type="text/css" href="/static/style.css">
-    <title>dispel4py monitoring</title>
+    <link rel="stylesheet" type="text/css" href="/static/DataTables-1.10.7/media/css/jquery.dataTables.min.css">
+
+    <!-- jQuery -->
+    <script type="text/javascript" charset="utf8" src="/static/jquery/jquery-2.1.4.min.js"></script>
+
+    <!-- DataTables -->
+    <script type="text/javascript" charset="utf8" src="/static/DataTables-1.10.7/media/js/jquery.dataTables.min.js"></script>    <title>dispel4py monitoring</title>
+
+    <script type="text/javascript">
+    $(document).ready( function () {
+        $('#job_list').DataTable(
+          {order: [[ 1, "desc" ]],
+           pageLength: 50}
+        );
+    } )
+    </script>
   </head>
   <body>
-      <img src="http://dispel4py.org/images/DISPEL4PY_web.jpg" height="200"/>
-      <h1>Job Monitoring</h1>
-      <table>
+      <img src="http://dispel4py.org/images/DISPEL4PY_web.jpg" height="200" align="right"/>
+      <h1>Monitoring</h1>
+      <table id="job_list">
         <thead>
           <tr><th>Job ID</th><th>Start</th><th>Finish</th></tr>
         </thead>
@@ -25,6 +40,8 @@
         </tbody>
       </table>
       <hr />
-      <a href="http://dispel4py.org">dispel4py.org</a>
+      <p>
+        <a href="http://dispel4py.org">dispel4py.org</a>
+      </p>
   </body>
 </html>
