@@ -117,7 +117,6 @@ class GenericWrapper(object):
             if inputs is not None:
                 try:
                     outputs = self.pe.process(inputs)
-                    num_iterations += 1
                     if outputs is not None:
                         # self.pe.log('Produced output: %s' % outputs)
                         for key, value in outputs.items():
@@ -125,6 +124,8 @@ class GenericWrapper(object):
                 except:
                     # ignore exceptions in each processing iteration
                     pass
+                finally:
+                    num_iterations += 1
             inputs, status = self._read()
             # self.pe.log('Result: %s, status=%s' % (inputs, STATUS[status]))
         self.pe.postprocess()
