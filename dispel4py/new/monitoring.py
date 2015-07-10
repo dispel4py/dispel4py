@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import time
-import traceback
 
 
 class Timer(object):
