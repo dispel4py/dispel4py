@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import time
+import traceback
 
 
 class Timer(object):
@@ -117,17 +118,29 @@ class TimestampEventsPE(MonitoringWrapper):
     def preprocess(self):
         with EventTimestamp('preprocess') as t:
             self._monitoring_events.append(t)
-            return self.baseObject.preprocess()
+            try:
+                return self.baseObject.preprocess()
+            except Exception as exc:
+                t.data['error'] = repr(exc)
+                raise
 
     def process(self, inputs):
         with EventTimestamp('process') as t:
             self._monitoring_events.append(t)
-            return self.baseObject.process(inputs)
+            try:
+                return self.baseObject.process(inputs)
+            except Exception as exc:
+                t.data['error'] = repr(exc)
+                raise
 
     def postprocess(self):
         with EventTimestamp('postprocess') as t:
-            self._monitoring_events.append(t)
-            return self.baseObject.postprocess()
+            try:
+                self._monitoring_events.append(t)
+                return self.baseObject.postprocess()
+            except Exception as exc:
+                t.data['error'] = repr(exc)
+                raise
 
 
 class TimestampEventsWrapper(MonitoringWrapper):
@@ -136,6 +149,15 @@ class TimestampEventsWrapper(MonitoringWrapper):
         MonitoringWrapper.__init__(self, baseObject)
         self.events = []
         self.baseObject.pe = TimestampEventsPE(self.baseObject.pe)
+
+    # def process(self):
+    #     with EventTimestamp('total_process') as t:
+    #         self.events.append(t)
+    #         try:
+    #             self.baseObject.process()
+    #         except:
+    #             t.error = traceback.format_exc(1)
+    #             raise
 
     def _write(self, name, data):
         with EventTimestamp('write') as t:
@@ -219,8 +241,8 @@ def write_stdout(input_queue):
     '''
     for item in iter(input_queue.get, STATUS_TERMINATED):
         pe_id, rank, event = item
-        print('%s,%s,%s,%s,%s,%s' %
-              (pe_id, rank, event.name, event.data, event.start, event.end))
+        info = [pe_id, rank, event.name, event.data, event.start, event.end]
+        print(','.join(str(x) for x in info))
 
 
 def write_file(input_queue, file_name):
@@ -232,9 +254,9 @@ def write_file(input_queue, file_name):
         with open(file_name, 'w') as f:
             for item in iter(input_queue.get, STATUS_TERMINATED):
                 pe_id, rank, event = item
-                f.write('%s,%s,%s,%s,%s,%s\n' %
-                        (pe_id, rank,
-                         event.name, event.data, event.start, event.end))
+                info = [pe_id, rank,
+                        event.name, event.data, event.start, event.end]
+                f.write(','.join(str(x) for x in info) + '\n')
     except Exception as exc:
         sys.stderr.write(
             'WARNING: Failed to write monitoring information to %s: %s\n' %
@@ -256,10 +278,15 @@ def add_to_collection(item, info):
     if pe_id not in collection:
         collection[pe_id] = {
             'detail': {},
-            'summary': {'count': 0, 'time': 0.0, 'processes': []}}
+            'summary': {'count': 0, 'time': 0.0,
+                        'error_count': 0,
+                        'processes': []}
+        }
     if rank not in collection[pe_id]['detail']:
-        collection[pe_id]['detail'][rank] = \
-            {'write': {}, 'read': {}, 'process': defaultdict(float)}
+        collection[pe_id]['detail'][rank] = {
+            'write': {}, 'read': {},
+            'process': defaultdict(float),
+        }
         bisect.insort_left(collection[pe_id]['summary']['processes'], rank)
     if rank not in info['processes']:
         bisect.insort_left(info['processes'], rank)
@@ -294,6 +321,11 @@ def add_to_collection(item, info):
         info['total_time'] += t_proc
         procs['time'] += t_proc
         procs['count'] += 1
+        if 'error' in event.data:
+            procs['error_count'] += 1
+            procs['last_error'] = event.data['error']
+            pe_total['error_count'] += 1
+            pe_total['last_error'] = event.data['error']
         pe_total['time'] += t_proc
         pe_total['count'] += 1
 

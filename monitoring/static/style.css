@@ -10,3 +10,6 @@ td, th {
   padding: .3em;
   border: 1px #ccc solid;
 }
+.number {
+  text-align: left;
+}

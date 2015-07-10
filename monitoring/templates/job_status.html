@@ -7,8 +7,8 @@
   <body>
       <h2>{{ job.name }}</h2>
       <ul>
-        <li><b>Job started:</b> {{job.start_time}}
-        <li><b>Job completed:</b> {{job.end_time}}
+        <li><b>Started:</b> {{job.start_time}}
+        <li><b>Completed:</b> {{job.end_time}}
         <li><b>Number of nodes:</b> {{job.processes|length}}
         <li><b>Total PE processing time:</b> {{job.total_time|round(4)}} s</li>
         <li><b>Total data size:</b> {{job.total_write_size}} bytes</li>
@@ -23,6 +23,8 @@
             <th>Processes</th>
             <th>Total time</th>
             <th>Iterations</th>
+            <th>Failed</th>
+            <th>Last error</th>
           </tr>
         </thead>
         <tbody>
@@ -36,6 +38,12 @@
               </td>
               <td style="text-align: right;">{{info.summary.time|round(4)}} s</td>
               <td style="text-align: right;">{{info.summary.count|round|int}}</td>
+              <td style="text-align: right;">{{info.summary.error_count}}</td>
+              {% if info.summary.last_error %}
+              <td>{{info.summary.last_error}}</td>
+              {% else %}
+              <td></td>
+              {% endif %}
             </tr>
           {% endfor %}
         </tbody>
@@ -45,6 +53,21 @@
         <h3 id={{pe}}> {{ pe }} </h3>
         {% for rank, info in pe_info.detail.items() %}
         <h4>Process {{ rank }}</h4>
+        <ul>
+          <li><b>Iterations:</b> {{info.process.count|int}}
+          <li>
+            <b>Failed:</b>
+            {% if info.process.error_count %}
+              {{info.process.error_count|int}}
+              ({{(100*info.process.error_count/info.process.count)|round(1)}}%)
+            {% else %}
+              0 (0%)
+            {% endif %}
+          </li>
+          {% if info.process.last_error %}
+          <li><b>Last error:</b> {{info.process.last_error}}
+          {% endif %}
+        </ul>
         <table>
           <thead>
             <tr>
@@ -60,17 +83,18 @@
             <tr>
               <td>Input</td>
               <td>{{input_name}}</td>
-              <td align="right">{{input_info.count}}</td>
-              <td align="right">{{input_info.size}}</td>
+              <td style="text-align: right;">{{input_info.count}}</td>
+              <td style="text-align: right;"></td>
+              <td>&nbsp;</td>
             </tr>
             {% endfor %}
             {% for output_name, output_info in info.write.items() %}
             <tr>
               <td>Output</td>
               <td>{{output_name}}</td>
-              <td align="right">{{output_info.count}}</td>
-              <td align="right">{{output_info.size/output_info.count}}</td>
-              <td align="right">{{output_info.size}}</td>
+              <td style="text-align: right;">{{output_info.count}}</td>
+              <td style="text-align: right;">{{(output_info.size/output_info.count)|round(2)}}</td>
+              <td style="text-align: right;">{{output_info.size}}</td>
             </tr>
             {% endfor %}
           </tbody>
