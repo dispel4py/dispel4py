@@ -4,17 +4,22 @@
     <title>dispel4py monitoring</title>
   </head>
   <body>
-      <img src="http://dispel4py.org/images/DISPEL4PY_web.jpg" />
+      <img src="http://dispel4py.org/images/DISPEL4PY_web.jpg" height="200"/>
       <h1>Job Monitoring</h1>
       <table>
         <thead>
-          <tr><th>Job ID</th><th>Start time</th></tr>
+          <tr><th>Job ID</th><th>Start</th><th>Finish</th></tr>
         </thead>
         <tbody>
           {% for job in job_list %}
           <tr>
             <td><a href="monitoring/{{ job.name }}">{{ job.name }}</a></td>
             <td>{{job.start_time}}</td>
+            {% if job.end_time %}
+            <td>{{job.end_time}}</td>
+            {% else %}
+            <td></td>
+            {% endif %}
           </tr>
           {% endfor %}
         </tbody>

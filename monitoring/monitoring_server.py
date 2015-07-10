@@ -29,8 +29,11 @@ def list_jobs():
             if os.path.isfile(filename):
                 with open(filename, 'r') as f:
                     job_status = json.load(f)
-                    jobs.append({'name': job_status['name'],
-                                 'start_time': job_status['start_time']})
+                    job = {'name': job_status['name'],
+                           'start_time': job_status['start_time']}
+                    if 'end_time' in job_status:
+                        job['end_time'] = job_status['end_time']
+                    jobs.append(job)
     except:
         # the directory might not exist but that's ok
         pass

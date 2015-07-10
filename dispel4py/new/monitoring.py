@@ -218,9 +218,9 @@ def write_stdout(input_queue):
     Writes all monitoring information to stdout.
     '''
     for item in iter(input_queue.get, STATUS_TERMINATED):
-        pe_id, event = item
-        print('%s,%s,%s,%s,%s' %
-              (pe_id, event.name, event.data, event.start, event.end))
+        pe_id, rank, event = item
+        print('%s,%s,%s,%s,%s,%s' %
+              (pe_id, rank, event.name, event.data, event.start, event.end))
 
 
 def write_file(input_queue, file_name):
@@ -231,9 +231,9 @@ def write_file(input_queue, file_name):
     try:
         with open(file_name, 'w') as f:
             for item in iter(input_queue.get, STATUS_TERMINATED):
-                pe_id, event = item
-                f.write('%s,%s,%s,%s,%s\n' %
-                        (pe_id,
+                pe_id, rank, event = item
+                f.write('%s,%s,%s,%s,%s,%s\n' %
+                        (pe_id, rank,
                          event.name, event.data, event.start, event.end))
     except Exception as exc:
         sys.stderr.write(
@@ -242,6 +242,7 @@ def write_file(input_queue, file_name):
 
 
 from collections import defaultdict
+import bisect
 
 
 def collect_timestamps(input_queue, collection):
@@ -251,12 +252,19 @@ def collect_timestamps(input_queue, collection):
 
 def add_to_collection(item, info):
     collection = info['status']
-    pe_id, event = item
+    pe_id, rank, event = item
     if pe_id not in collection:
-        collection[pe_id] = {'write': {},
-                             'read': {},
-                             'process': defaultdict(float)}
-    pe_data = collection[pe_id]
+        collection[pe_id] = {
+            'detail': {},
+            'summary': {'count': 0, 'time': 0.0, 'processes': []}}
+    if rank not in collection[pe_id]['detail']:
+        collection[pe_id]['detail'][rank] = \
+            {'write': {}, 'read': {}, 'process': defaultdict(float)}
+        bisect.insort_left(collection[pe_id]['summary']['processes'], rank)
+    if rank not in info['processes']:
+        bisect.insort_left(info['processes'], rank)
+    pe_data = collection[pe_id]['detail'][rank]
+    pe_total = collection[pe_id]['summary']
 
     if event.name == 'write':
         writes = pe_data['write']
@@ -286,6 +294,8 @@ def add_to_collection(item, info):
         info['total_time'] += t_proc
         procs['time'] += t_proc
         procs['count'] += 1
+        pe_total['time'] += t_proc
+        pe_total['count'] += 1
 
 
 def create_monitoring_info():
@@ -293,6 +303,7 @@ def create_monitoring_info():
             'total_write_count': 0,
             'total_read_count': 0,
             'total_time': 0,
+            'processes': [],
             'status': {}}
 
 
@@ -304,9 +315,15 @@ def print_stack(input_queue):
         print(collection)
 
 
+from datetime import datetime
+
+
+def format_timestamp(tst):
+    return tst.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+
+
 def publish_stack(input_queue, stack_file=None):
-    from datetime import datetime
-    starttime = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+    starttime = format_timestamp(datetime.now())
     import json
     import os
     import errno
@@ -338,6 +355,6 @@ def publish_stack(input_queue, stack_file=None):
                 tst = time.time()
 
     finally:
-        collection['end_time'] = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        collection['end_time'] = format_timestamp(datetime.now())
         with open(os.path.join(ROOT_DIR, stack_file), 'w') as f:
             f.write(json.dumps(collection))

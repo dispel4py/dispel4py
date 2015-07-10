@@ -9,6 +9,7 @@
       <ul>
         <li><b>Job started:</b> {{job.start_time}}
         <li><b>Job completed:</b> {{job.end_time}}
+        <li><b>Number of nodes:</b> {{job.processes|length}}
         <li><b>Total PE processing time:</b> {{job.total_time|round(4)}} s</li>
         <li><b>Total data size:</b> {{job.total_write_size}} bytes</li>
         <li><b>Total number of writes:</b> {{job.total_write_count}}</li>
@@ -19,53 +20,62 @@
         <thead>
           <tr>
             <th>PE</th>
+            <th>Processes</th>
             <th>Total time</th>
             <th>Iterations</th>
           </tr>
         </thead>
         <tbody>
           {% for pe, info in job.status.items() %}
-          <tr>
-            <td>{{pe}}</td>
-            <td align="right">{{info.process.time|round(4)}} s</td>
-            <td align="right">{{info.process.count|round|int}}</td>
-          </tr>
+            <tr>
+              <td><a href="#{{pe}}">{{pe}}</a></td>
+              <td>
+                {%- for proc in info.summary.processes %}
+                  {{proc}}{% if not loop.last %},{% endif %}
+                {%- endfor %}
+              </td>
+              <td style="text-align: right;">{{info.summary.time|round(4)}} s</td>
+              <td style="text-align: right;">{{info.summary.count|round|int}}</td>
+            </tr>
           {% endfor %}
         </tbody>
       </table>
 
-      {% for pe, info in job.status.items() %}
-      <h3> {{ pe }} </h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Type</th>
-            <th>Name</th>
-            <th>Iterations</th>
-            <th>Average data size</th>
-            <th>Total data</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for input_name, input_info in info.read.items() %}
-          <tr>
-            <td>Input</td>
-            <td>{{input_name}}</td>
-            <td align="right">{{input_info.count}}</td>
-            <td align="right">{{input_info.size}}</td>
-          </tr>
-          {% endfor %}
-          {% for output_name, output_info in info.write.items() %}
-          <tr>
-            <td>Output</td>
-            <td>{{output_name}}</td>
-            <td align="right">{{output_info.count}}</td>
-            <td align="right">{{output_info.size/output_info.count}}</td>
-            <td align="right">{{output_info.size}}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      {% for pe, pe_info in job.status.items() %}
+        <h3 id={{pe}}> {{ pe }} </h3>
+        {% for rank, info in pe_info.detail.items() %}
+        <h4>Process {{ rank }}</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Name</th>
+              <th>Iterations</th>
+              <th>Average data size</th>
+              <th>Total data</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for input_name, input_info in info.read.items() %}
+            <tr>
+              <td>Input</td>
+              <td>{{input_name}}</td>
+              <td align="right">{{input_info.count}}</td>
+              <td align="right">{{input_info.size}}</td>
+            </tr>
+            {% endfor %}
+            {% for output_name, output_info in info.write.items() %}
+            <tr>
+              <td>Output</td>
+              <td>{{output_name}}</td>
+              <td align="right">{{output_info.count}}</td>
+              <td align="right">{{output_info.size/output_info.count}}</td>
+              <td align="right">{{output_info.size}}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endfor %}
       {% endfor %}
 
       <hr />

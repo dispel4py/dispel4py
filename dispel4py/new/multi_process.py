@@ -184,10 +184,16 @@ from dispel4py.new.monitoring import TimestampEventsWrapper
 def write_events(wrapper):
     while wrapper.events:
         event = wrapper.events.pop(0)
-        wrapper.monitoring_queue.put((wrapper.baseObject.pe.id, event))
+        wrapper.monitoring_queue.put(
+            (wrapper.baseObject.pe.id,
+             wrapper.baseObject.pe.rank,
+             event))
     while wrapper.baseObject.pe._monitoring_events:
         event = wrapper.baseObject.pe._monitoring_events.pop(0)
-        wrapper.monitoring_queue.put((wrapper.baseObject.pe.id, event))
+        wrapper.monitoring_queue.put(
+            (wrapper.baseObject.pe.id,
+             wrapper.baseObject.pe.rank,
+             event))
 
 
 def add_monitoring_wrapper(wrapper, monitoring_queue,
