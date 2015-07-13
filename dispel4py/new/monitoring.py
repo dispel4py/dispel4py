@@ -340,7 +340,6 @@ def write_timeline(input_queue, info, job=None):
         write_info_file(job, job_dir, info, starttime, endtime)
 
 
-
 from collections import defaultdict
 import bisect
 
