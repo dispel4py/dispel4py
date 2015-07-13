@@ -148,6 +148,7 @@ class TimestampEventsWrapper(MonitoringWrapper):
         MonitoringWrapper.__init__(self, baseObject)
         self.events = []
         self.baseObject.pe = TimestampEventsPE(self.baseObject.pe)
+        self.data_count = defaultdict(int)
 
     # def process(self):
     #     with EventTimestamp('total_process') as t:
@@ -163,7 +164,12 @@ class TimestampEventsWrapper(MonitoringWrapper):
             t.data['output'] = name
             t.data['size'] = total_size(data)
             self.events.append(t)
-            self.baseObject._write(name, data)
+            self.data_count[name] += 1
+            data_id = (self.baseObject.pe.id, name, self.data_count[name])
+            t.data['id'] = data_id
+            annotated = {'data': data, 'id': data_id}
+            self.baseObject._write(name, annotated)
+            # self.baseObject._write(name, data)
         # print('>>> %s WRITE: %.6f s' % (self.baseObject.pe.id,
         #                                  (t.end - t.start)))
         self.write_events()
@@ -175,7 +181,14 @@ class TimestampEventsWrapper(MonitoringWrapper):
         try:
             data, status = obj
             t.data['input'] = list(data.keys())
+            original = {}
+            for input_name, input_data in data.items():
+                t.data['origin'] = input_data['id']
+                original[input_name] = input_data['data']
+            obj = original, status
         except:
+            # import traceback
+            # print(traceback.format_exc())
             # if the data is not a dictionary (could be None)
             pass
         self.write_events()
@@ -203,12 +216,12 @@ import multiprocessing
 from dispel4py.new.processor import STATUS_TERMINATED
 
 
-def publish_and_subscribe(monitoring_queue, monitoring_outputs):
+def publish_and_subscribe(monitoring_queue, monitoring_outputs, info):
     subscriptions = []
     subs_processes = []
     for m in monitoring_outputs:
         subs = multiprocessing.Queue()
-        args = [subs]
+        args = [subs, info]
         command = m.split(' ')
         method = command[0]
         if len(command) > 1:
@@ -234,7 +247,15 @@ def publish(queue, subscriptions):
             s.put(STATUS_TERMINATED)
 
 
-def write_stdout(input_queue):
+import json
+import os
+import errno
+import uuid
+
+ROOT_DIR = os.path.expanduser('~') + '/.dispel4py/monitoring'
+
+
+def write_stdout(input_queue, info):
     '''
     Writes all monitoring information to stdout.
     '''
@@ -244,7 +265,7 @@ def write_stdout(input_queue):
         print(','.join(str(x) for x in info))
 
 
-def write_file(input_queue, file_name):
+def write_file(input_queue, info, file_name):
     '''
     Writes all monitoring information to the given file.
     :file_name: name of the output file
@@ -260,6 +281,64 @@ def write_file(input_queue, file_name):
         sys.stderr.write(
             'WARNING: Failed to write monitoring information to %s: %s\n' %
             (file_name, exc))
+
+
+def write_info_file(job, job_dir, info, starttime, endtime=None):
+    try:
+        for proc, outputs in info[2].items():
+            for name, outp in outputs.items():
+                for target in outp:
+                    outputs[name] = target[1].destinations
+    except:
+        pass
+    with open(job_dir + '/info', 'w') as f:
+        job_info = {'name': job,
+                    'start_time': starttime,
+                    'processes': info[0],
+                    'inputs': info[1],
+                    'outputs': info[2]}
+        if endtime:
+            job_info['end_time'] = endtime
+        f.write(json.dumps(job_info))
+
+
+def write_timeline(input_queue, info, job=None):
+    '''
+    Writes all monitoring information to the given file.
+    :job: name of the output file, or None to generate a job ID
+    '''
+    starttime = format_timestamp(datetime.now())
+    if job is None:
+        job = str(uuid.uuid4())
+    try:
+        job_dir = os.path.join(ROOT_DIR, job)
+        os.makedirs(job_dir)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(job_dir):
+            pass
+        else:
+            raise
+    try:
+        write_info_file(job, job_dir, info, starttime)
+        with open(job_dir + '/timestamps', 'w') as f:
+            for item in iter(input_queue.get, STATUS_TERMINATED):
+                pe_id, rank, event = item
+                timestamp = {'content': event.name,
+                             'start': event.start,
+                             'end': event.end,
+                             'group': rank}
+                f.write(json.dumps(timestamp))
+                f.write('\n')
+    except Exception as exc:
+        import traceback
+        print(traceback.format_exc())
+        sys.stderr.write(
+            'WARNING: Failed to write monitoring information to %s: %s\n' %
+            (job_dir, exc))
+    finally:
+        endtime = format_timestamp(datetime.now())
+        write_info_file(job, job_dir, info, starttime, endtime)
+
 
 
 from collections import defaultdict
@@ -353,26 +432,23 @@ def format_timestamp(tst):
     return tst.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
 
-def publish_stack(input_queue, stack_file=None):
+def publish_stack(input_queue, info, job=None):
     starttime = format_timestamp(datetime.now())
-    import json
-    import os
-    import errno
-    import uuid
-    ROOT_DIR = os.path.expanduser('~') + '/.dispel4py/monitoring'
+    if job is None:
+        job = str(uuid.uuid4())
+    job_dir = os.path.join(ROOT_DIR, job)
     try:
-        os.makedirs(ROOT_DIR)
+        os.makedirs(job_dir)
     except OSError as exc:
-        if exc.errno == errno.EEXIST and os.path.isdir(ROOT_DIR):
+        if exc.errno == errno.EEXIST and os.path.isdir(job_dir):
             pass
         else:
             raise
     collection = create_monitoring_info()
     counter = 0
-    if stack_file is None:
-        stack_file = str(uuid.uuid4())
-    print('Monitoring job %s' % stack_file)
-    collection['name'] = stack_file
+    write_info_file(job, job_dir, info, starttime)
+    print('Monitoring job %s' % job)
+    collection['name'] = job
     collection['start_time'] = starttime
     tst = time.time()
     try:
@@ -380,12 +456,14 @@ def publish_stack(input_queue, stack_file=None):
             counter += 1
             add_to_collection(item, collection)
             if time.time() - tst > 1 or counter > 10000:
-                with open(os.path.join(ROOT_DIR, stack_file), 'w') as f:
+                with open(os.path.join(job_dir, 'stack'), 'w') as f:
                     f.write(json.dumps(collection))
                 counter = 0
                 tst = time.time()
 
     finally:
-        collection['end_time'] = format_timestamp(datetime.now())
-        with open(os.path.join(ROOT_DIR, stack_file), 'w') as f:
+        endtime = format_timestamp(datetime.now())
+        collection['end_time'] = endtime
+        write_info_file(job, job_dir, info, starttime, endtime)
+        with open(os.path.join(job_dir, 'stack'), 'w') as f:
             f.write(json.dumps(collection))

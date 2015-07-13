@@ -1,0 +1,75 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Timeline | Basic demo</title>
+
+  <style type="text/css">
+    body, html {
+      font-family: sans-serif;
+    }
+  </style>
+
+  <script type="text/javascript" charset="utf8" src="/static/jquery/jquery-2.1.4.min.js"></script>
+  <script src="/static/vis/moment.min.js"></script>
+  <script src="/static/vis/vis.min.js"></script>
+  <link href="/static/vis/vis.min.css" rel="stylesheet" type="text/css" />
+  <style type="text/css">
+  .vis-item .vis-item-overflow {
+    overflow: visible;
+  }
+  .vis-item.write {
+    background-color: gold;
+    border-color: orange;
+  }
+  .vis-item.read {
+    background-color: yellow;
+    border-color: orange;
+  }
+  .vis-item.process {
+    border-color: blue;
+  }
+  .vis-item.terminate {
+    background-color: red;
+    border-color: black;
+  }
+  </style>
+</head>
+<body>
+<div id="visualization"></div>
+
+<script type="text/javascript">
+
+  function setupGroups(data)
+  {
+    processes = data.processes
+    var groups = new vis.DataSet();
+    for (pe in processes) {
+      for (proc in processes[pe]) {
+        groups.add({id: processes[pe][proc], content: pe});
+      }
+    }
+    return groups;
+  }
+
+  // DOM element where the Timeline will be attached
+  var container = document.getElementById('visualization');
+  var groups = setupGroups({{info|safe}})
+  var input_data = {{timeline|safe}}
+  for (var index in input_data)
+  {
+    var item = input_data[index]
+    var starttime = item.start
+    var endtime = item.end
+    item['start'] = moment.unix(item.start)
+    item['end'] = moment.unix(item.end)
+    item['className'] = item['content']
+  }
+  var items = new vis.DataSet(input_data)
+  var options = {};
+
+  // Create a Timeline
+  var timeline = new vis.Timeline(container, items, options);
+  timeline.setGroups(groups)
+</script>
+</body>
+</html>

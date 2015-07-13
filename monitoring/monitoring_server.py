@@ -10,11 +10,38 @@ ROOT_DIR = os.path.expanduser('~') + '/.dispel4py/monitoring'
 @app.route('/monitoring/<job>')
 def show_status(job):
     try:
-        status_file = os.path.join(ROOT_DIR, job)
-        with open(status_file, 'r') as f:
+        job_dir = os.path.join(ROOT_DIR, job)
+        with open(os.path.join(job_dir, 'stack'), 'r') as f:
             job_status = json.load(f)
-        print(job_status)
+        # print(job_status)
         return render_template("job_status.html", job=job_status)
+    except:
+        print(traceback.format_exc())
+        raise
+
+
+@app.route('/timeline/<job>')
+def serve_timeline(job):
+    try:
+        info_path = os.path.join(ROOT_DIR, job + '/info')
+        with open(info_path, 'r') as f:
+            info = json.load(f)
+        timeline_path = os.path.join(
+            ROOT_DIR, job + '/timestamps')
+        with open(timeline_path, 'r') as f:
+            from collections import deque
+            result = []
+            for line in deque(f, maxlen=100):
+                try:
+                    result.append(json.loads(line))
+                except ValueError:
+                    # some JSON error
+                    pass
+        #     return f.read()
+        return render_template(
+            "job_timeline.html",
+            info=json.dumps(info),
+            timeline=json.dumps(result))
     except:
         print(traceback.format_exc())
         raise
@@ -26,14 +53,20 @@ def list_jobs():
     try:
         for fn in os.listdir(ROOT_DIR):
             filename = os.path.join(ROOT_DIR, fn)
-            if os.path.isfile(filename):
-                with open(filename, 'r') as f:
+            if os.path.isdir(filename):
+                with open(os.path.join(filename, 'info'), 'r') as f:
                     job_status = json.load(f)
                     job = {'name': job_status['name'],
                            'start_time': job_status['start_time']}
                     if 'end_time' in job_status:
                         job['end_time'] = job_status['end_time']
-                    jobs.append(job)
+                if os.path.isfile(os.path.join(filename, 'stack')):
+                    job['link'] = 'monitoring'
+                elif os.path.isfile(os.path.join(filename, 'timestamps')):
+                    job['link'] = 'timeline'
+                else:
+                    job['link'] = 'info'
+                jobs.append(job)
     except:
         # the directory might not exist but that's ok
         pass

@@ -158,8 +158,9 @@ def process(workflow, inputs, args):
 
     if monitoring_queue:
         from dispel4py.new.monitoring import publish_and_subscribe
+        info = (processes, inputmappings, outputmappings)
         publisher, subscription_procs = \
-            publish_and_subscribe(monitoring_queue, monitoring_outputs)
+            publish_and_subscribe(monitoring_queue, monitoring_outputs, info)
 
     for j in jobs:
         j.start()

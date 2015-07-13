@@ -65,8 +65,8 @@ from dispel4py.examples.graph_testing import testing_PEs as t
 from dispel4py.workflow_graph import WorkflowGraph
 
 prod = t.TestProducer()
-cons1 = t.TestOneInOneOut()
-cons2 = t.TestDelayOneInOneOut()
+cons1 = t.TestDelayOneInOneOut()
+cons2 = t.TestOneInOneOut()
 
 ''' important: this is the graph_variable '''
 graph = WorkflowGraph()
