@@ -69,6 +69,7 @@ def parse_args(args, namespace):    # pragma: no cover
                         type=int, help='number of processes to run')
     parser.add_argument('--monitoring', nargs='?', action='append',
                         help='monitor processing and write timestamps to file')
+    parser.add_argument('--name', help='job name')
     result = parser.parse_args(args, namespace)
     return result
 
@@ -124,6 +125,7 @@ def process(workflow, inputs, args):
         if args.monitoring:
             monitoring_queue = multiprocessing.Queue()
             monitoring_outputs = list(args.monitoring)
+            monitoring_job_name = args.name
     except AttributeError:
         pass
 
@@ -158,7 +160,7 @@ def process(workflow, inputs, args):
 
     if monitoring_queue:
         from dispel4py.new.monitoring import publish_and_subscribe
-        info = (processes, inputmappings, outputmappings)
+        info = (monitoring_job_name, processes, inputmappings, outputmappings)
         publisher, subscription_procs = \
             publish_and_subscribe(monitoring_queue, monitoring_outputs, info)
 

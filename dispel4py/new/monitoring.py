@@ -219,6 +219,8 @@ from dispel4py.new.processor import STATUS_TERMINATED
 def publish_and_subscribe(monitoring_queue, monitoring_outputs, info):
     subscriptions = []
     subs_processes = []
+    if info[0] is None:
+        info = (str(uuid.uuid4()),) + info[1:]
     for m in monitoring_outputs:
         subs = multiprocessing.Queue()
         args = [subs, info]
@@ -285,7 +287,7 @@ def write_file(input_queue, info, file_name):
 
 def write_info_file(job, job_dir, info, starttime, endtime=None):
     try:
-        for proc, outputs in info[2].items():
+        for proc, outputs in info[3].items():
             for name, outp in outputs.items():
                 for target in outp:
                     outputs[name] = target[1].destinations
@@ -294,22 +296,21 @@ def write_info_file(job, job_dir, info, starttime, endtime=None):
     with open(job_dir + '/info', 'w') as f:
         job_info = {'name': job,
                     'start_time': starttime,
-                    'processes': info[0],
-                    'inputs': info[1],
-                    'outputs': info[2]}
+                    'processes': info[1],
+                    'inputs': info[2],
+                    'outputs': info[3]}
         if endtime:
             job_info['end_time'] = endtime
         f.write(json.dumps(job_info))
 
 
-def write_timeline(input_queue, info, job=None):
+def write_timeline(input_queue, info):
     '''
     Writes all monitoring information to the given file.
     :job: name of the output file, or None to generate a job ID
     '''
     starttime = format_timestamp(datetime.now())
-    if job is None:
-        job = str(uuid.uuid4())
+    job = info[0]
     try:
         job_dir = os.path.join(ROOT_DIR, job)
         os.makedirs(job_dir)
@@ -431,8 +432,9 @@ def format_timestamp(tst):
     return tst.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
 
-def publish_stack(input_queue, info, job=None):
+def publish_stack(input_queue, info):
     starttime = format_timestamp(datetime.now())
+    job = info[0]
     if job is None:
         job = str(uuid.uuid4())
     job_dir = os.path.join(ROOT_DIR, job)
