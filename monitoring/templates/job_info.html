@@ -11,7 +11,7 @@
       <ul>
         <li><b>Started:</b> {{job.start_time}}
         <li><b>Completed:</b> {{job.end_time}}
-        <li><b>Number of nodes:</b> {{job.processes|length}}
+        <li><b>Number of nodes:</b> {{job.num_processes}}
       </ul>
       {% if job.graph_src %}
       <img src="{{job.graph_src}}" />
