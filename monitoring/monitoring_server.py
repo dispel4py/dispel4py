@@ -69,8 +69,10 @@ def show_job_info(job):
 def list_jobs():
     jobs = []
     try:
+        print(os.listdir(ROOT_DIR))
         for fn in os.listdir(ROOT_DIR):
             filename = os.path.join(ROOT_DIR, fn)
+            print ('%s is dir? %s' % (filename, os.path.isdir(filename)))
             if os.path.isdir(filename):
                 with open(os.path.join(filename, 'info'), 'r') as f:
                     job_status = json.load(f)
@@ -80,6 +82,8 @@ def list_jobs():
                         job['end_time'] = job_status['end_time']
                 jobs.append(job)
     except:
+        import traceback
+        print(traceback.format_exc())
         # the directory might not exist yet but that's ok
         pass
 
