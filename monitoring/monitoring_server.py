@@ -7,7 +7,7 @@ import traceback
 ROOT_DIR = os.path.expanduser('~') + '/.dispel4py/monitoring'
 
 
-@app.route('/monitoring/<job>')
+@app.route('/monitoring/<job>/summary')
 def show_status(job):
     try:
         job_dir = os.path.join(ROOT_DIR, job)
@@ -20,7 +20,7 @@ def show_status(job):
         raise
 
 
-@app.route('/timeline/<job>')
+@app.route('/monitoring/<job>/timeline')
 def serve_timeline(job):
     try:
         info_path = os.path.join(ROOT_DIR, job + '/info')
@@ -47,6 +47,24 @@ def serve_timeline(job):
         raise
 
 
+@app.route('/monitoring/<job>/info')
+def show_job_info(job):
+    job_dir = os.path.join(ROOT_DIR, job)
+    if os.path.isdir(job_dir):
+        with open(os.path.join(job_dir, 'info'), 'r') as f:
+            job_info = json.load(f)
+        processes = []
+        for procs in job_info['processes'].values():
+            processes.extend(procs)
+        print(processes)
+        job_info['num_processes'] = len(processes)
+        if os.path.isfile(os.path.join(job_dir, 'stack')):
+            job_info['has_summary'] = True
+        if os.path.isfile(os.path.join(job_dir, 'timestamps')):
+            job_info['has_timeline'] = True
+        return render_template("job_info.html", job=job_info)
+
+
 @app.route('/monitoring')
 def list_jobs():
     jobs = []
@@ -60,15 +78,9 @@ def list_jobs():
                            'start_time': job_status['start_time']}
                     if 'end_time' in job_status:
                         job['end_time'] = job_status['end_time']
-                if os.path.isfile(os.path.join(filename, 'stack')):
-                    job['link'] = 'monitoring'
-                elif os.path.isfile(os.path.join(filename, 'timestamps')):
-                    job['link'] = 'timeline'
-                else:
-                    job['link'] = 'info'
                 jobs.append(job)
     except:
-        # the directory might not exist but that's ok
+        # the directory might not exist yet but that's ok
         pass
 
     return render_template("index.html", job_list=jobs)

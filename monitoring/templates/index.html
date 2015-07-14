@@ -33,7 +33,7 @@
         <tbody>
           {% for job in job_list %}
           <tr>
-            <td><a href="{{ job.link }}/{{ job.name }}">{{ job.name }}</a></td>
+            <td><a href="monitoring/{{ job.name }}/info">{{ job.name }}</a></td>
             <td>{{job.start_time}}</td>
             {% if job.end_time %}
             <td>{{job.end_time}}</td>
