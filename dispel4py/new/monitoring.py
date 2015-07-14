@@ -214,14 +214,48 @@ class TimestampEventsWrapper(MonitoringWrapper):
 import sys
 import multiprocessing
 from dispel4py.new.processor import STATUS_TERMINATED
+from dispel4py.workflow_graph import drawDot
 
 
-def publish_and_subscribe(monitoring_queue, monitoring_outputs, info):
+def write_info_file(job_dir, info):
+    try:
+        for proc, outputs in info['outputs'].items():
+            for name, outp in outputs.items():
+                for target in outp:
+                    outputs[name] = target[1].destinations
+    except:
+        pass
+    with open(job_dir + '/info', 'w') as f:
+        f.write(json.dumps(info))
+
+
+def write_graph_vis(job_dir, workflow, info):
+    try:
+        with open(os.path.join(job_dir, 'graph.png'), 'w') as f:
+            f.write(drawDot(workflow))
+        info['graph'] = True
+    except:
+        import traceback
+        print(traceback.format_exc())
+        pass
+
+
+def publish_and_subscribe(
+        workflow, info, monitoring_queue, monitoring_outputs):
     subscriptions = []
     subs_processes = []
     if info['name'] is None:
         info['name'] = str(uuid.uuid4())
     info['start_time'] = format_timestamp(datetime.now())
+    try:
+        job_dir = os.path.join(ROOT_DIR, info['name'])
+        os.makedirs(job_dir)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(job_dir):
+            pass
+        else:
+            raise
+    write_graph_vis(job_dir, workflow, info)
     for m in monitoring_outputs:
         subs = multiprocessing.Queue()
         args = [subs, info]
@@ -241,15 +275,7 @@ def publish_and_subscribe(monitoring_queue, monitoring_outputs, info):
 
 
 def publish(queue, subscriptions, info):
-    job = info['name']
-    try:
-        job_dir = os.path.join(ROOT_DIR, job)
-        os.makedirs(job_dir)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST and os.path.isdir(job_dir):
-            pass
-        else:
-            raise
+    job_dir = os.path.join(ROOT_DIR, info['name'])
     write_info_file(job_dir, info)
     try:
         for item in iter(queue.get, STATUS_TERMINATED):
@@ -296,18 +322,6 @@ def write_file(input_queue, info, file_name):
         sys.stderr.write(
             'WARNING: Failed to write monitoring information to %s: %s\n' %
             (file_name, exc))
-
-
-def write_info_file(job_dir, info):
-    try:
-        for proc, outputs in info['outputs'].items():
-            for name, outp in outputs.items():
-                for target in outp:
-                    outputs[name] = target[1].destinations
-    except:
-        pass
-    with open(job_dir + '/info', 'w') as f:
-        f.write(json.dumps(info))
 
 
 def write_timeline(input_queue, info):

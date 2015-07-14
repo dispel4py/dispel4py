@@ -165,7 +165,8 @@ def process(workflow, inputs, args):
                 'inputs': inputmappings,
                 'outputs': outputmappings}
         publisher, subscription_procs = \
-            publish_and_subscribe(monitoring_queue, monitoring_outputs, info)
+            publish_and_subscribe(
+                workflow, info, monitoring_queue, monitoring_outputs)
 
     for j in jobs:
         j.start()

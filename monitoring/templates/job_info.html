@@ -11,11 +11,14 @@
       <ul>
         <li><b>Started:</b> {{job.start_time}}
         <li><b>Completed:</b> {{job.end_time}}
-        <li><b>Number of nodes:</b> {{job.num_processes}}
+        <li><b>Number of processes:</b> {{job.num_processes}}
+        <li><b>PE processes:</b>
+          <ul>
+            {% for pe, processes in job.processes.items() %}
+            <li>{{pe}}: {{processes}}</li>
+            {% endfor %}
+          </ul>
       </ul>
-      {% if job.graph_src %}
-      <img src="{{job.graph_src}}" />
-      {% endif %}
 
       <h3>Monitoring</h3>
       <ul>
@@ -26,6 +29,11 @@
         <li><a href="timeline">Timeline</a></li>
         {% endif %}
       </ul>
+
+      {% if job.graph %}
+      <h3>Workflow</h3>
+      <a href="graph"><img src="graph" style="max-width: 80%;"/></a>
+      {% endif %}
 
       <hr />
       <a href="http://dispel4py.org">dispel4py.org</a>

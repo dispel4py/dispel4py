@@ -1,10 +1,19 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, send_from_directory, abort
 app = Flask(__name__)
 
 import json
 import os
 import traceback
 ROOT_DIR = os.path.expanduser('~') + '/.dispel4py/monitoring'
+
+
+@app.route('/monitoring/<job>/graph')
+def show_graph(job):
+    try:
+        job_dir = os.path.join(ROOT_DIR, job)
+        return send_from_directory(job_dir, 'graph.png', mimetype='image/png')
+    except:
+        abort(404)
 
 
 @app.route('/monitoring/<job>/summary')
