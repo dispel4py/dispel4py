@@ -14,6 +14,7 @@
         $('#job_list').DataTable(
           {
             order: [[ 1, "desc" ]],
+            columnDefs: [ { orderable: false, searchable: false, targets: [3] } ],
             pageLength: 50,
             "language": {
               "emptyTable": "No monitoring data available"
@@ -28,7 +29,7 @@
       <h1>Monitoring</h1>
       <table id="job_list">
         <thead>
-          <tr><th>Job ID</th><th>Start</th><th>Finish</th></tr>
+          <tr><th>Job ID</th><th>Start</th><th>Finish</th><th></th></tr>
         </thead>
         <tbody>
           {% for job in job_list %}
@@ -40,6 +41,11 @@
             {% else %}
             <td></td>
             {% endif %}
+            <td>
+              <form action="monitoring/{{ job.name }}/delete" method="post">
+                <input type="submit" value="Remove Data">
+              </form>
+            </td>
           </tr>
           {% endfor %}
         </tbody>

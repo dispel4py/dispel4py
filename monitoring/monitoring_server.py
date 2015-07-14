@@ -1,4 +1,5 @@
-from flask import Flask, render_template, send_from_directory, abort
+from flask import Flask, \
+    render_template, send_from_directory, abort, redirect, url_for
 app = Flask(__name__)
 
 import json
@@ -71,6 +72,15 @@ def show_job_info(job):
         if os.path.isfile(os.path.join(job_dir, 'timestamps')):
             job_info['has_timeline'] = True
         return render_template("job_info.html", job=job_info)
+
+
+@app.route('/monitoring/<job>/delete', methods=['POST'])
+def delete_stats(job):
+    import shutil
+    print('Deleting %s' % job)
+    job_dir = os.path.join(ROOT_DIR, job)
+    shutil.rmtree(job_dir, True)
+    return redirect(url_for('list_jobs'), code=302)
 
 
 @app.route('/monitoring')
