@@ -473,8 +473,6 @@ def publish_stack(input_queue, info):
 
 # *********** MongoDB *************
 
-from pymongo import MongoClient
-
 
 def store(input_queue, info,
           mongodb_url='mongodb://localhost:27017/',
@@ -483,6 +481,7 @@ def store(input_queue, info,
     '''
     Store monitoring data in MongoDB.
     '''
+    from pymongo import MongoClient
     client = MongoClient(mongodb_url)
     db = client[mongodb_database]
     info_col = db.job_info
