@@ -180,10 +180,10 @@ class TimestampEventsWrapper(MonitoringWrapper):
             obj = self.baseObject._read()
         try:
             data, status = obj
-            t.data['input'] = list(data.keys())
             original = {}
+            t.data['input'] = []
             for input_name, input_data in data.items():
-                t.data['origin'] = input_data['id']
+                t.data['input'].append((input_name, input_data['id']))
                 original[input_name] = input_data['data']
             obj = original, status
         except:
@@ -292,6 +292,7 @@ import json
 import os
 import errno
 import uuid
+import traceback
 
 ROOT_DIR = os.path.expanduser('~') + '/.dispel4py/monitoring'
 
@@ -315,9 +316,9 @@ def write_file(input_queue, info, file_name):
         with open(file_name, 'w') as f:
             for item in iter(input_queue.get, STATUS_TERMINATED):
                 pe_id, rank, event = item
-                info = [pe_id, rank,
-                        event.name, event.data, event.start, event.end]
-                f.write(','.join(str(x) for x in info) + '\n')
+                record = [pe_id, rank,
+                          event.name, event.data, event.start, event.end]
+                f.write(','.join(str(x) for x in record) + '\n')
     except Exception as exc:
         sys.stderr.write(
             'WARNING: Failed to write monitoring information to %s: %s\n' %
@@ -468,3 +469,60 @@ def publish_stack(input_queue, info):
         collection['end_time'] = endtime
         with open(os.path.join(job_dir, 'stack'), 'w') as f:
             f.write(json.dumps(collection))
+
+
+# *********** MongoDB *************
+
+from pymongo import MongoClient
+
+
+def store(input_queue, info,
+          mongodb_url='mongodb://localhost:27017/',
+          mongodb_database='dispel4py_monitor',
+          mongodb_collection='raw'):
+    '''
+    Store monitoring data in MongoDB.
+    '''
+    client = MongoClient(mongodb_url)
+    db = client[mongodb_database]
+    info_col = db.job_info
+    info_record = {
+        'name': info['name'],
+        'processes': info['processes'],
+        'start_time': info['start_time']
+    }
+    info_record['inputs'] = \
+        {str(proc): inputs for proc, inputs in info['inputs'].items()}
+    info_record['outputs'] = {}
+    for proc, outputs in info['outputs'].items():
+        info_record['outputs'][str(proc)] = {}
+        for name, outp in outputs.items():
+            info_record['outputs'][str(proc)][name] = \
+                [target[1].destinations for target in outp]
+    try:
+        info_record['graph'] = info['graph']
+    except:
+        pass
+    info_col.insert_one(info_record)
+    collection = db[mongodb_collection]
+    try:
+        for item in iter(input_queue.get, STATUS_TERMINATED):
+            try:
+                pe_id, rank, event = item
+                record = {'job': info['name'],
+                          'pe': pe_id,
+                          'process': rank,
+                          'name': event.name,
+                          'data': event.data,
+                          'time': event.end - event.start,
+                          'start': event.start,
+                          'end': event.end}
+                collection.insert_one(record)
+            except:
+                print(traceback.format_exc())
+    finally:
+        endtime = format_timestamp(datetime.now())
+        info_col.find_one_and_update(
+            {'_id': info_record['_id']},
+            {'$set': {'end_time': endtime}}
+        )

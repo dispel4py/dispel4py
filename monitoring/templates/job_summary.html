@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <title>dispel4py monitoring: {{job.name}}</title>
+  </head>
+  <body>
+      <h2>{{ job.info.name }}</h2>
+      <ul>
+        <li><b>Started:</b> {{job.info.start_time}}
+        <li><b>Completed:</b> {{job.info.end_time}}
+        <li><b>Number of nodes:</b> {{job.info.num_processes}}
+        <li><b>Total PE processing time:</b> {{job.total.time|round(4)}} s</li>
+        <li><b>Total data size:</b> {{job.total.size}} bytes</li>
+      </ul>
+
+      <table>
+        <thead>
+          <tr>
+            <th>PE</th>
+            <th>Processes</th>
+            <th>Total time</th>
+            <th>Iterations</th>
+            <th>Failed</th>
+            <th>Last error</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pe, info in job.summary.items() %}
+            <tr>
+              <td><a href="#{{pe}}">{{pe}}</a></td>
+              <td>
+                {%- for proc in job.info.processes[pe] %}
+                  {{proc}}{% if not loop.last %},{% endif %}
+                {%- endfor %}
+              </td>
+              <td style="text-align: right;">{{info.time|round(4)}} s</td>
+              <td style="text-align: right;">{{info.count|round|int}}</td>
+              <td style="text-align: right;">{{info.error_count|round|int}}</td>
+              {% if info.last_error %}
+              <td>{{info.last_error}}</td>
+              {% else %}
+              <td></td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% for pe, pe_info in job.detail.items() %}
+        <h3 id={{pe}}> {{ pe }} </h3>
+        {% for rank, info in pe_info.items() %}
+        <h4>Process {{ rank }}</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Calls</th>
+              <th>Total time</th>
+              <th>Average time</th>
+              <th>Failed</th>
+              <th>Failed %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for method, method_info in info.items() %}
+            {% if (method != 'write') %}
+            <tr>
+              <td>{{method}}</td>
+              <td style="text-align: right;">{{method_info.count}}</td>
+              <td style="text-align: right;">{{method_info.time|round(3)}}</td>
+              <td style="text-align: right;">{{method_info.avg|round(3)}}</td>
+              {% if method_info.error_count %}
+                <td style="text-align: right;">
+                  {{info.process.error_count|int}}
+                </td>
+                <td style="text-align: right;">
+                  {{(100*info.process.error_count/info.process.count)|round(1)}}%
+                </td>
+                {% else %}
+                  <td style="text-align: right;">0</td>
+                  <td style="text-align: right;">0%</td>
+              {% endif %}
+              {% if info.process.last_error %}
+              <li>{{info.process.last_error}}</li>
+              {% endif %}
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+
+        {% if info.write %}
+        <ul><li><b>Data output:</b></ul>
+        <table>
+          <thead>
+            <tr>
+              <th>Output stream</th>
+              <th>Item count</th>
+              <th>Total time</th>
+              <th>Average time</th>
+              <th>Total size</th>
+              <th>Average size</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for output_name, output_info in info.write.items() %}
+            <tr>
+              <td>{{output_name}}</td>
+              <td>{{output_info.count}}</td>
+              <td>{{output_info.time|round(3)}}</td>
+              <td>{{output_info.avg|round(3)}}</td>
+              <td>{{output_info.size}}</td>
+              <td>{{output_info.avg_size|round(3)}}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+        {% endfor %}
+      {% endfor %}
+
+      <hr />
+      <a href="http://dispel4py.org">dispel4py.org</a>
+  </body>
+</html>

@@ -34,7 +34,7 @@
         <tbody>
           {% for job in job_list %}
           <tr>
-            <td><a href="monitoring/{{ job.name }}/info">{{ job.name }}</a></td>
+            <td><a href="{{link}}/{{ job.name }}/info">{{ job.name }}</a></td>
             <td>{{job.start_time}}</td>
             {% if job.end_time %}
             <td>{{job.end_time}}</td>
@@ -42,7 +42,7 @@
             <td></td>
             {% endif %}
             <td>
-              <form action="monitoring/{{ job.name }}/delete" method="post">
+              <form action="{{link}}/{{ job.name }}/delete" method="post">
                 <input type="submit" value="Remove Data">
               </form>
             </td>
