@@ -1,4 +1,4 @@
-from flask import Flask, \
+from flask import Flask, request, \
     render_template, send_from_directory, abort, redirect, url_for
 app = Flask(__name__)
 
@@ -315,6 +315,24 @@ def get_communication_time(job, limit=100):
         results.append(record)
 
     return json.dumps(results)
+
+
+@app.route('/db/<job>/method/<pe>/<process>/<method>')
+def get_times(job, pe, process, method):
+    limit = request.args.get('limit', '100')
+    agg = [
+        {"$match": {"job": job,
+                    "pe": pe,
+                    "process": int(process),
+                    "name": method}},
+        {"$sort": SON([("_id", 1)])},
+        {"$limit": int(limit)},
+        {"$project": {"time": 1, "_id": 0}}]
+    collection = client[MONGODB_DB]['raw']
+    times = []
+    for record in collection.aggregate(agg):
+        times.append(record['time'])
+    return json.dumps(times)
 
 
 if __name__ == "__main__":
