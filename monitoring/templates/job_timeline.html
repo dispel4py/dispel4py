@@ -45,7 +45,7 @@
     var groups = new vis.DataSet();
     for (pe in processes) {
       for (proc in processes[pe]) {
-        groups.add({id: processes[pe][proc], content: pe});
+        groups.add({id: processes[pe][proc], content: pe + ' (' + proc + ')'});
       }
     }
     return groups;

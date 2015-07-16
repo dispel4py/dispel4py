@@ -123,7 +123,7 @@ from collections import defaultdict
 
 @app.route('/db')
 def list_jobs_db():
-    collection = client[MONGODB_DB]['job_info']
+    collection = client[MONGODB_DB].job_info
     jobs = list(collection.find())
     return render_template("index.html", job_list=jobs, link='db')
 
@@ -153,6 +153,21 @@ def show_graph_db(job):
         return send_from_directory(job_dir, 'graph.png', mimetype='image/png')
     except:
         abort(404)
+
+
+@app.route('/db/<job>/delete', methods=['POST'])
+def delete_job(job):
+    import shutil
+    print('Deleting %s' % job)
+    job_dir = os.path.join(ROOT_DIR, job)
+    shutil.rmtree(job_dir, True)
+    info_col = client[MONGODB_DB]['job_info']
+    result = info_col.delete_many({'name': job})
+    print('Deleted %s info documents' % result.deleted_count)
+    raw_col = client[MONGODB_DB]['raw']
+    result = raw_col.delete_many({'job': job})
+    print('Deleted %s raw documents' % result.deleted_count)
+    return redirect(url_for('list_jobs_db'), code=302)
 
 
 from bson.son import SON
@@ -236,6 +251,33 @@ def show_status_db(job):
     # print(info['detail'])
     return render_template('job_summary.html', job=info)
     # return json.dumps(info)
+
+
+@app.route('/db/<job>/timeline')
+def get_timeline(job):
+    try:
+        job_info = lookup_job(job)
+        del job_info['_id']
+        agg = [
+            {"$match": {"job": job}},
+            {"$project": {"name": 1, "start": 1, "end": 1, "process": 1}},
+            {"$sort": SON([("_id", -1)])},
+            {"$limit": 1000}
+        ]
+        collection = client[MONGODB_DB]['raw']
+        timestamps = []
+        for record in collection.aggregate(agg):
+            timestamps.append(
+                {'content': record['name'],
+                 'start': record['start'],
+                 'end': record['end'],
+                 'group': record['process']})
+        return render_template(
+            "job_timeline.html",
+            info=json.dumps(job_info),
+            timeline=json.dumps(timestamps))
+    except Exception:
+        print(traceback.format_exc())
 
 
 if __name__ == "__main__":

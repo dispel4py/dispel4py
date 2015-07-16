@@ -477,6 +477,7 @@ def publish_stack(input_queue, info):
 def store(input_queue, info,
           mongodb_url='mongodb://localhost:27017/',
           mongodb_database='dispel4py_monitor',
+          mongodb_info='job_info',
           mongodb_collection='raw'):
     '''
     Store monitoring data in MongoDB.
@@ -484,7 +485,9 @@ def store(input_queue, info,
     from pymongo import MongoClient
     client = MongoClient(mongodb_url)
     db = client[mongodb_database]
-    info_col = db.job_info
+    info_col = db[mongodb_info]
+    if mongodb_info not in db.collection_names():
+        info_col.create_index('name', background=True)
     info_record = {
         'name': info['name'],
         'processes': info['processes'],
@@ -504,6 +507,8 @@ def store(input_queue, info,
         pass
     info_col.insert_one(info_record)
     collection = db[mongodb_collection]
+    if mongodb_collection not in db.collection_names():
+        collection.create_index('job', background=True)
     try:
         for item in iter(input_queue.get, STATUS_TERMINATED):
             try:
