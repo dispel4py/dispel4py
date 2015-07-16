@@ -107,12 +107,12 @@ class TimestampEventsPE(MonitoringWrapper):
         MonitoringWrapper.__init__(self, baseObject)
         self._monitoring_events = []
 
-    def write(self, name, data):
-        with EventTimestamp('write') as t:
-            t.data['output'] = name
-            t.data['size'] = total_size(data)
-            self._monitoring_events.append(t)
-            return self.baseObject.write(name, data)
+    # def write(self, name, data):
+    #     with EventTimestamp('write') as t:
+    #         t.data['output'] = name
+    #         t.data['size'] = total_size(data)
+    #         self._monitoring_events.append(t)
+    #         return self.baseObject.write(name, data)
 
     def preprocess(self):
         with EventTimestamp('preprocess') as t:
@@ -165,13 +165,16 @@ class TimestampEventsWrapper(MonitoringWrapper):
             t.data['size'] = total_size(data)
             self.events.append(t)
             self.data_count[name] += 1
-            data_id = (self.baseObject.pe.id, name, self.data_count[name])
+            data_id = (self.baseObject.pe.id,
+                       self.baseObject.pe.rank,
+                       name,
+                       self.data_count[name])
             t.data['id'] = data_id
             annotated = {'data': data, 'id': data_id}
             self.baseObject._write(name, annotated)
             # self.baseObject._write(name, data)
-        # print('>>> %s WRITE: %.6f s' % (self.baseObject.pe.id,
-        #                                  (t.end - t.start)))
+        # print('>>> %s WRITE: %.6f s to %.6f s' %
+        #       (self.baseObject.pe.id, t.start, t.end))
         self.write_events()
 
     def _read(self):
@@ -192,8 +195,8 @@ class TimestampEventsWrapper(MonitoringWrapper):
             # if the data is not a dictionary (could be None)
             pass
         self.write_events()
-        # print('>>> %s READ: %.6f s' % (self.baseObject.pe.id,
-        #                                 (t.end - t.start)))
+        # print('>>> %s READ: %.6f s to %.6f s' %
+        #       (self.baseObject.pe.id, t.start, t.end))
         return obj
 
     def _terminate(self):

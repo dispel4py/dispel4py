@@ -280,5 +280,42 @@ def get_timeline(job):
         print(traceback.format_exc())
 
 
+@app.route('/db/<job>/communication_time/<limit>')
+def get_communication_time(job, limit=100):
+    limit = int(limit)
+    comm_agg = [
+        {'$match': {'data.input': {'$exists': 'true'}, 'job': job}},
+        {"$sort": SON([("_id", -1)])},
+        {"$limit": limit},
+        {'$unwind': '$data.input'}
+    ]
+    collection = client[MONGODB_DB]['raw']
+    results = []
+    for reader in collection.aggregate(comm_agg):
+        data_id = reader['data']['input'][1]
+        writer = collection.find_one(
+            {'job': job, 'data.id': data_id})
+        communication_time = reader['end'] - writer['start']
+        record = {
+            'time': communication_time,
+            'start': writer['start'],
+            'end': reader['end'],
+            'writer': {
+                'pe': data_id[0],
+                'process': data_id[1],
+                'output': data_id[2],
+                'data': data_id[3]},
+            'reader': {
+                'pe': reader['pe'],
+                'process': reader['process'],
+                'input': reader['data']['input'][0]
+            }
+        }
+        print(record)
+        results.append(record)
+
+    return json.dumps(results)
+
+
 if __name__ == "__main__":
     app.run(debug=True)
