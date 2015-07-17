@@ -1,4 +1,4 @@
-from flask import Flask, request, \
+from flask import Flask, request, jsonify, \
     render_template, send_from_directory, abort, redirect, url_for
 app = Flask(__name__)
 
@@ -6,6 +6,17 @@ import json
 import os
 import traceback
 ROOT_DIR = os.path.expanduser('~') + '/.dispel4py/monitoring'
+
+
+def request_wants_json():
+    '''
+    http://flask.pocoo.org/snippets/45/
+    '''
+    best = request.accept_mimetypes \
+        .best_match(['application/json', 'text/html'])
+    return best == 'application/json' and \
+        request.accept_mimetypes[best] > \
+        request.accept_mimetypes['text/html']
 
 
 @app.route('/monitoring/<job>/graph')
@@ -124,13 +135,17 @@ from collections import defaultdict
 @app.route('/db')
 def list_jobs_db():
     collection = client[MONGODB_DB].job_info
-    jobs = list(collection.find())
+    jobs = list(
+        collection.find({},
+                        {'name': 1, 'start_time': 1, 'end_time': 1, '_id': 0}))
+    if request_wants_json():
+        return jsonify({job['name']: job for job in jobs})
     return render_template("index.html", job_list=jobs, link='db')
 
 
 def lookup_job(job):
     collection = client[MONGODB_DB]['job_info']
-    job_info = collection.find_one({'name': job})
+    job_info = collection.find_one({'name': job}, {'_id': 0})
     processes = []
     for procs in job_info['processes'].values():
         processes.extend(procs)
@@ -143,6 +158,8 @@ def get_job_info(job):
     job_info = lookup_job(job)
     job_info['has_summary'] = True
     job_info['has_timeline'] = True
+    if request_wants_json():
+        return jsonify(job_info)
     return render_template("job_info.html", job=job_info)
 
 
@@ -257,7 +274,6 @@ def show_status_db(job):
 def get_timeline(job):
     try:
         job_info = lookup_job(job)
-        del job_info['_id']
         agg = [
             {"$match": {"job": job}},
             {"$project": {"name": 1, "start": 1, "end": 1, "process": 1}},
