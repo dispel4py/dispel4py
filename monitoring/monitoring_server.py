@@ -187,6 +187,13 @@ def delete_job(job):
     return redirect(url_for('list_jobs_db'), code=302)
 
 
+@app.route('/db/<job>/charts')
+def get_job_charts(job):
+    job_info = lookup_job(job)
+    return render_template("job_charts.html",
+                           name=job, job=json.dumps(job_info))
+
+
 from bson.son import SON
 
 

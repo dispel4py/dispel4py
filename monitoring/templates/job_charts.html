@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Monitoring</title>
+  <link href="/static/flot/flot.css" rel="stylesheet" type="text/css">
+	<script language="javascript" type="text/javascript" src="/static/jquery/jquery-2.1.4.min.js"></script>
+	<script language="javascript" type="text/javascript" src="/static/flot/jquery.flot.min.js"></script>
+	<script type="text/javascript">
+
+  function populate_pes(job_info)
+  {
+    var options = '';
+    $.each(job_info.processes, function( key, val ) {
+      options += '<option>' + key + '</option>'
+    });
+    $('#pe_list').empty().append(options);
+    $('#pe_list').trigger('change');
+  }
+
+  function populate_processes(job_info, pe_name)
+  {
+    var options = '';
+    $.each(job_info.processes[pe_name], function( key, val ) {
+      options += '<option>' + val + '</option>'
+    });
+    $('#pe_processes').empty().append(options);
+  }
+
+  function loadData(job, pe, process, method, limit)
+  {
+    // var url = "/db/6c15009c-f303-43fc-b175-ab42bde4ba43/method/TestOneInOneOut1/4/process?limit=100"
+    if (limit === undefined)
+    {
+      limit = 100;
+    }
+    var url = "/db/" + job.name + "/method/" + pe + "/" + process + "/"+ method + "?limit=" + limit
+    $.getJSON(url, function( data ) {
+      var dataset = [];
+      $.each( data, function( key, val ) {
+        dataset.push([key, val]);
+      });
+      $.plot("#time_chart", [
+        {
+          data: dataset,
+          bars: { show: true }
+        }
+      ]);
+    });
+  }
+
+  $(function() {
+    $("#pe_list").on("change", function(e) {
+      var selected = $(this).val();
+      populate_processes({{job|safe}}, selected);
+      loadData({{job|safe}}, selected, $('#pe_processes').val(), $('#pe_methods').val())
+    });
+    $("#pe_processes").on("change", function(e) {
+      var selected = $(this).val();
+      loadData({{job|safe}}, $('#pe_list').val(), selected, $('#pe_methods').val())
+    });
+    $("#pe_methods").on("change", function(e) {
+      var selected = $(this).val();
+      loadData({{job|safe}}, $('#pe_list').val(), $('#pe_processes').val(), selected)
+    });
+    populate_pes({{job|safe}});
+	});
+
+	</script>
+</head>
+<body>
+
+	<div id="header">
+		<h2>{{name}}</h2>
+	</div>
+
+
+	<div id="content">
+
+    <p>
+      <label for="pe_list">Processing Element:</label>
+      <select id='pe_list'>
+      </select>
+      <label for="pe_processes">Process</label>
+      <select id='pe_processes'>
+      </select>
+      <label for="pe_methods">Method:</label>
+      <select id='pe_methods'>
+        <option>process</option>
+        <option>read</option>
+        <option>write</option>
+      </select>
+    </p>
+
+		<div class="demo-container">
+			<div id="time_chart" class="demo-placeholder"></div>
+		</div>
+
+	</div>
+
+	<div id="footer">
+	</div>
+
+</body>
+</html>
