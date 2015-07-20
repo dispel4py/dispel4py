@@ -136,8 +136,13 @@ from collections import defaultdict
 def list_jobs_db():
     collection = client[MONGODB_DB].job_info
     jobs = list(
-        collection.find({},
-                        {'name': 1, 'start_time': 1, 'end_time': 1, '_id': 0}))
+        collection.find(
+            {},
+            {'name': 1,
+             'mapping': 1,
+             'start_time': 1,
+             'end_time': 1,
+             '_id': 0}))
     if request_wants_json():
         return jsonify({job['name']: job for job in jobs})
     return render_template("index.html", job_list=jobs, link='db')

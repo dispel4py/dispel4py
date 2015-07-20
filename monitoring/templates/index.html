@@ -29,12 +29,13 @@
       <h1>Monitoring</h1>
       <table id="job_list">
         <thead>
-          <tr><th>Job ID</th><th>Start</th><th>Finish</th><th></th></tr>
+          <tr><th>Job ID</th><th>Mapping</th><th>Start</th><th>Finish</th><th></th></tr>
         </thead>
         <tbody>
           {% for job in job_list %}
           <tr>
             <td><a href="{{link}}/{{ job.name }}/info">{{ job.name }}</a></td>
+            <td>{{job.mapping}}</td>
             <td>{{job.start_time}}</td>
             {% if job.end_time %}
             <td>{{job.end_time}}</td>
