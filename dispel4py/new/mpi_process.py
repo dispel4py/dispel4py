@@ -68,6 +68,9 @@ def parse_args(args, namespace):
         description='Submit a dispel4py graph to MPI processes.')
     parser.add_argument('-s', '--simple', help='force simple processing',
                         action='store_true')
+    parser.add_argument('--monitoring', nargs='?', action='append',
+                        help='monitor processing and write timestamps to file')
+    parser.add_argument('--name', help='job name')
     result = parser.parse_args(args, namespace)
     return result
 
@@ -113,6 +116,20 @@ def process(workflow, inputs, args):
     if not success:
         return
 
+    monitoring_rank = None
+    monitoring_outputs = None
+    monitoring_job_name = None
+    try:
+        if rank == 0 and args.monitoring:
+            all_processes = []
+            for pe, procs in processes.items():
+                all_processes.extend(procs)
+            monitoring_rank = len(all_processes)
+            monitoring_outputs = list(args.monitoring)
+            monitoring_job_name = args.name
+    except AttributeError:
+        pass
+
     try:
         inputs = {pe.id: v for pe, v in inputs.items()}
     except AttributeError:
@@ -122,17 +139,114 @@ def process(workflow, inputs, args):
     outputmappings = comm.bcast(outputmappings, root=0)
     inputs = comm.bcast(inputs, root=0)
 
+    monitoring_rank = comm.bcast(monitoring_rank, root=0)
+    monitoring_outputs = comm.bcast(monitoring_outputs, root=0)
+    monitoring_job_name = comm.bcast(monitoring_job_name, root=0)
+
     if rank == 0:
         print('Processes: %s' % processes)
         # print 'Inputs: %s' % inputs
 
+    if monitoring_rank >= size:
+        if rank == 0:
+            print('dispel4py monitoring: Not enough processes. \
+Please allow one additional process for the collection of monitoring data.')
+        return
+    if rank == monitoring_rank:
+        collect_monitoring_info(workflow,
+                                monitoring_job_name, monitoring_outputs,
+                                processes, inputmappings, outputmappings)
+
     for pe in nodes:
         if rank in processes[pe.id]:
-            provided_inputs = processor.get_inputs(pe, inputs)
-            wrapper = MPIWrapper(pe, provided_inputs)
-            wrapper.targets = outputmappings[rank]
-            wrapper.sources = inputmappings[rank]
-            wrapper.process()
+            try:
+                provided_inputs = processor.get_inputs(pe, inputs)
+                wrapper = MPIWrapper(pe, provided_inputs)
+                wrapper.targets = outputmappings[rank]
+                wrapper.sources = inputmappings[rank]
+                if monitoring_rank:
+                    wrapper = add_monitoring_wrapper(wrapper, monitoring_rank)
+                wrapper.process()
+            finally:
+                if monitoring_rank:
+                    comm.isend(
+                        None,
+                        tag=STATUS_TERMINATED,
+                        dest=monitoring_rank)
+
+
+def collect_monitoring_info(workflow, monitoring_job_name, monitoring_outputs,
+                            processes, inputmappings, outputmappings):
+        from dispel4py.new.monitoring import publish_and_subscribe
+        import multiprocessing
+
+        info = {'name': monitoring_job_name,
+                'processes': processes,
+                'inputs': inputmappings,
+                'outputs': outputmappings,
+                'mapping': 'mpi'}
+        monitoring_queue = multiprocessing.Queue()
+        publisher, subscription_procs = \
+            publish_and_subscribe(
+                workflow, info, monitoring_queue, monitoring_outputs)
+        num_terminated = 0
+        while num_terminated < rank:
+            status = MPI.Status()
+            msg = comm.recv(source=MPI.ANY_SOURCE,
+                            tag=MPI.ANY_TAG,
+                            status=status)
+            tag = status.Get_tag()
+            if tag == STATUS_TERMINATED:
+                num_terminated += 1
+            else:
+                monitoring_queue.put(msg)
+        monitoring_queue.put(STATUS_TERMINATED)
+
+
+def write_events(wrapper):
+    while wrapper.events:
+        event = wrapper.events.pop(0)
+        try:
+            request = comm.isend(
+                (wrapper.baseObject.pe.id,
+                 wrapper.baseObject.pe.rank,
+                 event),
+                dest=wrapper.monitoring_rank)
+            status = MPI.Status()
+            request.Wait(status)
+        except:
+            wrapper.baseObject.pe.log(
+                'Failed to send monitoring info to rank %s: %s'
+                % (wrapper.monitoring_rank, traceback.format_exc()))
+    while wrapper.baseObject.pe._monitoring_events:
+        event = wrapper.baseObject.pe._monitoring_events.pop(0)
+        try:
+            request = comm.isend(
+                (wrapper.baseObject.pe.id,
+                 wrapper.baseObject.pe.rank,
+                 event),
+                dest=wrapper.monitoring_rank)
+            status = MPI.Status()
+            request.Wait(status)
+        except:
+            wrapper.baseObject.pe.log(
+                'Failed to send monitoring info to rank %s: %s'
+                % (wrapper.monitoring_rank, traceback.format_exc()))
+
+
+from dispel4py.new.monitoring import TimestampEventsWrapper
+
+
+def add_monitoring_wrapper(wrapper, monitoring_rank,
+                           WrapperMonitor=TimestampEventsWrapper):
+    wrapper.monitoring_rank = monitoring_rank
+    wrapper.write_events = types.MethodType(write_events, wrapper)
+    monitor = WrapperMonitor(wrapper)
+    # now point the PE output writers to the new monitoring wrapper
+    # otherwise any output written with self.write() is not captured
+    for output in wrapper.pe.outputconnections.values():
+        output['writer'].wrapper = monitor
+    return monitor
 
 
 class MPIWrapper(GenericWrapper):
