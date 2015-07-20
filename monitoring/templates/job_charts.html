@@ -1,12 +1,12 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<title>Monitoring</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Monitoring</title>
   <link href="/static/flot/flot.css" rel="stylesheet" type="text/css">
-	<script language="javascript" type="text/javascript" src="/static/jquery/jquery-2.1.4.min.js"></script>
-	<script language="javascript" type="text/javascript" src="/static/flot/jquery.flot.min.js"></script>
-	<script type="text/javascript">
+  <script language="javascript" type="text/javascript" src="/static/jquery/jquery-2.1.4.min.js"></script>
+  <script language="javascript" type="text/javascript" src="/static/flot/jquery.flot.min.js"></script>
+  <script type="text/javascript">
 
   function populate_pes(job_info)
   {
@@ -29,77 +29,109 @@
 
   function loadData(job, pe, process, method, limit)
   {
-    // var url = "/db/6c15009c-f303-43fc-b175-ab42bde4ba43/method/TestOneInOneOut1/4/process?limit=100"
-    if (limit === undefined)
+    if (limit === undefined || isNaN(limit))
     {
       limit = 100;
     }
     var url = "/db/" + job.name + "/method/" + pe + "/" + process + "/"+ method + "?limit=" + limit
     $.getJSON(url, function( data ) {
       var dataset = [];
+      var offset = -1;
       $.each( data, function( key, val ) {
-        dataset.push([key, val]);
+        starttime = parseFloat(val[1])
+        if (offset == -1)
+          offset = starttime
+        dataset.push([starttime-offset, val[0]]);
       });
       $.plot("#time_chart", [
         {
           data: dataset,
-          bars: { show: true }
+          bars: { show: true, barWidth: .000001 }
+          // points: {show: true}
         }
       ]);
     });
   }
 
+  function refresh() {
+    var limit = parseInt($('#limit').val());
+    loadData({{job|safe}}, $('#pe_list').val(), $('#pe_processes').val(), $('#pe_methods').val(), limit)
+  }
+
+  $(document).ready(function(){
+    $('#refresh').click(function(){
+      refresh();
+    });
+  });
+
   $(function() {
     $("#pe_list").on("change", function(e) {
       var selected = $(this).val();
+      var limit = parseInt($('#limit').val());
       populate_processes({{job|safe}}, selected);
-      loadData({{job|safe}}, selected, $('#pe_processes').val(), $('#pe_methods').val())
+      loadData({{job|safe}}, selected, $('#pe_processes').val(), $('#pe_methods').val(), limit)
     });
     $("#pe_processes").on("change", function(e) {
       var selected = $(this).val();
-      loadData({{job|safe}}, $('#pe_list').val(), selected, $('#pe_methods').val())
+      var limit = parseInt($('#limit').val());
+      loadData({{job|safe}}, $('#pe_list').val(), selected, $('#pe_methods').val(), limit)
     });
     $("#pe_methods").on("change", function(e) {
       var selected = $(this).val();
-      loadData({{job|safe}}, $('#pe_list').val(), $('#pe_processes').val(), selected)
+      var limit = parseInt($('#limit').val());
+      loadData({{job|safe}}, $('#pe_list').val(), $('#pe_processes').val(), selected, limit)
+    });
+    $("#limit").on("click", function(e) {
+      refresh();
     });
     populate_pes({{job|safe}});
-	});
+  });
 
-	</script>
+  </script>
 </head>
 <body>
 
-	<div id="header">
-		<h2>{{name}}</h2>
-	</div>
+  <div id="header">
+    <h2>{{name}}</h2>
+  </div>
 
 
-	<div id="content">
+  <div id="content">
 
-    <p>
-      <label for="pe_list">Processing Element:</label>
-      <select id='pe_list'>
-      </select>
-      <label for="pe_processes">Process</label>
-      <select id='pe_processes'>
-      </select>
-      <label for="pe_methods">Method:</label>
-      <select id='pe_methods'>
-        <option>process</option>
-        <option>read</option>
-        <option>write</option>
-      </select>
-    </p>
+    <table>
+      <tr>
+        <td>Processing Element:</td>
+        <td><select id='pe_list'></select></td>
+      </tr>
+      <tr>
+        <td>Process:</td>
+        <td><select id='pe_processes'></select></td>
+      </tr>
+      <tr>
+        <td>Method:</td>
+        <td>
+          <select id="pe_methods">
+            <option>process</option>
+            <option>read</option>
+            <option>write</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td>Number of calls:</td>
+        <td><input style="text-align: right;" id="limit" type="number" value="100"></input></td>
+      </tr>
+      </table>
+      <input id="refresh" type="button" value="Refresh"></input>
 
-		<div class="demo-container">
-			<div id="time_chart" class="demo-placeholder"></div>
-		</div>
+    <div class="demo-container">
+      <div id="time_chart" class="demo-placeholder"></div>
+    </div>
 
-	</div>
+  </div>
 
-	<div id="footer">
-	</div>
+  <div id="footer">
+  </div>
 
 </body>
 </html>

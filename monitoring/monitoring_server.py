@@ -350,11 +350,11 @@ def get_times(job, pe, process, method):
                     "name": method}},
         {"$sort": SON([("_id", 1)])},
         {"$limit": int(limit)},
-        {"$project": {"time": 1, "_id": 0}}]
+        {"$project": {"time": 1, "start": 1, "_id": 0}}]
     collection = client[MONGODB_DB]['raw']
     times = []
     for record in collection.aggregate(agg):
-        times.append(record['time'])
+        times.append((record['time'], record['start']))
     return json.dumps(times)
 
 
