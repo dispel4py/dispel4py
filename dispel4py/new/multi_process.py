@@ -163,7 +163,8 @@ def process(workflow, inputs, args):
         info = {'name': monitoring_job_name,
                 'processes': processes,
                 'inputs': inputmappings,
-                'outputs': outputmappings}
+                'outputs': outputmappings,
+                'mapping': 'multi'}
         publisher, subscription_procs = \
             publish_and_subscribe(
                 workflow, info, monitoring_queue, monitoring_outputs)

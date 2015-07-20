@@ -493,6 +493,7 @@ def store(input_queue, info,
         info_col.create_index('name', background=True)
     info_record = {
         'name': info['name'],
+        'mapping': info['mapping'],
         'processes': info['processes'],
         'start_time': info['start_time']
     }
