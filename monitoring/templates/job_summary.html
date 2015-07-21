@@ -9,6 +9,11 @@
       <ul>
         <li><b>Started:</b> {{job.info.start_time}}
         <li><b>Completed:</b> {{job.info.end_time}}
+          {% if job.info.end_time %}
+          <li><b>Total runtime:</b> {{job.info.runtime}}</li>
+          {% else %}
+          <li><b>Current runtime:</b> {{job.info.runtime}}</li>
+          {% endif %}
         <li><b>Number of nodes:</b> {{job.info.num_processes}}
         <li><b>Total PE processing time:</b> {{job.total.time|round(4)}} s</li>
         <li><b>Total data size:</b> {{job.total.size}} bytes</li>

@@ -163,6 +163,7 @@ def get_job_info(job):
     job_info = lookup_job(job)
     job_info['has_summary'] = True
     job_info['has_timeline'] = True
+    job_info['runtime'] = get_runtime(job_info)
     if request_wants_json():
         return jsonify(job_info)
     return render_template("job_info.html", job=job_info)
@@ -200,6 +201,20 @@ def get_job_charts(job):
 
 
 from bson.son import SON
+from datetime import datetime
+
+
+def get_runtime(info):
+    try:
+        end = datetime.strptime(info['end_time'], "%Y-%m-%dT%H:%M:%S.%f")
+    except:
+        end = datetime.now()
+    start = datetime.strptime(info['start_time'], "%Y-%m-%dT%H:%M:%S.%f")
+    runtime = (end - start).total_seconds()
+    hours = round(runtime / 3600)
+    minutes = round((runtime - hours * 3600) / 60)
+    seconds = runtime - minutes * 60 - hours * 3600
+    return '%d:%02d:%02.3f' % (hours, minutes, seconds)
 
 
 @app.route('/db/<job>/summary')
@@ -277,7 +292,7 @@ def show_status_db(job):
                      'error_count': total_errors}
 
     info['info'] = lookup_job(job)
-    # print(info['detail'])
+    info['info']['runtime'] = get_runtime(info['info'])
     return render_template('job_summary.html', job=info)
     # return json.dumps(info)
 

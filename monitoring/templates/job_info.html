@@ -11,6 +11,11 @@
       <ul>
         <li><b>Started:</b> {{job.start_time}}
         <li><b>Completed:</b> {{job.end_time}}
+        {% if job.end_time %}
+        <li><b>Total runtime:</b> {{job.runtime}}</li>
+        {% else %}
+        <li><b>Current runtime:</b> {{job.runtime}}</li>
+        {% endif %}
         <li><b>Mapping:</b> {{job.mapping}}
         <li><b>Number of processes:</b> {{job.num_processes}}
         <li><b>PE processes:</b>
@@ -19,6 +24,7 @@
             <li>{{pe}}: {{processes}}</li>
             {% endfor %}
           </ul>
+        </li>
       </ul>
 
       <h3>Monitoring</h3>
