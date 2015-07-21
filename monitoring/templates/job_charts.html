@@ -21,41 +21,64 @@
   function populate_processes(job_info, pe_name)
   {
     var options = '';
+    var numprocs = 0;
     $.each(job_info.processes[pe_name], function( key, val ) {
+      numprocs++;
       options += '<option>' + val + '</option>'
     });
+    if (numprocs > 1) options = '<option>All</option>' + options;
     $('#pe_processes').empty().append(options);
   }
 
-  function loadData(job, pe, process, method, limit)
+  function loadData(job, pe, processes, method, limit)
   {
     if (limit === undefined || isNaN(limit))
     {
       limit = 100;
     }
-    var url = "/db/" + job.name + "/method/" + pe + "/" + process + "/"+ method + "?limit=" + limit
-    $.getJSON(url, function( data ) {
-      var dataset = [];
-      var offset = -1;
-      $.each( data, function( key, val ) {
-        starttime = parseFloat(val[1])
-        if (offset == -1)
-          offset = starttime
-        dataset.push([starttime-offset, val[0]]);
+    all_data = [];
+    $.each(processes, function( index, proc ) {
+      var url = "/db/" + job.name + "/method/" + pe + "/" + proc + "/"+ method + "?limit=" + limit
+      $.getJSON(url, function( data ) {
+        var dataset = [];
+        var offset = -1;
+        $.each( data, function( key, val ) {
+          starttime = parseFloat(val[1])
+          if (offset == -1)
+            offset = starttime
+          dataset.push([starttime-offset, val[0]]);
+        });
+        all_data.push({
+            data: dataset,
+            bars: { show: true, barWidth: .000001 }
+            // points: {show: true}
+        });
+        plot = $.plot("#time_chart", all_data);
+        // var series = plot.getData();
+        // series[i].color
       });
-      $.plot("#time_chart", [
-        {
-          data: dataset,
-          bars: { show: true, barWidth: .000001 }
-          // points: {show: true}
-        }
-      ]);
     });
   }
 
   function refresh() {
     var limit = parseInt($('#limit').val());
-    loadData({{job|safe}}, $('#pe_list').val(), $('#pe_processes').val(), $('#pe_methods').val(), limit)
+    loadData({{job|safe}}, $('#pe_list').val(), select_processes(), $('#pe_methods').val(), limit)
+  }
+
+  function select_processes() {
+    var selected = $('#pe_processes').val()
+    var show_procs = []
+    if (selected == 'All') {
+      $("#pe_processes option").each(function() {
+        if ($(this).val() != "All") {
+          show_procs.push($(this).val());
+        }
+      });
+    }
+    else {
+      show_procs = [selected];
+    }
+    return show_procs;
   }
 
   $(document).ready(function(){
@@ -67,19 +90,14 @@
   $(function() {
     $("#pe_list").on("change", function(e) {
       var selected = $(this).val();
-      var limit = parseInt($('#limit').val());
       populate_processes({{job|safe}}, selected);
-      loadData({{job|safe}}, selected, $('#pe_processes').val(), $('#pe_methods').val(), limit)
+      refresh();
     });
     $("#pe_processes").on("change", function(e) {
-      var selected = $(this).val();
-      var limit = parseInt($('#limit').val());
-      loadData({{job|safe}}, $('#pe_list').val(), selected, $('#pe_methods').val(), limit)
+      refresh();
     });
     $("#pe_methods").on("change", function(e) {
-      var selected = $(this).val();
-      var limit = parseInt($('#limit').val());
-      loadData({{job|safe}}, $('#pe_list').val(), $('#pe_processes').val(), selected, limit)
+      refresh();
     });
     $("#limit").on("click", function(e) {
       refresh();
