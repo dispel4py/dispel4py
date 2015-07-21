@@ -116,7 +116,6 @@
 
 
   <div id="content">
-
     <table>
       <tr>
         <td>Processing Element:</td>
@@ -138,18 +137,26 @@
       </tr>
       <tr>
         <td>Number of calls:</td>
-        <td><input style="text-align: right;" id="limit" type="number" value="100"></input></td>
+        <td><input style="text-align: right; width: 7em;" id="limit" type="number" value="100"></input></td>
+      </tr>
+      <tr>
+        <td><input id="refresh" type="button" value="Refresh"></input></td>
+        <td></td>
       </tr>
       </table>
-      <input id="refresh" type="button" value="Refresh"></input>
+    </div>
+    <div id="chart">
 
-    <div class="demo-container">
-      <div id="time_chart" class="demo-placeholder"></div>
+      <div class="chart-container">
+        <div id="time_chart" class="chart-placeholder"></div>
+      </div>
+
     </div>
 
-  </div>
-
   <div id="footer">
+    <a href="http://dispel4py.org">
+      <img src="http://dispel4py.org/images/DISPEL4PY_web.jpg" height="100" align="right"/>
+    </a>
   </div>
 
 </body>
