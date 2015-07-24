@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, \
+from flask import Flask, request, Response, jsonify, \
     render_template, send_from_directory, abort, redirect, url_for
 app = Flask(__name__)
 
@@ -323,17 +323,90 @@ def get_timeline(job):
         print(traceback.format_exc())
 
 
-@app.route('/db/<job>/communication_time/<limit>')
-def get_communication_time(job, limit=100):
-    limit = int(limit)
-    comm_agg = [
-        {'$match': {'data.input': {'$exists': 'true'}, 'job': job}},
-        {"$sort": SON([("_id", -1)])},
-        {"$limit": limit},
-        {'$unwind': '$data.input'}
-    ]
+@app.route('/db/<job>/communication_time')
+def get_communication_time(job):
+    limit = request.args.get('limit', None)
+
+    def generate():
+        for record in generate_communication_times(job, limit):
+            yield(json.dumps(record) + '\n')
+    return Response(generate(), mimetype='text/plain')
+
+
+@app.route('/db/<job>/total_communication_time')
+def get_total_communication_time(job):
+    limit = request.args.get('limit', '10000')
+    total_time = 0.0
+    total_count = 0
+    for record in generate_communication_times(job, limit):
+        total_time += record['time']
+        total_count += 1
+    return json.dumps({'time': total_time, 'count': total_count})
+
+
+@app.route('/db/<job>/communication_time/summary')
+def get_communication_time_summary(job):
+    limit = request.args.get('limit', '100')
+    total_time = defaultdict(int)
+    total_count = defaultdict(int)
+    for c in generate_communication_times(job, limit):
+        writer = c['writer']
+        reader = c['reader']
+        total_time[(writer['pe'], writer['process'], writer['output'],
+                    reader['pe'], reader['process'], reader['input'])] += \
+            c['time']
+        total_count[(writer['pe'], writer['process'], writer['output'],
+                    reader['pe'], reader['process'], reader['input'])] += 1
+    times = defaultdict(
+        lambda: defaultdict(
+            lambda: defaultdict(
+                lambda: defaultdict(
+                    lambda: defaultdict(
+                        lambda: defaultdict(dict))))))
+    outputs = defaultdict(lambda: defaultdict(set))
+    inputs = defaultdict(lambda: defaultdict(set))
+    processes = defaultdict(set)
+    for c in total_time:
+        (w, wp, wo, r, rp, ri) = c
+        times[w][wp][wo][r][rp][ri] = {
+            'time': total_time[c],
+            'count': total_count[c],
+            'avg': total_time[c] / total_count[c]}
+        outputs[w][r].add((wo, ri))
+        inputs[r][w].add((wo, ri))
+        processes[w].add(wp)
+        processes[r].add(rp)
+    json_outputs = defaultdict(lambda: defaultdict(list))
+    json_inputs = defaultdict(lambda: defaultdict(list))
+    for w, readers in outputs.items():
+        for r, conx in readers.items():
+            for o, i in conx:
+                json_outputs[w][r].append([o, i])
+                json_inputs[r][w].append([o, i])
+    json_processes = defaultdict(list)
+    for pe, procs in processes.items():
+        json_processes[pe] = list(procs)
+    return json.dumps({'outputs': json_outputs,
+                       'inputs': json_inputs,
+                       'processes': json_processes,
+                       'times': times})
+
+
+def generate_communication_times(job, limit):
+    if not limit:
+        comm_agg = [
+            {'$match': {'data.input': {'$exists': 'true'}, 'job': job}},
+            {'$unwind': '$data.input'}
+        ]
+    else:
+        limit = int(limit)
+        comm_agg = [
+            {'$match': {'data.input': {'$exists': 'true'}, 'job': job}},
+            {"$sort": SON([("_id", -1)])},
+            {"$limit": limit},
+            {'$unwind': '$data.input'}
+        ]
     collection = client[MONGODB_DB]['raw']
-    results = []
     for reader in collection.aggregate(comm_agg):
         data_id = reader['data']['input'][1]
         writer = collection.find_one(
@@ -354,10 +427,7 @@ def get_communication_time(job, limit=100):
                 'input': reader['data']['input'][0]
             }
         }
-        print(record)
-        results.append(record)
-
-    return json.dumps(results)
+        yield record
 
 
 @app.route('/db/<job>/method/<pe>/<process>/<method>')
