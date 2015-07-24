@@ -489,14 +489,17 @@ def store(input_queue, info,
     client = MongoClient(mongodb_url)
     db = client[mongodb_database]
     info_col = db[mongodb_info]
+    collection = db[mongodb_collection]
     if mongodb_info not in db.collection_names():
         info_col.create_index('name', background=True)
-        info.create_index([('name', 1), ('data.id', 1)], background=True)
+    if mongodb_collection not in db.collection_names():
+        collection.create_index('job', background=True)
+        collection.create_index([('job', 1), ('data.id', 1)], background=True)
 
-    for j in info_col.find({'name': info['name']}, {'_id': 1}):
-        # job name already exists
+    del_result = info_col.delete_many({'name': info['name']})
+    collection.delete_many({'job': info['name']})
+    if del_result.deleted_count:
         print('Monitor: WARNING: replacing existing job "%s"' % info['name'])
-        info_col.remove(j)
 
     info_record = {
         'name': info['name'],
@@ -517,9 +520,7 @@ def store(input_queue, info,
     except:
         pass
     info_col.insert_one(info_record)
-    collection = db[mongodb_collection]
-    if mongodb_collection not in db.collection_names():
-        collection.create_index('job', background=True)
+
     try:
         for item in iter(input_queue.get, STATUS_TERMINATED):
             try:
