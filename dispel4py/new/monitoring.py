@@ -491,6 +491,12 @@ def store(input_queue, info,
     info_col = db[mongodb_info]
     if mongodb_info not in db.collection_names():
         info_col.create_index('name', background=True)
+
+    for j in info_col.find({'name': info['name']}):
+        # job name already exists
+        print('Monitor: WARNING: replacing existing job %s' % j['_id'])
+        info_col.remove(j)
+
     info_record = {
         'name': info['name'],
         'mapping': info['mapping'],
