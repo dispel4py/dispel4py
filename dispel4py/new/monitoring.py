@@ -491,6 +491,7 @@ def store(input_queue, info,
     info_col = db[mongodb_info]
     if mongodb_info not in db.collection_names():
         info_col.create_index('name', background=True)
+        info.create_index([('name', 1), ('data.id', 1)], background=True)
 
     for j in info_col.find({'name': info['name']}, {'_id': 1}):
         # job name already exists
