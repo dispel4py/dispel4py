@@ -81,10 +81,14 @@ def process(workflow, inputs, args):
     outputmappings = {}
     success = True
     nodes = [node.getContainedObject() for node in workflow.graph.nodes()]
+    process_size = size
+    if args.monitoring:
+        # assign one additional process to the monitor
+        process_size -= 1
     if rank == 0 and not args.simple:
         try:
             processes, inputmappings, outputmappings =\
-                processor.assign_and_connect(workflow, size)
+                processor.assign_and_connect(workflow, process_size)
         except:
             success = False
     success = comm.bcast(success, root=0)
@@ -102,7 +106,7 @@ def process(workflow, inputs, args):
                                            wrapperPE.workflow.graph.nodes()]))
             try:
                 processes, inputmappings, outputmappings =\
-                    processor.assign_and_connect(ubergraph, size)
+                    processor.assign_and_connect(ubergraph, process_size)
                 inputs = processor.map_inputs_to_partitions(ubergraph, inputs)
                 success = True
             except:
