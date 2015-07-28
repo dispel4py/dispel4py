@@ -59,8 +59,21 @@ from dispel4py.new.processor\
 from dispel4py.new import processor
 
 import argparse
+import sys
 import types
 import traceback
+
+
+def mpi_excepthook(type, value, trace):
+    '''
+    Sending abort to all processes if an exception is raised.
+    '''
+    if rank == 0:
+        traceback.print_tb(trace)
+    comm.Abort(1)
+
+
+sys.excepthook = mpi_excepthook
 
 
 def parse_args(args, namespace):
