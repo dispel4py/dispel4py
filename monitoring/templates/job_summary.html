@@ -65,6 +65,7 @@
               <th>Average time</th>
               <th>Failed</th>
               <th>Failed %</th>
+              <th>Last error</th>
             </tr>
           </thead>
           <tbody>
@@ -77,17 +78,19 @@
               <td style="text-align: right;">{{method_info.avg|round(3)}}</td>
               {% if method_info.error_count %}
                 <td style="text-align: right;">
-                  {{info.process.error_count|int}}
+                  {{method_info.error_count|int}}
                 </td>
                 <td style="text-align: right;">
-                  {{(100*info.process.error_count/info.process.count)|round(1)}}%
+                  {{(100*method_info.error_count/method_info.count)|round(1)}}%
                 </td>
                 {% else %}
                   <td style="text-align: right;">0</td>
                   <td style="text-align: right;">0%</td>
               {% endif %}
-              {% if info.process.last_error %}
-              <li>{{info.process.last_error}}</li>
+              {% if method_info.last_error %}
+              <td>{{method_info.last_error}}</td>
+              {% else %}
+                <td>&nbsp;</td>
               {% endif %}
             </tr>
             {% endif %}

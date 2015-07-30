@@ -80,9 +80,10 @@ class ProcessTimingPE(MonitoringWrapper):
 
 class EventTimestamp(object):
 
-    def __init__(self, name):
+    def __init__(self, name, events):
         self.name = name
         self.data = {}
+        self.events = events
 
     def __str__(self):
         return 'EventTimestamp(%s, %s, %.5f, %.5f)' \
@@ -97,6 +98,7 @@ class EventTimestamp(object):
 
     def __exit__(self, *args):
         self.end = time.time()
+        self.events.append(self)
 
 from dispel4py.utils import total_size
 
@@ -115,8 +117,7 @@ class TimestampEventsPE(MonitoringWrapper):
     #         return self.baseObject.write(name, data)
 
     def preprocess(self):
-        with EventTimestamp('preprocess') as t:
-            self._monitoring_events.append(t)
+        with EventTimestamp('preprocess', self._monitoring_events) as t:
             try:
                 return self.baseObject.preprocess()
             except Exception as exc:
@@ -124,8 +125,7 @@ class TimestampEventsPE(MonitoringWrapper):
                 raise
 
     def process(self, inputs):
-        with EventTimestamp('process') as t:
-            self._monitoring_events.append(t)
+        with EventTimestamp('process', self._monitoring_events) as t:
             try:
                 return self.baseObject.process(inputs)
             except Exception as exc:
@@ -133,9 +133,8 @@ class TimestampEventsPE(MonitoringWrapper):
                 raise
 
     def postprocess(self):
-        with EventTimestamp('postprocess') as t:
+        with EventTimestamp('postprocess', self._monitoring_events) as t:
             try:
-                self._monitoring_events.append(t)
                 return self.baseObject.postprocess()
             except Exception as exc:
                 t.data['error'] = repr(exc)
@@ -160,10 +159,9 @@ class TimestampEventsWrapper(MonitoringWrapper):
     #             raise
 
     def _write(self, name, data):
-        with EventTimestamp('write') as t:
+        with EventTimestamp('write', self.events) as t:
             t.data['output'] = name
             t.data['size'] = total_size(data)
-            self.events.append(t)
             self.data_count[name] += 1
             data_id = (self.baseObject.pe.id,
                        self.baseObject.pe.rank,
@@ -178,30 +176,28 @@ class TimestampEventsWrapper(MonitoringWrapper):
         self.write_events()
 
     def _read(self):
-        with EventTimestamp('read') as t:
-            self.events.append(t)
+        with EventTimestamp('read', self.events) as t:
             obj = self.baseObject._read()
-        try:
-            data, status = obj
-            original = {}
-            t.data['input'] = []
-            for input_name, input_data in data.items():
-                t.data['input'].append((input_name, input_data['id']))
-                original[input_name] = input_data['data']
-            obj = original, status
-        except:
-            # import traceback
-            # print(traceback.format_exc())
-            # if the data is not a dictionary (could be None)
-            pass
+            try:
+                data, status = obj
+                original = {}
+                t.data['input'] = []
+                for input_name, input_data in data.items():
+                    t.data['input'].append((input_name, input_data['id']))
+                    original[input_name] = input_data['data']
+                obj = original, status
+            except:
+                # import traceback
+                # print(traceback.format_exc())
+                # if the data is not a dictionary (could be None)
+                pass
         self.write_events()
         # print('>>> %s READ: %.6f s to %.6f s' %
         #       (self.baseObject.pe.id, t.start, t.end))
         return obj
 
     def _terminate(self):
-        with EventTimestamp('terminate') as t:
-            self.events.append(t)
+        with EventTimestamp('terminate', self.events):
             self.baseObject._terminate()
         self.write_events()
         # print('>>> %s TERMINATED:' % (self.baseObject.pe.id))
