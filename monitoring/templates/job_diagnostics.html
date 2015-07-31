@@ -1,0 +1,131 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <link rel="stylesheet" type="text/css" href="/static/DataTables-1.10.7/media/css/jquery.dataTables.min.css">
+
+    <!-- jQuery -->
+    <script type="text/javascript" charset="utf8" src="/static/jquery/jquery-2.1.4.min.js"></script>
+
+    <!-- DataTables -->
+    <script type="text/javascript" charset="utf8" src="/static/DataTables-1.10.7/media/js/jquery.dataTables.min.js"></script>    <title>dispel4py monitoring</title>
+
+    <script type="text/javascript">
+    $(document).ready( function () {
+        $('#processing_times').DataTable(
+          {
+            order: [[ 1, "desc" ]],
+            columnDefs: [ { orderable: false, searchable: false} ],
+            pageLength: 50,
+            "language": {
+              "emptyTable": "No diagnostics"
+            }
+           }
+        );
+        $('#comm_times').DataTable(
+          {
+            order: [[ 4, "desc" ]],
+            columnDefs: [ { orderable: false, searchable: false} ],
+            pageLength: 50,
+            "language": {
+              "emptyTable": "No diagnostics"
+            }
+           }
+        );
+
+        // $('#all_comm').DataTable(
+        //   {
+        //     columnDefs: [ { orderable: false, searchable: false} ],
+        //     pageLength: 50,
+        //     "language": {
+        //       "emptyTable": "No diagnostics"
+        //     }
+        //    }
+        // );
+
+    } )
+    </script>
+  </head>
+  <body>
+      <img src="/static/images/DISPEL4PY_web.jpg" height="120" align="right"/>
+      <h1>Diagnostics</h1>
+      <h2>Processing Times</h2>
+      <table id="processing_times">
+        <thead>
+          <tr><th>PE</th><th>Average time</th><th>Total time</th><th>Iterations</th></tr>
+        </thead>
+        <tbody>
+          {% for pe in pe_times %}
+          <tr>
+            <td>{{pe._id.pe}}</a></td>
+            <td style="text-align: right;">{{pe.avg|round(3)}}</td>
+            <td style="text-align: right;">{{pe.time|round(3)}}</td>
+            <td style="text-align: right;">{{pe.count|int}}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <h2>Communication Times</h2>
+      <table id="comm_times">
+        <thead>
+          <tr>
+            <th>Source</th>
+            <th>Output</th>
+            <th>Destination</th>
+            <th>Input</th>
+            <th>Average time</th><th>Total time</th><th>Iterations</th>
+            <th>Average size</th><th>Total size</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for key, value in comm_times.items() %}
+          <tr>
+            <td>{{key[0]}}</td>
+            <td>{{key[1]}}</td>
+            <td>{{key[2]}}</td>
+            <td>{{key[3]}}</td>
+            <td style="text-align: right;">{{value.avg|round(3)}}</td>
+            <td style="text-align: right;">{{value.time|round(3)}}</td>
+            <td style="text-align: right;">{{value.count}}</td>
+            <td style="text-align: right;">{{value.avg_size|round(3)}}</td>
+            <td style="text-align: right;">{{value.size|round(3)}}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+<!--
+      <h2>Communication Times - complete list</h2>
+      <table id="all_comm">
+        <thead>
+          <tr>
+            <th>Source</th>
+            <th>Output</th>
+            <th>Process</th>
+            <th>Destination</th>
+            <th>Input</th>
+            <th>Process</th>
+            <th>Time</th>
+            <th>Size</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for info in all_comm %}
+          <tr>
+            <td>{{info.writer.pe}}</td>
+            <td>{{info.writer.output}}</td>
+            <td>{{info.writer.process}}</td>
+            <td>{{info.reader.pe}}</td>
+            <td>{{info.reader.input}}</td>
+            <td>{{info.reader.process}}</td>
+            <td style="text-align: right;">{{info.time|round(3)}}</a></td>
+            <td style="text-align: right;">{{info.size}}</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+-->
+      <hr />
+      <p>
+        <a href="http://dispel4py.org">dispel4py.org</a>
+      </p>
+  </body>
+</html>

@@ -245,6 +245,9 @@ def show_status_db(job):
         pe_id = record['_id']['pe']
         process = record['_id']['process']
         method = record['_id']['name']
+        # create the summary in case the PE didn't run at all
+        info['summary'][pe_id]['time'] += 0
+        info['summary'][pe_id]['count'] += 0
         if method == 'write':
             if method not in detail[pe_id][process]:
                 detail[pe_id][process][method] = {}
@@ -285,6 +288,7 @@ def show_status_db(job):
         total_errors += record['count']
         info['summary'][pe_id]['error_count'] += record['count']
         info['summary'][pe_id]['last_error'] = record['last']
+        detail[pe_id][process][method]['last_error'] = record['last']
 
     info['total'] = {'count': total_count,
                      'time': total_time,
@@ -293,8 +297,8 @@ def show_status_db(job):
 
     info['info'] = lookup_job(job)
     info['info']['runtime'] = get_runtime(info['info'])
+    # print(json.dumps(info))
     return render_template('job_summary.html', job=info)
-    # return json.dumps(info)
 
 
 @app.route('/db/<job>/timeline')
@@ -321,6 +325,49 @@ def get_timeline(job):
             timeline=json.dumps(timestamps))
     except Exception:
         print(traceback.format_exc())
+
+
+@app.route('/db/<job>/diagnostics')
+def get_avg_times_per_method(job):
+    collection = client[MONGODB_DB]['raw']
+    method = 'process'
+    agg = [
+        {"$match": {"job": job, "name": method}},
+        {"$group": {"_id": {"pe": "$pe",
+                            "method": "$method",
+                            "name": "$name"},
+                    "avg": {"$avg": "$time"},
+                    "time": {"$sum": "$time"},
+                    "count": {"$sum": 1}}},
+        {"$sort": SON([("time", -1)])}
+    ]
+    pe_times = list(collection.aggregate(agg))
+
+    total_time = defaultdict(float)
+    total_count = defaultdict(int)
+    total_size = defaultdict(int)
+    # all_comm = []
+
+    for record in generate_communication_times(job):
+        entry = (record['writer']['pe'],
+                 record['writer']['output'],
+                 record['reader']['pe'],
+                 record['reader']['input'])
+        total_time[entry] += record['time']
+        total_count[entry] += 1
+        total_size[entry] += record['size']
+        # all_comm.append(record)
+
+    comm_times = {key: {'time': t,
+                        'count': total_count[key],
+                        'avg': t / total_count[key],
+                        'size': total_size[key],
+                        'avg_size': total_size[key] / total_count[key]}
+                  for key, t in total_time.items()}
+
+    return render_template("job_diagnostics.html",
+                           pe_times=pe_times,
+                           comm_times=comm_times)
 
 
 @app.route('/db/<job>/communication_time')
@@ -392,7 +439,7 @@ def get_communication_time_summary(job):
                        'times': times})
 
 
-def generate_communication_times(job, limit):
+def generate_communication_times(job, limit=None):
     if not limit:
         comm_agg = [
             {'$match': {'data.input': {'$exists': 'true'}, 'job': job}},
@@ -416,6 +463,7 @@ def generate_communication_times(job, limit):
             'time': communication_time,
             'start': writer['start'],
             'end': reader['end'],
+            'size': writer['data']['size'],
             'writer': {
                 'pe': data_id[0],
                 'process': data_id[1],
