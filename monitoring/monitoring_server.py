@@ -497,4 +497,5 @@ def get_times(job, pe, process, method):
 
 
 if __name__ == "__main__":
+    # app.run(host='0.0.0.0') # externally visible
     app.run(debug=True)
