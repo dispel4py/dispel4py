@@ -173,7 +173,10 @@ class GroupByCommunication(object):
         self.name = groupby
 
     def getDestination(self, data):
-        output = tuple([data[self.input_name][x] for x in self.groupby])
+        input_data = data[self.input_name]
+        if '_d_id' in input_data:
+            input_data = input_data['data']
+        output = tuple([input_data[x] for x in self.groupby])
         dest_index = abs(make_hash(output)) % len(self.destinations)
         return [self.destinations[dest_index]]
 

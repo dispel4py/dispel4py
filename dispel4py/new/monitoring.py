@@ -168,7 +168,7 @@ class TimestampEventsWrapper(MonitoringWrapper):
                        name,
                        self.data_count[name])
             t.data['id'] = data_id
-            annotated = {'data': data, 'id': data_id}
+            annotated = {'data': data, '_d_id': data_id}
             self.baseObject._write(name, annotated)
             # self.baseObject._write(name, data)
         # print('>>> %s WRITE: %.6f s to %.6f s' %
@@ -183,7 +183,7 @@ class TimestampEventsWrapper(MonitoringWrapper):
                 original = {}
                 t.data['input'] = []
                 for input_name, input_data in data.items():
-                    t.data['input'].append((input_name, input_data['id']))
+                    t.data['input'].append((input_name, input_data['_d_id']))
                     original[input_name] = input_data['data']
                 obj = original, status
             except:
