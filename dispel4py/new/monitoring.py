@@ -217,11 +217,27 @@ from dispel4py.workflow_graph import drawDot
 
 
 def write_info_file(job_dir, info):
+    for proc, inputs in info['inputs'].items():
+        new_inputs = {}
+        for name, inp_procs in inputs.items():
+            try:
+                p, i = name
+                new_inputs['%s_%s' % (p, i)] = inp_procs
+            except:
+                new_inputs[name] = inp_procs
+        info['inputs'][proc] = new_inputs
     try:
         for proc, outputs in info['outputs'].items():
+            new_outputs = {}
             for name, outp in outputs.items():
+                try:
+                    p, o = name
+                    new_name = '%s_%s' % (p, o)
+                except:
+                    new_name = name
                 for target in outp:
-                    outputs[name] = target[1].destinations
+                    new_outputs[new_name] = target[1].destinations
+            info['outputs'][proc] = new_outputs
     except:
         pass
     with open(job_dir + '/info', 'w') as f:
@@ -504,13 +520,17 @@ def store(input_queue, info,
         'start_time': info['start_time']
     }
     info_record['inputs'] = \
-        {str(proc): inputs for proc, inputs in info['inputs'].items()}
+        {str(proc):
+            [{'name': name, 'sources': sources}
+                for name, sources in inputs.items()]
+            for proc, inputs in info['inputs'].items()}
     info_record['outputs'] = {}
     for proc, outputs in info['outputs'].items():
-        info_record['outputs'][str(proc)] = {}
+        info_record['outputs'][str(proc)] = []
         for name, outp in outputs.items():
-            info_record['outputs'][str(proc)][name] = \
-                [target[1].destinations for target in outp]
+            info_record['outputs'][str(proc)].append({
+                'name': name,
+                'destinations': [target[1].destinations for target in outp]})
     try:
         info_record['graph'] = info['graph']
     except:
