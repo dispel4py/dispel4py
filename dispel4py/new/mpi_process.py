@@ -261,6 +261,7 @@ def add_monitoring_wrapper(wrapper, monitoring_rank,
     wrapper.monitoring_rank = monitoring_rank
     wrapper.write_events = types.MethodType(write_events, wrapper)
     monitor = WrapperMonitor(wrapper)
+    wrapper.pe.wrapper = monitor
     # now point the PE output writers to the new monitoring wrapper
     # otherwise any output written with self.write() is not captured
     for output in wrapper.pe.outputconnections.values():
