@@ -80,9 +80,17 @@
           {% for key, value in comm_times.items() %}
           <tr>
             <td>{{key[0]}}</td>
+            {% if key[1] is string %}
             <td>{{key[1]}}</td>
+            {% else %}
+            <td>({{key[1][0]}}, {{key[1][1]}})</td>
+            {% endif %}
             <td>{{key[2]}}</td>
+            {% if key[3] is string %}
             <td>{{key[3]}}</td>
+            {% else %}
+            <td>({{key[3][0]}}, {{key[3][1]}})</td>
+            {% endif %}
             <td style="text-align: right;">{{value.avg|round(3)}}</td>
             <td style="text-align: right;">{{value.time|round(3)}}</td>
             <td style="text-align: right;">{{value.count}}</td>

@@ -349,10 +349,14 @@ def get_avg_times_per_method(job):
     # all_comm = []
 
     for record in generate_communication_times(job):
-        entry = (record['writer']['pe'],
-                 record['writer']['output'],
-                 record['reader']['pe'],
-                 record['reader']['input'])
+        output_name = record['writer']['output']
+        if isinstance(output_name, list):
+            output_name = tuple(output_name)
+        input_name = record['reader']['input']
+        if isinstance(input_name, list):
+            input_name = tuple(input_name)
+        entry = (record['writer']['pe'], output_name,
+                 record['reader']['pe'], input_name)
         total_time[entry] += record['time']
         total_count[entry] += 1
         total_size[entry] += record['size']
@@ -364,7 +368,6 @@ def get_avg_times_per_method(job):
                         'size': total_size[key],
                         'avg_size': total_size[key] / total_count[key]}
                   for key, t in total_time.items()}
-
     return render_template("job_diagnostics.html",
                            pe_times=pe_times,
                            comm_times=comm_times)
