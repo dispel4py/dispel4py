@@ -461,21 +461,28 @@ def generate_communication_times(job, limit=None):
         data_id = reader['data']['input'][1]
         writer = collection.find_one(
             {'job': job, 'data.id': data_id})
-        communication_time = reader['end'] - writer['start']
+        start = max(writer['start'], reader['start'])
+        end = max(writer['end'], reader['end'])
+        communication_time = end - start
         record = {
             'time': communication_time,
-            'start': writer['start'],
-            'end': reader['end'],
+            'start': start,
+            'end': end,
             'size': writer['data']['size'],
             'writer': {
                 'pe': data_id[0],
                 'process': data_id[1],
                 'output': data_id[2],
-                'data': data_id[3]},
+                'data': data_id[3],
+                'start': writer['start'],
+                'end': writer['end']
+            },
             'reader': {
                 'pe': reader['pe'],
                 'process': reader['process'],
-                'input': reader['data']['input'][0]
+                'input': reader['data']['input'][0],
+                'start': reader['start'],
+                'end': reader['end']
             }
         }
         yield record
