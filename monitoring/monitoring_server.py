@@ -327,8 +327,7 @@ def get_timeline(job):
         print(traceback.format_exc())
 
 
-@app.route('/db/<job>/diagnostics')
-def get_avg_times_per_method(job):
+def collect_diagnostics(job):
     collection = client[MONGODB_DB]['raw']
     method = 'process'
     agg = [
@@ -368,6 +367,14 @@ def get_avg_times_per_method(job):
                         'size': total_size[key],
                         'avg_size': total_size[key] / total_count[key]}
                   for key, t in total_time.items()}
+    return pe_times, comm_times
+
+
+@app.route('/db/<job>/diagnostics')
+def get_job_diagnostics(job):
+    pe_times, comm_times = collect_diagnostics(job)
+    # print(pe_times)
+    # print(comm_times)
     return render_template("job_diagnostics.html",
                            pe_times=pe_times,
                            comm_times=comm_times)
