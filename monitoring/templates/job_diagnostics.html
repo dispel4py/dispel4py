@@ -41,6 +41,16 @@
         //     }
         //    }
         // );
+        $('#partitions').DataTable(
+          {
+            'ordering': false,
+            columnDefs: [ { orderable: false, searchable: false} ],
+            pageLength: 50,
+            "language": {
+              "emptyTable": "No suggestions"
+            }
+           }
+        );
 
     } )
     </script>
@@ -48,7 +58,12 @@
   <body>
       <img src="/static/images/DISPEL4PY_web.jpg" height="120" align="right"/>
       <h1>Diagnostics</h1>
-      <h2>Processing Times</h2>
+      <ul>
+        <li><a href="#h_processing_times">Processing Times</a></li>
+        <li><a href="#h_communication_times">Communication Times</a></li>
+        <li><a href="#h_partitioning">Partitioning</a></li>
+      </ul>
+      <h2 id="h_processing_times">Processing Times</h2>
       <table id="processing_times">
         <thead>
           <tr><th>PE</th><th>Average time</th><th>Total time</th><th>Iterations</th></tr>
@@ -64,7 +79,7 @@
           {% endfor %}
         </tbody>
       </table>
-      <h2>Communication Times</h2>
+      <h2 id="h_communication_times">Communication Times</h2>
       <table id="comm_times">
         <thead>
           <tr>
@@ -131,6 +146,25 @@
         </tbody>
       </table>
 -->
+    <h2 id="h_partitioning">Partitioning</h2>
+      <p>Suggested partitions:</p>
+      <table id="partitions">
+        <thead>
+          <tr>
+            <th>Partition</th>
+            <th>Number of processes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in partitions %}
+          <tr>
+            <td>[ {{p[0]|join(', ')}} ]</td>
+            <td>{{p[1]}}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
       <hr />
       <p>
         <a href="http://dispel4py.org">dispel4py.org</a>
