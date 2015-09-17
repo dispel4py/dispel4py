@@ -5,7 +5,9 @@ class Node(object):
 
     def __init__(self, pe, pt):
         self.pes = [pe]
+        # maps a destination node to the communication times with that node
         self.comm_out = defaultdict(float)
+        # maps a source node to the communication times with that node
         self.comm_in = defaultdict(float)
         self.processing_time = pt
 
@@ -23,8 +25,10 @@ class Node(object):
 def find_best_partitioning(job, pe_times, comm_times):
     graph = start_graph(job, pe_times, comm_times)
     roots = find_roots(comm_times)
-    nodes = [graph[pe] for pe in roots]
-    partitions = []
+    nodes = []
+    for pe in roots:
+        nodes += graph[pe].comm_out.keys()
+    partitions = [graph[pe] for pe in roots]
     while nodes:
         source_node = nodes.pop()
         partitions.append(source_node)
