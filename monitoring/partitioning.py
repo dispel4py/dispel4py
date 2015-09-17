@@ -10,6 +10,7 @@ class Node(object):
         # maps a source node to the communication times with that node
         self.comm_in = defaultdict(float)
         self.processing_time = pt
+        self.is_root = False
 
     def add(self, node):
         self.pes += node.pes
@@ -22,18 +23,54 @@ class Node(object):
             self.comm_out[dest_node] = node.comm_out[dest_node]
 
 
+def assign_processes(partitions, total_processes):
+    total_processing_time = 0
+    num_roots = 0
+    for node in partitions:
+        if node.is_root:
+            node.num_processes = 1
+            num_roots += 1
+        else:
+            total_processing_time += node.processing_time
+            node.num_processes = 0
+    # remove the root processes that have been assigned already
+    n_processes = total_processes - num_roots
+    total_assigned = 0
+    for node in partitions:
+        if not node.is_root:
+            frac = node.processing_time / total_processing_time
+            np = round(frac * n_processes)
+            node.num_processes += np
+            total_assigned += np
+    misfit = total_assigned - n_processes
+    while misfit:
+        for node in partitions:
+            if misfit > 0:
+                if not node.is_root and node.num_processes > 1:
+                    node.num_processes -= 1
+                    misfit -= 1
+            elif misfit < 0:
+                if not node.is_root:
+                    node.num_processes += 1
+                    misfit += 1
+            else:
+                break
+    return [int(node.num_processes) for node in partitions]
+
+
 def find_best_partitioning(job, pe_times, comm_times):
     graph = start_graph(job, pe_times, comm_times)
     roots = find_roots(comm_times)
     nodes = []
     for pe in roots:
+        graph[pe].is_root = True
         nodes += graph[pe].comm_out.keys()
     partitions = [graph[pe] for pe in roots]
     while nodes:
         source_node = nodes.pop()
         partitions.append(source_node)
         expand(source_node, nodes, partitions)
-    return [p.pes for p in partitions]
+    return partitions
 
 
 def expand(source_node, not_visited, partitions):
@@ -56,7 +93,8 @@ def expand(source_node, not_visited, partitions):
         else:
             # print('new partition for %s' % dest_node.pes)
             not_visited.append(dest_node)
-            partitions.append(dest_node)
+            if dest_node not in partitions:
+                partitions.append(dest_node)
 
 
 def find_roots(comm_times):
