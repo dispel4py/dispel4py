@@ -68,7 +68,8 @@ def find_best_partitioning(job, pe_times, comm_times):
     partitions = [graph[pe] for pe in roots]
     while nodes:
         source_node = nodes.pop()
-        partitions.append(source_node)
+        if source_node not in partitions:
+            partitions.append(source_node)
         expand(source_node, nodes, partitions)
     return partitions
 
