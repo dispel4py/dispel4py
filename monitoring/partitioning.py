@@ -16,11 +16,13 @@ class Node(object):
         self.pes += node.pes
         self.processing_time += node.processing_time
         for source_node in node.comm_in:
-            source_node.comm_out[self] = source_node.comm_out[node]
-            del source_node.comm_out[node]
-            self.comm_in[source_node] = node.comm_in[source_node]
+            if source_node != self:
+                source_node.comm_out[self] = source_node.comm_out[node]
+                del source_node.comm_out[node]
+                self.comm_in[source_node] = node.comm_in[source_node]
         for dest_node in node.comm_out:
             self.comm_out[dest_node] = node.comm_out[dest_node]
+        del self.comm_out[node]
 
 
 def assign_processes(partitions, total_processes):
@@ -68,6 +70,7 @@ def find_best_partitioning(job, pe_times, comm_times):
     partitions = [graph[pe] for pe in roots]
     while nodes:
         source_node = nodes.pop()
+        print('starting with %s' % source_node.pes)
         if source_node not in partitions:
             partitions.append(source_node)
         expand(source_node, nodes, partitions)
@@ -77,11 +80,11 @@ def find_best_partitioning(job, pe_times, comm_times):
 def expand(source_node, not_visited, partitions):
     node_list = list(source_node.comm_out.keys())
     while node_list:
-        # print([n.pes for n in node_list])
+        # print('expanding to %s' % [n.pes for n in node_list])
         dest_node = node_list.pop(0)
-        print('%s > min(%s, %s)' % (source_node.comm_out[dest_node],
-                                    source_node.processing_time,
-                                    dest_node.processing_time))
+        # print('%s > min(%s, %s)' % (source_node.comm_out[dest_node],
+        #                             source_node.processing_time,
+        #                             dest_node.processing_time))
         if source_node.comm_out[dest_node] > \
                 min(source_node.processing_time,
                     dest_node.processing_time):
@@ -93,7 +96,8 @@ def expand(source_node, not_visited, partitions):
             source_node.add(dest_node)
         else:
             # print('new partition for %s' % dest_node.pes)
-            not_visited.append(dest_node)
+            if dest_node not in not_visited:
+                not_visited.append(dest_node)
             if dest_node not in partitions:
                 partitions.append(dest_node)
 
