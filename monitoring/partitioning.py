@@ -128,3 +128,52 @@ def start_graph(job, pe_times, comm_times):
         nodes[dest_pe].comm_in[nodes[source_pe]] += value['time']
         nodes[source_pe].comm_out[nodes[dest_pe]] += value['time']
     return nodes
+
+
+from itertools import count
+
+
+def create_dot(partitions, comm_times):
+    parts = {}
+    clusters = {}
+    across_clusters = ''
+    for i, node in zip(count(), partitions):
+        clusters[i] = '''subgraph cluster_%s {
+    node [style=filled];
+    color=grey;
+''' % i
+        for pe in node.pes:
+            parts[pe] = i
+    for key, value in comm_times.items():
+        source_pe = key[0]
+        sp = parts[source_pe]
+        # output = key[1]
+        dest_pe = key[2]
+        # input = key[3]
+        dp = parts[dest_pe]
+        arrow = '%s -> %s;\n' % (source_pe, dest_pe)
+        if sp == dp:
+            clusters[sp] += '    %s' % arrow
+        else:
+            across_clusters += arrow
+    result = 'digraph G {\n'
+    for i in clusters:
+        result += clusters[i] + '}\n'
+    result += across_clusters
+    result += '}'
+    return result
+
+
+def dot_to_png(dot):   # pragma: no cover
+    '''
+    Draws the workflow as a graph and creates a PNG image using graphviz dot.
+    '''
+    from subprocess import Popen, PIPE
+    p = Popen(['dot', '-T', 'png'], stdout=PIPE, stdin=PIPE, stderr=PIPE)
+    stdout, stderr = p.communicate(dot.encode('utf-8'))
+    return stdout
+
+
+def draw_partitions(partitions, comm_times):
+    dot = create_dot(partitions, comm_times)
+    return dot_to_png(dot)

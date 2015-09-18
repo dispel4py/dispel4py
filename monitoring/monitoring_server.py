@@ -374,11 +374,13 @@ def collect_diagnostics(job):
 def get_job_diagnostics(job):
     pe_times, comm_times = collect_diagnostics(job)
 
-    from partitioning import find_best_partitioning, assign_processes
+    from partitioning \
+        import find_best_partitioning, assign_processes, draw_partitions
     job_info = lookup_job(job)
     pe_times, comm_times = collect_diagnostics(job)
     partitions = find_best_partitioning(job, pe_times, comm_times)
     procs = assign_processes(partitions, job_info['num_processes'])
+    graph_img = draw_partitions(partitions, comm_times)
 
     # print(pe_times)
     # print(comm_times)
@@ -386,7 +388,8 @@ def get_job_diagnostics(job):
     return render_template("job_diagnostics.html",
                            pe_times=pe_times,
                            comm_times=comm_times,
-                           partitions=zip([p.pes for p in partitions], procs))
+                           partitions=zip([p.pes for p in partitions], procs),
+                           img_data=graph_img.encode('base64'))
 
 
 @app.route('/db/<job>/communication_time')
