@@ -430,8 +430,9 @@ def map_inputs_to_partitions(ubergraph, inputs):
                 partition_id = ubergraph.pe_to_partition[pe.id]
                 pe_id = pe.id
             except:
-                print 'Could not map input "%s" to a PE' % pe
-                raise
+                import sys
+                raise Exception('Could not map input name "%s" to a PE' % pe), \
+                    None, sys.exc_info()[2]
         mapped_pe = ubergraph.partition_pes[partition_id]
         try:
             mapped_pe_input = []
