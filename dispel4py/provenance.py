@@ -823,8 +823,8 @@ def injectProv(object, provType, active=True, **kwargs):
         for x in nodelist:
             injectProv(x, provType, **kwargs)
     else:
-        print("Injecting provenance to: " + object.name + \
-            " Original type: " + str(object.__class__.__bases__))
+        print("Injecting provenance to: " + object.name +
+        " Original type: " + str(object.__class__.__bases__))
         parent = object.__class__.__bases__[0]
         localname = object.name
 
