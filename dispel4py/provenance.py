@@ -906,7 +906,7 @@ def attachProvenanceRecorderPE(
     try:
         partitions = graph.partitions
     except:
-        print "NO PARTITIONS: " + str(partitions)
+        print("NO PARTITIONS: " + str(partitions))
 
     if username is None or runId is None:
         raise Exception("Missing values")
@@ -1016,7 +1016,7 @@ class NewWorkflowRun(GenericPE):
             system_id=self.parameters["system_id"],
             workflowName=self.parameters["workflowName"],
             runId=self.parameters["runId"])
-        print "RUN Metadata: " + str(bundle)
+        print("RUN Metadata: " + str(bundle))
 
         self.write('output', bundle)
 
@@ -1098,8 +1098,7 @@ class ProvenanceRecorderToService(ProvenanceRecorder):
             headers)
 
         response = self.connection.getresponse()
-        print response.status, response.reason, response, response.read()
-
+        print("Response From Provenance Serivce: ",response.status, response.reason, response, response.read())
         self.connection.close()
         return None
 
