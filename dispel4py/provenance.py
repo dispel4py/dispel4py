@@ -67,9 +67,8 @@ def commandChain(commands, envhpc, queue=None):
 def toW3Cprov(prov, format='w3c-prov-json'):
     from dispel4py.prov.model import ProvDocument
     from dispel4py.prov.model import Namespace
-    from dispel4py.prov.model import Literal
     from dispel4py.prov.model import PROV
-    from dispel4py.prov.model import Identifier
+
 
     g = ProvDocument()
     # namespaces do not need to be explicitly added to a document
@@ -79,7 +78,7 @@ def toW3Cprov(prov, format='w3c-prov-json'):
     'specifing user'
     # first time the ex namespace was used, it is added to the document
     # automatically
-    ag = g.agent(vc["ag_" + prov["username"]],
+    g.agent(vc["ag_" + prov["username"]],
                  other_attributes={"dcterms:author": prov["username"]})
 
     'specify bundle'
@@ -256,6 +255,11 @@ def getUniqueId():
     return socket.gethostname() + "-" + \
         str(os.getpid()) + "-" + str(uuid.uuid1())
 
+def num(s):
+    try:
+        return int(s)
+    except exceptions.ValueError:
+        return float(s)
 
 class ProvenancePE(GenericPE):
 
