@@ -1098,7 +1098,8 @@ class ProvenanceRecorderToService(ProvenanceRecorder):
             headers)
 
         response = self.connection.getresponse()
-        print("Response From Provenance Serivce: ",response.status, response.reason, response, response.read())
+        print("Response From Provenance Serivce: ", response.status,
+              response.reason, response, response.read())
         self.connection.close()
         return None
 
