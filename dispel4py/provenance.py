@@ -27,7 +27,6 @@ import httplib
 import urllib
 from dispel4py.new import simple_process
 from subprocess import Popen, PIPE
-from exceptions import ValueError
 
 
 INPUT_NAME = 'input'
@@ -54,7 +53,7 @@ def getDestination_prov(self, data):
 def commandChain(commands, envhpc, queue=None):
 
     for cmd in commands:
-        print cmd
+        print ('Executing commandChain:' +str(cmd))
         process = Popen(cmd, stdout=PIPE, stderr=PIPE, env=envhpc, shell=True)
         stdoutdata, stderrdata = process.communicate()
 
@@ -79,7 +78,7 @@ def toW3Cprov(prov, format='w3c-prov-json'):
     # first time the ex namespace was used, it is added to the document
     # automatically
     g.agent(vc["ag_" + prov["username"]],
-                 other_attributes={"dcterms:author": prov["username"]})
+            other_attributes={"dcterms:author": prov["username"]})
 
     'specify bundle'
 
@@ -904,7 +903,6 @@ def attachProvenanceRecorderPE(
         username=None,
         w3c_prov=False):
     partitions = []
-    
     try:
         partitions = graph.partitions
     except:
