@@ -27,6 +27,7 @@ import httplib
 import urllib
 from dispel4py.new import simple_process
 from subprocess import Popen, PIPE
+from exceptions import ValueError
 
 
 INPUT_NAME = 'input'
@@ -68,7 +69,6 @@ def toW3Cprov(prov, format='w3c-prov-json'):
     from dispel4py.prov.model import ProvDocument
     from dispel4py.prov.model import Namespace
     from dispel4py.prov.model import PROV
-
 
     g = ProvDocument()
     # namespaces do not need to be explicitly added to a document
@@ -212,7 +212,7 @@ def toW3Cprov(prov, format='w3c-prov-json'):
                     try:
                         val = num(y[key])
 
-                    except Exception as e:
+                    except Exception:
                         val = str(y[key])
 
                     if ':' in key:
@@ -255,11 +255,13 @@ def getUniqueId():
     return socket.gethostname() + "-" + \
         str(os.getpid()) + "-" + str(uuid.uuid1())
 
+
 def num(s):
     try:
         return int(s)
     except exceptions.ValueError:
         return float(s)
+
 
 class ProvenancePE(GenericPE):
 
@@ -267,7 +269,6 @@ class ProvenancePE(GenericPE):
 
     def pe_init(self, *args, **kwargs):
         # ProvenancePE.__init__(self)
-        localname = self.name
         self.impcls = None
 
         if 'pe_class' in kwargs and kwargs['pe_class'] != GenericPE:
@@ -308,27 +309,17 @@ class ProvenancePE(GenericPE):
         return socket.gethostname() + "-" + str(os.getpid()) + \
             "-" + str(uuid.uuid1())
 
-    def setOutputDataTuple(self, types):
-        self.outputconnections[OUTPUT_DATA][TYPE] = types
-
     def getDataStreams(self, inputs):
-
         streams = {}
-
         for inp in self.inputconnections:
-
             if inp not in inputs:
                 continue
-
             values = inputs[inp]
-
             if isinstance(values, list):
                 data = values[0:]
             else:
                 data = values
-
             streams["streams"].update({inp: data})
-
         return streams
 
     def getInputAt(self, port="input", index=0):
@@ -340,11 +331,10 @@ class ProvenancePE(GenericPE):
 
         # streams = self.getDataStreams(inputs)
         self.stateless = False
-        result = None
         # processing...
         self.iterationIndex += 1
 
-        output = self.__processwrapper(inputs)
+        self.__processwrapper(inputs)
         self.log("stateless " + str((self.error)))
         if not self.stateless:
             self.log('STATEFUL CAPTURE: ')
@@ -409,7 +399,7 @@ class ProvenancePE(GenericPE):
 
             return True
 
-        except Exception as err:
+        except Exception:
             self.log(traceback.format_exc())
             if self.provon:
                 self.error += " FlushChunk Error: %s" % traceback.format_exc()
@@ -554,7 +544,7 @@ class ProvenancePE(GenericPE):
                     pass
             return streamtransfer
 
-        except Exception as err:
+        except Exception:
             self.error += self.name + " Writing output Error: %s" % \
                 traceback.format_exc()
             raise
@@ -609,7 +599,7 @@ class ProvenancePE(GenericPE):
     def __importInputMetadata(self):
         try:
             self.inMetaStreams = self.input["metadata"]["streams"]
-        except Exception as err:
+        except Exception:
             None
 
     """
@@ -639,7 +629,7 @@ class ProvenancePE(GenericPE):
             metadata.update(attributes)
         usermeta = {}
 
-        if 'con:skip' in control and control['con:skip'] == True:
+        if 'con:skip' in control and bool(control['con:skip']):
             self.provon = False
         else:
             self.provon = True
@@ -677,7 +667,7 @@ class ProvenancePE(GenericPE):
 
                 return {"streams": self.getMetadata(data)}
 
-        except Exception as err:
+        except Exception:
                 # streamlist=list()
                 # streamItem={}
                 # streammeta=list()
@@ -694,10 +684,9 @@ class ProvenancePE(GenericPE):
 
         streamItem = {}
         streammeta = {}
-        content = []
         streammeta = {}
         self.extractItemMetadata(data)
-        streamapp = {}
+        
 
         if not isinstance(streammeta, list):
 
@@ -743,11 +732,10 @@ class ProvenancePE(GenericPE):
 
         streamItem = {}
         streammeta = {}
-        content = []
+        
         # streammeta={}
         streammeta = self.extractItemMetadata(data)
         # self.extractItemMetadata(data);
-        streamapp = {}
         # self.log(type(streammeta));
         if not isinstance(streammeta, list):
             streammeta = kwargs['metadata'] if isinstance(
@@ -783,8 +771,8 @@ class ProvenancePE(GenericPE):
 
         try:
 
-            derivation = {'port': port, 'DerivedFromDatasetID': data[
-                'id'], 'TriggeredByProcessIterationID':
+            derivation = {'port': port, 'DerivedFromDatasetID': 
+                          data['id'], 'TriggeredByProcessIterationID':
                           data['TriggeredByProcessIterationID']}
             # self.log('Deriv: '+str(derivation))
             self.derivationIds.append(derivation)
@@ -809,7 +797,7 @@ class ProvenancePE(GenericPE):
                     try:
                         v = num(v)
                         adic.update({"val": v})
-                    except Exception as e:
+                    except Exception:
                         adic.update({"val": str(v)})
 
                 alist.append(adic)
@@ -881,7 +869,6 @@ def InitiateNewRun(
 
     if username is None or workflowId is None or workflowName is None:
         raise Exception("Missing values")
-    run_id = None
     if runId is None:
         runId = getUniqueId()
 
@@ -923,11 +910,10 @@ def attachProvenanceRecorderPE(
         username=None,
         w3c_prov=False):
     partitions = []
-    nopartitions = False
+    
     try:
         partitions = graph.partitions
     except:
-        nopartitions = True
         print "NO PARTITIONS: " + str(partitions)
 
     if username is None or runId is None:
@@ -940,7 +926,7 @@ def attachProvenanceRecorderPE(
     recpartition = []
     for x in nodelist:
         if isinstance(x, (WorkflowGraph)):
-            attachProvenancePE(
+            attachProvenanceRecorderPE(
                 x,
                 provRecorderClass,
                 runId=runId,
