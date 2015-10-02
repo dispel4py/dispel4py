@@ -834,8 +834,8 @@ def injectProv(object, provType, active=True, **kwargs):
         object.__class__ = type(str(object.__class__),
                                 (provType, object.__class__), {})
 
-        print "Injecting provenance to: " + object.name + \
-            " Transoformed: " + str(type(object))
+        print("Injecting provenance to: " + object.name +
+              " Transoformed: " + str(type(object)))
         object.pe_init(pe_class=parent, **kwargs)
         object.name = localname
 
