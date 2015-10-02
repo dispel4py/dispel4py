@@ -259,7 +259,7 @@ def getUniqueId():
 def num(s):
     try:
         return int(s)
-    except exceptions.ValueError:
+    except Exception:
         return float(s)
 
 
@@ -686,18 +686,13 @@ class ProvenancePE(GenericPE):
         streammeta = {}
         streammeta = {}
         self.extractItemMetadata(data)
-        
 
         if not isinstance(streammeta, list):
-
             streammeta = self.streamItemsMeta[str(id(data))] if \
                 isinstance(self.streamItemsMeta[str(id(data))], list) \
                 else [self.streamItemsMeta[str(id(data))]]
-
         elif isinstance(streammeta, list):
-
             try:
-
                 if isinstance(self.streamItemsMeta[str(id(data))], list):
                     streammeta = streammeta + \
                         self.streamItemsMeta[str(id(data))]
@@ -732,7 +727,6 @@ class ProvenancePE(GenericPE):
 
         streamItem = {}
         streammeta = {}
-        
         # streammeta={}
         streammeta = self.extractItemMetadata(data)
         # self.extractItemMetadata(data);
@@ -771,7 +765,7 @@ class ProvenancePE(GenericPE):
 
         try:
 
-            derivation = {'port': port, 'DerivedFromDatasetID': 
+            derivation = {'port': port, 'DerivedFromDatasetID':
                           data['id'], 'TriggeredByProcessIterationID':
                           data['TriggeredByProcessIterationID']}
             # self.log('Deriv: '+str(derivation))
