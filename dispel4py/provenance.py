@@ -26,8 +26,7 @@ import json
 import httplib
 import urllib
 from dispel4py.new import simple_process
-# from multiprocessing import Popen
-# from subprocess import *
+from subprocess import Popen, PIPE, STDOUT
 
 
 INPUT_NAME = 'input'
