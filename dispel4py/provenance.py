@@ -13,9 +13,10 @@
 
 import dispel4py.new.processor
 from dispel4py.utils import make_hash
-from dispel4py.core import GenericPE, NAME, GROUPING
+from dispel4py.core import GenericPE
 from dispel4py.base import IterativePE, NAME, SimpleFunctionPE
-from dispel4py.workflow_graph import *
+from dispel4py.workflow_graph import WorkflowGraph
+import sys
 import datetime
 import uuid
 import traceback
@@ -25,8 +26,8 @@ import json
 import httplib
 import urllib
 from dispel4py.new import simple_process
-from multiprocessing import *
-from subprocess import *
+# from multiprocessing import Popen
+# from subprocess import *
 
 
 INPUT_NAME = 'input'
