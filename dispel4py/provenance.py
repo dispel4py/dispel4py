@@ -1069,9 +1069,8 @@ class ProvenanceRecorderToService(ProvenanceRecorder):
             "name": ProvenanceRecorder.INPUT_NAME}
 
     def _preprocess(self):
-        self.provurl = urllib.parse.urlparse(
-                                             ProvenanceRecorderToService.
-                                             REPOS_URL)
+        self.provurl = urllib.parse.\
+            urlparse(ProvenanceRecorderToService.REPOS_URL)
         self.connection = httplib.HTTPConnection(
             self.provurl.netloc)
 
@@ -1122,9 +1121,8 @@ class ProvenanceRecorderToServiceBulk(ProvenanceRecorder):
         self.timestamp = datetime.datetime.utcnow()
 
     def _preprocess(self):
-        self.provurl = urllib.parse.urlparse(
-                                             ProvenanceRecorderToServiceBulk.
-                                             REPOS_URL)
+        self.provurl = urllib.parse.\
+            urlparse(ProvenanceRecorderToService.REPOS_URL)
         self.connection = httplib.HTTPConnection(
             self.provurl.netloc)
 
