@@ -1059,7 +1059,7 @@ class ProvenanceRecorderToFile(ProvenanceRecorder):
 
 class ProvenanceRecorderToService(ProvenanceRecorder):
 
-    REPOS_URL = 'http://localhost/j2ep-1.0/prov/workflow/insert'
+    REPOS_URL = ''
 
     def __init__(self, name='ProvenanceRecorderToService', toW3C=False):
         ProvenanceRecorder.__init__(self)
@@ -1074,9 +1074,9 @@ class ProvenanceRecorderToService(ProvenanceRecorder):
         self.connection = httplib.HTTPConnection(
             self.provurl.netloc)
 
-        def _process(self, inputs):
-            prov = inputs[self.INPUT_NAME]
-            out = None
+    def _process(self, inputs):
+        prov = inputs[self.INPUT_NAME]
+        out = None
         # print "PROVENANCETOSERIVCE:  "+str(prov)
         if isinstance(prov, list) and "data" in prov[0]:
             prov = prov[0]["data"]
@@ -1109,7 +1109,7 @@ class ProvenanceRecorderToService(ProvenanceRecorder):
 
 class ProvenanceRecorderToServiceBulk(ProvenanceRecorder):
 
-    REPOS_URL = 'http://localhost/j2ep-1.0/prov/workflow/insert'
+    REPOS_URL = ''
 
     def __init__(self, name='ProvenanceRecorderToServiceBulk', toW3C=False):
         ProvenanceRecorder.__init__(self)
