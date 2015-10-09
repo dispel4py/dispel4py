@@ -1059,24 +1059,24 @@ class ProvenanceRecorderToFile(ProvenanceRecorder):
 
 class ProvenanceRecorderToService(ProvenanceRecorder):
 
-    REPOS_URL = 'localhost'
+    REPOS_URL = 'http://localhost/j2ep-1.0/prov/workflow/insert'
 
     def __init__(self, name='ProvenanceRecorderToService', toW3C=False):
         ProvenanceRecorder.__init__(self)
         self.name = name
-
         self.convertToW3C = toW3C
-
         self.inputconnections[ProvenanceRecorder.INPUT_NAME] = {
             "name": ProvenanceRecorder.INPUT_NAME}
 
-    def _process(self, inputs):
-
-        prov = inputs[self.INPUT_NAME]
-        out = None
-
+    def _preprocess(self):
+        self.provurl = urllib.parse.urlparse(
+                       ProvenanceRecorderToService.REPOS_URL)
         self.connection = httplib.HTTPConnection(
-            ProvenanceRecorderToService.REPOS_URL)
+            self.provurl.netloc)
+
+        def _process(self, inputs):
+            prov = inputs[self.INPUT_NAME]
+            out = None
         # print "PROVENANCETOSERIVCE:  "+str(prov)
         if isinstance(prov, list) and "data" in prov[0]:
             prov = prov[0]["data"]
@@ -1093,7 +1093,7 @@ class ProvenanceRecorderToService(ProvenanceRecorder):
             "Accept": "application/json"}
         self.connection.request(
             "POST",
-            "/j2ep-1.0/prov/workflow/insert",
+            self.provurl.path,
             params,
             headers)
 
@@ -1103,10 +1103,13 @@ class ProvenanceRecorderToService(ProvenanceRecorder):
         self.connection.close()
         return None
 
+    def postprocess(self):
+        self.connection.close()
+
 
 class ProvenanceRecorderToServiceBulk(ProvenanceRecorder):
 
-    REPOS_URL = 'localhost'
+    REPOS_URL = 'http://localhost/j2ep-1.0/prov/workflow/insert'
 
     def __init__(self, name='ProvenanceRecorderToServiceBulk', toW3C=False):
         ProvenanceRecorder.__init__(self)
@@ -1117,16 +1120,20 @@ class ProvenanceRecorderToServiceBulk(ProvenanceRecorder):
             "name": ProvenanceRecorder.INPUT_NAME}
         self.timestamp = datetime.datetime.utcnow()
 
-    def postprocess(self):
+    def _preprocess(self):
+        self.provurl = urllib.parse.urlparse(
+                       ProvenanceRecorderToServiceBulk.REPOS_URL)
         self.connection = httplib.HTTPConnection(
-            ProvenanceRecorderToServiceBulk.REPOS_URL)
+            self.provurl.netloc)
+
+    def postprocess(self):
         params = urllib.urlencode({'prov': json.dumps(self.bulk)})
         headers = {
             "Content-type": "application/x-www-form-urlencoded",
             "Accept": "application/json"}
         self.connection.request(
             "POST",
-            "/j2ep-1.0/prov/workflow/insert",
+            self.provurl.path,
             params,
             headers)
         response = self.connection.getresponse()
@@ -1139,11 +1146,7 @@ class ProvenanceRecorderToServiceBulk(ProvenanceRecorder):
     def _process(self, inputs):
 
         prov = inputs[self.INPUT_NAME]
-
         out = None
-
-        self.connection = httplib.HTTPConnection(
-            "verce-portal-dev.scai.fraunhofer.de")
         # print "PROVENANCETOSERIVCE:  "+str(prov)
         if isinstance(prov, list) and "data" in prov[0]:
             prov = prov[0]["data"]
@@ -1162,7 +1165,7 @@ class ProvenanceRecorderToServiceBulk(ProvenanceRecorder):
                 "Content-type": "application/x-www-form-urlencoded",
                 "Accept": "application/json"}
             self.connection.request(
-                "POST", "/j2ep-1.0/prov/workflow/insert", params, headers)
+                "POST", self.provurl, params, headers)
             response = self.connection.getresponse()
             self.log("progress: " + str((response.status, response.reason,
                                          response, response.read())))
