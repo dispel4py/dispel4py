@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
 import dispel4py.new.processor
 from dispel4py.utils import make_hash
 from dispel4py.core import GenericPE
@@ -25,24 +26,82 @@ import socket
 import json
 import httplib
 import urllib
+from urlparse import urlparse
 from dispel4py.new import simple_process
 from subprocess import Popen, PIPE
+import collections
 
+from itertools import chain
+try:
+    from reprlib import repr
+except ImportError:
+    pass
 
 INPUT_NAME = 'input'
 OUTPUT_DATA = 'output'
 OUTPUT_METADATA = 'provenance'
 
 
-def write(self, name, data, **kwargs):
-    self._write(name, data)
+#def write(self, name, data, **kwargs):
+#    self._write(name, data)
+    
 
-dispel4py.core.GenericPE.write = write
+
+def total_size(o, handlers={}, verbose=False):
+    """ Returns the approximate memory footprint an object and all of its contents.
+
+    Automatically finds the contents of the following builtin containers and
+    their subclasses:  tuple, list, deque, dict, set and frozenset.
+    To search other containers, add handlers to iterate over their contents:
+
+        handlers = {SomeContainerClass: iter,
+                    OtherContainerClass: OtherContainerClass.get_elements}
+
+    """
+    dict_handler = lambda d: chain.from_iterable(d.items())
+    all_handlers = {tuple: iter,
+                    list: iter,
+                    #deque: iter,
+                    dict: dict_handler,
+                    set: iter,
+                    frozenset: iter,
+                   }
+    all_handlers.update(handlers)     # user handlers take precedence
+    seen = set()                      # track which object id's have already been seen
+    default_size = sys.getsizeof(0)       # estimate sizeof object without __sizeof__
+
+    def sizeof(o):
+        if id(o) in seen:       # do not double count the same object
+            return 0
+        seen.add(id(o))
+        s = sys.getsizeof(o, default_size)
+
+        #if verbose:
+        #    print(s, type(o), repr(o), file=stderr)
+
+        for typ, handler in all_handlers.items():
+            if isinstance(o, typ):
+                s += sum(map(sizeof, handler(o)))
+                break
+        return s
+
+    return sizeof(o)
+
+
+def write(self, name, data):
+    if isinstance(data, dict) and '_d4p_prov' in data:
+#            meta = data['_d4p_prov']
+            data = (data['_d4p_data'])
+    self._write(name,data)
+
+#dispel4py.core.GenericPE.write = write
+dispel4py.base.SimpleFunctionPE.write = write
 
 
 def getDestination_prov(self, data):
-    if 'TriggeredByProcessIterationID' in data[self.input_name][0]:
-        output = tuple([data[self.input_name][0]['data'][x]
+    print ("GGGGGGGGG "+str(data[self.input_name]))
+    if 'TriggeredByProcessIterationID' in data[self.input_name]:
+        output = tuple([data[self.input_name]['_d4p'][x]
                         for x in self.groupby])
     else:
         output = tuple([data[self.input_name][x] for x in self.groupby])
@@ -262,14 +321,22 @@ def num(s):
         return float(s)
 
 
+
+_d4p_plan_sqn = 0
+
 class ProvenancePE(GenericPE):
 
     OUTPUT_METADATA = 'metadata'
 
     def pe_init(self, *args, **kwargs):
         # ProvenancePE.__init__(self)
-        self.impcls = None
+        
+        
+        global _d4p_plan_sqn
 
+        
+        self.impcls = None
+        
         if 'pe_class' in kwargs and kwargs['pe_class'] != GenericPE:
             self.impcls = kwargs['pe_class']
 
@@ -297,12 +364,15 @@ class ProvenancePE(GenericPE):
         self.stateless = False
         self.derivationIds = list()
         self.iterationIndex = 0
-        self.instanceId = self.name + "-Instance-" + \
-            socket.gethostname() + "-" + getUniqueId()
-
+        self.behalfOf=self.name+'_'+str(_d4p_plan_sqn)
+        _d4p_plan_sqn=_d4p_plan_sqn+1
+        
+        
+        
     def __init__(self, *args, **kwargs):
         GenericPE.__init__(self)
         self.parameters = {}
+        
 
     def __getUniqueId(self):
         return socket.gethostname() + "-" + str(os.getpid()) + \
@@ -324,17 +394,23 @@ class ProvenancePE(GenericPE):
     def getInputAt(self, port="input", index=0):
         return self.inputs[port][index]
 
-        # print "Not Extracting PROV"
-
+    def _preprocess(self):
+        self.instanceId = self.name + "-Instance-" + \
+            "-" + getUniqueId()
+        #self.log("CREATING INSTANCE: "+self.instanceId)
+        super(ProvenancePE, self)._preprocess()
+    
+    
     def process(self, inputs):
 
         # streams = self.getDataStreams(inputs)
         self.stateless = False
         # processing...
         self.iterationIndex += 1
-
+       #self.log(inputs)
+       # self.log(total_size(inputs, 0))
+       # self.insize=total_size(inputs, 0)
         self.__processwrapper(inputs)
-        self.log("stateless " + str((self.error)))
         if not self.stateless:
             self.log('STATEFUL CAPTURE: ')
             if self.provon:
@@ -346,27 +422,7 @@ class ProvenancePE(GenericPE):
             self.stateless = False
 
     def extractItemMetadata(self, data, port='output'):
-        # streammeta=list()
-        # self.log(self.name+" TYPE: "+str(data))
-        # if type(data)==tuple or type(data)==list:
-        #   for x in data:
-        #       if type(x)==dict:
-        #           meta={}
-        #           for k in x:
-        #               try:
-        #                   meta[k]=num(x[k])
-        #               except Exception,e:
-        #                   try:
-        #                       meta[k]=str(x[k]).encode(encoding='UTF-8',errors='strict')[0:20]
-        #                   except Exception,e:
-        #                       continue
-        #           streammeta.append(meta)
-        #       else:
-                # streammeta.append({'serial':str(x).encode(encoding='UTF-8',errors='strict')[0:50]})
-        #           streammeta.append({})
-        # else:
-        #   streammeta=str(data)[0:50];
-        # return streammeta
+        
         return {}
 
     def flushData(self, data, metadata, port):
@@ -446,18 +502,20 @@ class ProvenancePE(GenericPE):
             if 'outputid' in self.controlParameters else 'None'
 
     def importInputData(self, data):
-        # self.log("IIIIIIIII: "+str(data))
-
+        
         inputs = {}
-
+        
         try:
-            for x in data:
-                self.buildDerivation(data[x], port=x)
-                if '_d4p' in data[x]:
-                    inputs[x] = data[x]['_d4p']
-                else:
-                    inputs[x] = data[x]
-            return inputs
+            if not isinstance(data, collections.Iterable):
+                return data
+            else:
+                for x in data:
+                    self.buildDerivation(data[x], port=x)
+                    if '_d4p' in data[x]:
+                        inputs[x] = data[x]['_d4p']
+                    else:
+                        inputs[x] = data[x]
+                return inputs
 
         except Exception:
             self.output = ""
@@ -483,7 +541,7 @@ class ProvenancePE(GenericPE):
             self.extractProvenance(result, error=self.error, output_port=name)
 
     def __markIteration(self):
-        self.endTime = datetime.datetime.utcnow()
+        self.startTime = datetime.datetime.utcnow()
         self.iterationId = self.name + '-' + getUniqueId()
 
     def __computewrapper(self, inputs):
@@ -491,7 +549,7 @@ class ProvenancePE(GenericPE):
         try:
             result = None
 
-            self.startTime = datetime.datetime.utcnow()
+            self.__markIteration()
 
             if self.impcls is not None and isinstance(self, self.impcls):
 
@@ -500,14 +558,14 @@ class ProvenancePE(GenericPE):
 
                 result = self._process(inputs[self.impcls.INPUT_NAME])
 
-                self.__markIteration()
+                self.endTime = datetime.datetime.utcnow()
 
                 if result is not None:
                     self.wirteResults(self.impcls.OUTPUT_NAME, result)
             else:
                 result = self._process(inputs)
                 # self.log=('REEEES :'+result)
-                self.__markIteration()
+                self.endTime = datetime.datetime.utcnow()
 
             if result is not None:
                 return result
@@ -515,7 +573,7 @@ class ProvenancePE(GenericPE):
         except Exception:
             self.log(" Compute Error: %s" % traceback.format_exc())
             self.error += " Compute Error: %s" % traceback.format_exc()
-            self.__markIteration()
+            self.endTime = datetime.datetime.utcnow()
             self.wirteResults('error', {'error': 'null'})
 
     def prepareOutputStream(self, data, trace):
@@ -555,8 +613,13 @@ class ProvenancePE(GenericPE):
 
                 # self.log("content: "+str(contentmeta))
                 # print "INSTANCE_ID: "+self.instanceId
-                # print "UNIQUEEE: "+self.iterationId
-                metadata.update({'_id': self.iterationId})
+                # print "UNIQUEEE: "+
+                
+                # identifies the actual iteration over the instance
+                metadata.update({'iterationId': self.iterationId})
+                # identifies the actual writing process'
+                metadata.update({'actedOnBehalfOf': self.behalfOf})
+                metadata.update({'_id': self.name+'_write_'+str(getUniqueId())})
                 metadata.update({'iterationIndex': self.iterationIndex})
                 metadata.update({'instanceId': self.instanceId})
                 metadata.update({'annotations': {}})
@@ -574,7 +637,9 @@ class ProvenancePE(GenericPE):
                 metadata.update({'endTime': str(self.endTime)})
                 metadata.update({'type': 'lineage'})
                 metadata.update({'streams': contentmeta})
+               # metadata.update({'input_size': self.insize})
                 metadata.update({'mapping': sys.argv[1]})
+                
 
                 if self.creator is not None:
                     metadata.update({'creator': self.creator})
@@ -651,8 +716,12 @@ class ProvenancePE(GenericPE):
 
     def write(self, name, data, **kwargs):
 
-        self.__markIteration()
-        self.stateless = True
+        #self.__markIteration()
+        self.endTime = datetime.datetime.utcnow()
+        if 'state_reset' in kwargs:
+            self.stateless = bool(kwargs['state_reset'])
+        else:
+            self.stateless=True
         self.extractProvenance(data, output_port=name, **kwargs)
 
     """
@@ -680,7 +749,7 @@ class ProvenancePE(GenericPE):
 
     def getMetadata(self, data):
         streamlist = list()
-
+        
         streamItem = {}
         streammeta = {}
         streammeta = {}
@@ -756,8 +825,10 @@ class ProvenancePE(GenericPE):
         streamItem.update({"location": kwargs['location']})
         # if (self.streamItemsFormat!={}):
         streamItem.update({"format": kwargs['format']})
+        streamItem.update({"size": total_size(data)})
         streamlist.append(streamItem)
-
+        self.log(total_size(data, verbose=True))
+        #self.log(data)
         return streamlist
 
     def buildDerivation(self, data, port=""):
@@ -1069,8 +1140,7 @@ class ProvenanceRecorderToService(ProvenanceRecorder):
             "name": ProvenanceRecorder.INPUT_NAME}
 
     def _preprocess(self):
-        self.provurl = urllib.parse.\
-            urlparse(ProvenanceRecorderToService.REPOS_URL)
+        self.provurl = urlparse(ProvenanceRecorderToService.REPOS_URL)
         self.connection = httplib.HTTPConnection(
             self.provurl.netloc)
 
@@ -1121,8 +1191,8 @@ class ProvenanceRecorderToServiceBulk(ProvenanceRecorder):
         self.timestamp = datetime.datetime.utcnow()
 
     def _preprocess(self):
-        self.provurl = urllib.parse.\
-            urlparse(ProvenanceRecorderToService.REPOS_URL)
+        self.provurl = urlparse(ProvenanceRecorderToServiceBulk.REPOS_URL)
+        
         self.connection = httplib.HTTPConnection(
             self.provurl.netloc)
 
@@ -1165,7 +1235,7 @@ class ProvenanceRecorderToServiceBulk(ProvenanceRecorder):
                 "Content-type": "application/x-www-form-urlencoded",
                 "Accept": "application/json"}
             self.connection.request(
-                "POST", self.provurl, params, headers)
+                "POST", self.provurl.path, params, headers)
             response = self.connection.getresponse()
             self.log("progress: " + str((response.status, response.reason,
                                          response, response.read())))
