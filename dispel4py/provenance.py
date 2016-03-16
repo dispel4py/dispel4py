@@ -42,6 +42,8 @@ OUTPUT_DATA = 'output'
 OUTPUT_METADATA = 'provenance'
 
 
+
+
 #def write(self, name, data, **kwargs):
 #    self._write(name, data)
     
@@ -89,22 +91,31 @@ def total_size(o, handlers={}, verbose=False):
 
 
 def write(self, name, data):
+    
     if isinstance(data, dict) and '_d4p_prov' in data:
 #            meta = data['_d4p_prov']
-            data = (data['_d4p_data'])
+        data = (data['_d4p_data'])
     self._write(name,data)
+    
+def _process(self, data):
+        results = self.compute_fn(data, **self.params)
+        if isinstance(results, dict) and '_d4p_prov' in results:
+#            meta = data['_d4p_prov']
+             return results['_d4p_data']
+
 
 #dispel4py.core.GenericPE.write = write
 dispel4py.base.SimpleFunctionPE.write = write
-
+dispel4py.base.SimpleFunctionPE._process = _process
 
 def getDestination_prov(self, data):
-    print ("GGGGGGGGG "+str(data[self.input_name]))
+    print ("Provenance Enabled Grouping for input port: "+self.input_name)
     if 'TriggeredByProcessIterationID' in data[self.input_name]:
+       
         output = tuple([data[self.input_name]['_d4p'][x]
                         for x in self.groupby])
     else:
-        output = tuple([data[self.input_name][x] for x in self.groupby])
+       output = tuple([data[self.input_name][x] for x in self.groupby])
     dest_index = abs(make_hash(output)) % len(self.destinations)
     return [self.destinations[dest_index]]
 
@@ -327,7 +338,7 @@ _d4p_plan_sqn = 0
 class ProvenancePE(GenericPE):
 
     OUTPUT_METADATA = 'metadata'
-
+	
     def pe_init(self, *args, **kwargs):
         # ProvenancePE.__init__(self)
         
@@ -522,10 +533,9 @@ class ProvenancePE(GenericPE):
             self.error += "Reading Input Error: %s" % traceback.format_exc()
             raise
 
-    def wirteResults(self, name, result):
+    def writeResults(self, name, result):
 
         self.stateless = True
-
         if isinstance(result, dict) and '_d4p_prov' in result:
             meta = result['_d4p_prov']
             result = (result['_d4p_data'])
@@ -557,11 +567,10 @@ class ProvenancePE(GenericPE):
                     self.parameters = self.params
 
                 result = self._process(inputs[self.impcls.INPUT_NAME])
-
                 self.endTime = datetime.datetime.utcnow()
 
                 if result is not None:
-                    self.wirteResults(self.impcls.OUTPUT_NAME, result)
+                    self.writeResults(self.impcls.OUTPUT_NAME, result)
             else:
                 result = self._process(inputs)
                 # self.log=('REEEES :'+result)
@@ -639,6 +648,10 @@ class ProvenancePE(GenericPE):
                 metadata.update({'streams': contentmeta})
                # metadata.update({'input_size': self.insize})
                 metadata.update({'mapping': sys.argv[1]})
+                if hasattr(self, 'prov_cluster'):
+                    metadata.update({'prov_cluster': self.prov_cluster})
+                else:  
+                    metadata.update({'prov_cluster': self.instanceId})
                 
 
                 if self.creator is not None:
@@ -827,7 +840,7 @@ class ProvenancePE(GenericPE):
         streamItem.update({"format": kwargs['format']})
         streamItem.update({"size": total_size(data)})
         streamlist.append(streamItem)
-        self.log(total_size(data, verbose=True))
+        #self.log(total_size(data, verbose=True))
         #self.log(data)
         return streamlist
 
@@ -884,7 +897,7 @@ class ProvenancePE(GenericPE):
 
 
 def injectProv(object, provType, active=True, **kwargs):
-    'Change grouping implementation '
+    print('Change grouping implementation ')
     dispel4py.new.processor.GroupByCommunication.getDestination = \
         getDestination_prov
 
@@ -917,6 +930,7 @@ def injectProv(object, provType, active=True, **kwargs):
 ' which could dump to files, dbs, external services, enrich '
 ' the metadata, etc..'
 
+provclusters={}
 
 def InitiateNewRun(
         graph,
@@ -963,9 +977,8 @@ def InitiateNewRun(
         runId,
         username,
         w3c_prov)
-
+    provclusters={}
     return runId
-
 
 def attachProvenanceRecorderPE(
         graph,
@@ -974,6 +987,7 @@ def attachProvenanceRecorderPE(
         username=None,
         w3c_prov=False):
     partitions = []
+    provtag=None
     try:
         partitions = graph.partitions
     except:
@@ -985,7 +999,6 @@ def attachProvenanceRecorderPE(
 
     nodelist = graph.getContainedObjects()
 
-    provrecorder = provRecorderClass(toW3C=w3c_prov)
     recpartition = []
     for x in nodelist:
         if isinstance(x, (WorkflowGraph)):
@@ -999,6 +1012,23 @@ def attachProvenanceRecorderPE(
         if isinstance(x, (ProvenancePE)) and x.provon:
             provrecorder = provRecorderClass(toW3C=w3c_prov)
             # provrecorder.numprocesses=1
+            if isinstance(x, (SimpleFunctionPE)):
+                if 'prov_cluster' in x.params:
+                    provtag=x.params['prov_cluster']
+                    x.prov_cluster=provtag
+                    
+            else:
+                if hasattr(x, 'prov_cluster'):
+                    provtag=x.prov_cluster
+            	    
+          
+            if provtag!=None:
+            	print("PROV CLUSTER: Attaching "+x.name+" to provenance cluster: " + provtag)
+                if provtag not in provclusters:
+                    provclusters[provtag]= provrecorder
+                else:
+                    provrecorder=provclusters[provtag]
+                    
             x.controlParameters["runId"] = runId
             x.controlParameters["username"] = username
             graph.connect(
@@ -1008,6 +1038,7 @@ def attachProvenanceRecorderPE(
                 provrecorder.INPUT_NAME)
             recpartition.append(provrecorder)
             partitions.append([x])
+            provtag=None
 
     # partitions.append(recpartition)
     # graph.partitions=partitions
@@ -1097,18 +1128,19 @@ class ProvenanceRecorder(GenericPE):
 
     def __init__(self, name='ProvenanceRecorder', toW3C=False):
         GenericPE.__init__(self)
+        #self._add_input(ProvenanceRecorder.INPUT_NAME, grouping=['prov_cluster'])
 
 
 class ProvenanceRecorderToFile(ProvenanceRecorder):
 
-    INPUT_NAME = 'metadata'
+    
 
     def __init__(self, name='ProvenanceRecorderToFile', toW3C=False):
         ProvenanceRecorder.__init__(self)
         self.name = name
         self.convertToW3C = toW3C
-        self.inputconnections[ProvenanceRecorder.INPUT_NAME] = {
-            "name": ProvenanceRecorder.INPUT_NAME}
+        #self.inputconnections[ProvenanceRecorder.INPUT_NAME] = {
+        #"name": ProvenanceRecorder.INPUT_NAME}
 
     def process(self, inputs):
 
@@ -1136,8 +1168,8 @@ class ProvenanceRecorderToService(ProvenanceRecorder):
         ProvenanceRecorder.__init__(self)
         self.name = name
         self.convertToW3C = toW3C
-        self.inputconnections[ProvenanceRecorder.INPUT_NAME] = {
-            "name": ProvenanceRecorder.INPUT_NAME}
+        #self.inputconnections[ProvenanceRecorder.INPUT_NAME] = {
+        #"name": ProvenanceRecorder.INPUT_NAME}
 
     def _preprocess(self):
         self.provurl = urlparse(ProvenanceRecorderToService.REPOS_URL)
@@ -1186,8 +1218,9 @@ class ProvenanceRecorderToServiceBulk(ProvenanceRecorder):
         self.name = name
         self.convertToW3C = toW3C
         self.bulk = []
-        self.inputconnections[ProvenanceRecorder.INPUT_NAME] = {
-            "name": ProvenanceRecorder.INPUT_NAME}
+        #self.inputconnections[ProvenanceRecorder.INPUT_NAME] = {
+        #"name": ProvenanceRecorder.INPUT_NAME}
+        self._add_input(ProvenanceRecorder.INPUT_NAME, grouping=['prov_cluster'])
         self.timestamp = datetime.datetime.utcnow()
 
     def _preprocess(self):
@@ -1214,6 +1247,7 @@ class ProvenanceRecorderToServiceBulk(ProvenanceRecorder):
         self.bulk = []
 
     def _process(self, inputs):
+         
 
         prov = inputs[self.INPUT_NAME]
         out = None
@@ -1247,14 +1281,15 @@ class ProvenanceRecorderToServiceBulk(ProvenanceRecorder):
 
 class ProvenanceRecorderToFileBulk(ProvenanceRecorder):
 
-    INPUT_NAME = 'metadata'
+     
 
     def __init__(self, name='ProvenanceRecorderToFileBulk', toW3C=False):
         ProvenanceRecorder.__init__(self)
         self.name = name
         self.convertToW3C = toW3C
-        self.inputconnections[ProvenanceRecorder.INPUT_NAME] = {
-            "name": ProvenanceRecorder.INPUT_NAME}
+        #self.inputconnections[ProvenanceRecorder.INPUT_NAME] = {
+        #"name": ProvenanceRecorder.INPUT_NAME}
+        
         self.bulk = []
 
     def postprocess(self):
