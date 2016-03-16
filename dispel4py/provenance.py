@@ -943,7 +943,8 @@ def InitiateNewRun(
         system_id=None,
         workflowName=None,
         w3c_prov=False,
-        runId=None):
+        runId=None,
+        clustersRecorders={}):
 
     if username is None or workflowId is None or workflowName is None:
         raise Exception("Missing values")
@@ -976,7 +977,8 @@ def InitiateNewRun(
         provRecorderClass,
         runId,
         username,
-        w3c_prov)
+        w3c_prov,
+        clustersRecorders)
     provclusters={}
     return runId
 
@@ -985,7 +987,8 @@ def attachProvenanceRecorderPE(
         provRecorderClass,
         runId=None,
         username=None,
-        w3c_prov=False):
+        w3c_prov=False,
+        clustersRecorders={}):
     partitions = []
     provtag=None
     try:
@@ -1021,13 +1024,18 @@ def attachProvenanceRecorderPE(
                 if hasattr(x, 'prov_cluster'):
                     provtag=x.prov_cluster
             	    
-          
+            
             if provtag!=None:
-            	print("PROV CLUSTER: Attaching "+x.name+" to provenance cluster: " + provtag)
+                print(clustersRecorders)
+                ' checks if specific recorders have been specified'
+                if provtag in clustersRecorders:
+                        provrecorder = clustersRecorders[provtag](toW3C=w3c_prov)
+                   
+                print("PROV CLUSTER: Attaching "+x.name+" to provenance cluster: " + provtag)
                 if provtag not in provclusters:
                     provclusters[provtag]= provrecorder
                 else:
-                    provrecorder=provclusters[provtag]
+                      provrecorder=provclusters[provtag]
                     
             x.controlParameters["runId"] = runId
             x.controlParameters["username"] = username
@@ -1128,7 +1136,7 @@ class ProvenanceRecorder(GenericPE):
 
     def __init__(self, name='ProvenanceRecorder', toW3C=False):
         GenericPE.__init__(self)
-        #self._add_input(ProvenanceRecorder.INPUT_NAME, grouping=['prov_cluster'])
+        self._add_input(ProvenanceRecorder.INPUT_NAME, grouping=['prov_cluster'])
 
 
 class ProvenanceRecorderToFile(ProvenanceRecorder):
