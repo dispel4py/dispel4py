@@ -20,8 +20,7 @@ from dispel4py.workflow_graph import WorkflowGraph
 
 from importlib import import_module
 from imp import load_source
-import traceback
-import sys
+import traceback,sys
 
 
 def findWorkflowGraph(mod, attr):
@@ -67,7 +66,6 @@ def load_graph(graph_source, attr=None):
     except Exception:
         error_message += \
             'Error loading graph module:\n%s' % traceback.format_exc()
-        traceback.print_exc(file=sys.stderr)
         pass
 
     # maybe it's a file?
@@ -76,10 +74,10 @@ def load_graph(graph_source, attr=None):
     except IOError:
         # it's not a file
         error_message += 'No file "%s"\n' % graph_source
+        traceback.print_exc(file=sys.stderr)
     except Exception:
         error_message += \
             'Error loading graph from file:\n%s' % traceback.format_exc()
-        traceback.print_exc(file=sys.stderr)
 
     # we don't know what it is
     print('Failed to load graph from "%s":\n%s' %

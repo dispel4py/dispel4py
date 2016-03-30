@@ -30,6 +30,7 @@ from urlparse import urlparse
 from dispel4py.new import simple_process
 from subprocess import Popen, PIPE
 import collections
+from copy import deepcopy
 
 from itertools import chain
 try:
@@ -104,7 +105,12 @@ def _process(self, data):
              return results['_d4p_data']
 
 
+def addToProv(self,*args, **kwargs):
+    self.log("Need to Activate Provenance to use this method")
+    None
+    
 #dispel4py.core.GenericPE.write = write
+dispel4py.base.GenericPE.addToProv = addToProv
 dispel4py.base.SimpleFunctionPE.write = write
 dispel4py.base.SimpleFunctionPE._process = _process
 
@@ -408,26 +414,25 @@ class ProvenancePE(GenericPE):
     def _preprocess(self):
         self.instanceId = self.name + "-Instance-" + \
             "-" + getUniqueId()
-        #self.log("CREATING INSTANCE: "+self.instanceId)
+        
         super(ProvenancePE, self)._preprocess()
     
     
     def process(self, inputs):
 
-        # streams = self.getDataStreams(inputs)
         self.stateless = False
-        # processing...
         self.iterationIndex += 1
-       #self.log(inputs)
-       # self.log(total_size(inputs, 0))
-       # self.insize=total_size(inputs, 0)
         self.__processwrapper(inputs)
         if not self.stateless:
             self.log('STATEFUL CAPTURE: ')
             if self.provon:
+                
                 self.extractProvenance(self, output_port=None)
-                self.derivationIds = [self.derivationIds.pop()]
-
+                try:
+                    self.derivationIds = [self.derivationIds.pop()]
+                except:
+                    pass
+                
         if self.stateless:
             self.derivationIds = []
             self.stateless = False
@@ -441,6 +446,7 @@ class ProvenancePE(GenericPE):
         stream = data
         try:
             if self.provon:
+                self.endTime = datetime.datetime.utcnow()
                 trace = self.packageAll(metadata)
                 stream = self.prepareOutputStream(data, trace)
 
@@ -448,21 +454,22 @@ class ProvenancePE(GenericPE):
                 super(ProvenancePE, self).write(port, stream)
 
             except:
+                self.log(traceback.format_exc())
                 'if cant write doesnt matter move on'
                 pass
             try:
                 if self.provon:
-                    # self.log('port: '+str(port))
                     super(
                         ProvenancePE,
                         self).write(
                         OUTPUT_METADATA,
-                        trace['metadata'])
+                        deepcopy(trace['metadata']))
+                    
             except:
                 self.log(traceback.format_exc())
                 'if cant write doesnt matter move on'
                 pass
-
+            
             return True
 
         except Exception:
@@ -567,14 +574,13 @@ class ProvenancePE(GenericPE):
                     self.parameters = self.params
 
                 result = self._process(inputs[self.impcls.INPUT_NAME])
-                self.endTime = datetime.datetime.utcnow()
+                #self.endTime = datetime.datetime.utcnow()
 
                 if result is not None:
                     self.writeResults(self.impcls.OUTPUT_NAME, result)
             else:
                 result = self._process(inputs)
-                # self.log=('REEEES :'+result)
-                self.endTime = datetime.datetime.utcnow()
+                
 
             if result is not None:
                 return result
@@ -582,15 +588,14 @@ class ProvenancePE(GenericPE):
         except Exception:
             self.log(" Compute Error: %s" % traceback.format_exc())
             self.error += " Compute Error: %s" % traceback.format_exc()
-            self.endTime = datetime.datetime.utcnow()
-            self.wirteResults('error', {'error': 'null'})
+            #self.endTime = datetime.datetime.utcnow()
+            self.writeResults('error', {'error': 'null'})
 
     def prepareOutputStream(self, data, trace):
         ''' To be overridden '''
 
         try:
 
-            # self.log("TRACE: "+str(trace))
             streamtransfer = {}
 
             streamtransfer['_d4p'] = data
@@ -602,9 +607,8 @@ class ProvenancePE(GenericPE):
                         'metadata']["streams"][0]["id"]
                     streamtransfer[
                         "TriggeredByProcessIterationID"] = self.iterationId
-                # self.log("WRITEOUT2: "+str(streamtransfer))
                     if not self.stateless:
-                        # self.log(''' Building OUT Derivation ''')
+                        #self.log(''' Building OUT Derivation ''')
                         self.buildDerivation(streamtransfer)
                 except:
                     pass
@@ -620,9 +624,7 @@ class ProvenancePE(GenericPE):
         if self.provon:
             try:
 
-                # self.log("content: "+str(contentmeta))
-                # print "INSTANCE_ID: "+self.instanceId
-                # print "UNIQUEEE: "+
+               
                 
                 # identifies the actual iteration over the instance
                 metadata.update({'iterationId': self.iterationId})
@@ -665,7 +667,7 @@ class ProvenancePE(GenericPE):
             "pid": "%s" %
             (os.getpid(),
              )}
-#        self.log("PACKAGED "+str(output))
+
         return output
 
     """
@@ -686,7 +688,24 @@ class ProvenancePE(GenericPE):
     self.streamItemsFormat
     self.outputstreams
     """
-
+    def addToProv(
+            self,
+            data,
+            location="",
+            format="",
+            metadata={}
+            ):
+        
+        self.endTime = datetime.datetime.utcnow()
+        
+        self.extractProvenance(data,
+            location,
+            format,
+            metadata,
+            output_port="_d4p_state")
+        
+        
+        
     def extractProvenance(
             self,
             data,
@@ -696,10 +715,11 @@ class ProvenancePE(GenericPE):
             control={},
             attributes={},
             error="",
-            output_port="output"):
+            output_port="",
+            **kwargs):
 
         self.error = error
-
+        
         if isinstance(metadata, list):
             metadata.append(attributes)
         else:
@@ -719,10 +739,9 @@ class ProvenancePE(GenericPE):
                 attributes=attributes,
                 error=error,
                 output_port=output_port)
-
+        
         self.flushData(data, usermeta, output_port)
-        # self.flushData(data,{},output_port)
-
+        
     """
     Overrides the GenericPE write
     """
@@ -731,10 +750,12 @@ class ProvenancePE(GenericPE):
 
         #self.__markIteration()
         self.endTime = datetime.datetime.utcnow()
+        
         if 'state_reset' in kwargs:
             self.stateless = bool(kwargs['state_reset'])
         else:
             self.stateless=True
+        
         self.extractProvenance(data, output_port=name, **kwargs)
 
     """
@@ -808,10 +829,9 @@ class ProvenancePE(GenericPE):
 
         streamItem = {}
         streammeta = {}
-        # streammeta={}
+        
         streammeta = self.extractItemMetadata(data)
-        # self.extractItemMetadata(data);
-        # self.log(type(streammeta));
+        
         if not isinstance(streammeta, list):
             streammeta = kwargs['metadata'] if isinstance(
                 kwargs['metadata'], list) else [kwargs['metadata']]
@@ -840,8 +860,6 @@ class ProvenancePE(GenericPE):
         streamItem.update({"format": kwargs['format']})
         streamItem.update({"size": total_size(data)})
         streamlist.append(streamItem)
-        #self.log(total_size(data, verbose=True))
-        #self.log(data)
         return streamlist
 
     def buildDerivation(self, data, port=""):
@@ -851,7 +869,7 @@ class ProvenancePE(GenericPE):
             derivation = {'port': port, 'DerivedFromDatasetID':
                           data['id'], 'TriggeredByProcessIterationID':
                           data['TriggeredByProcessIterationID']}
-            # self.log('Deriv: '+str(derivation))
+            
             self.derivationIds.append(derivation)
 
         except Exception:
@@ -1187,7 +1205,6 @@ class ProvenanceRecorderToService(ProvenanceRecorder):
     def _process(self, inputs):
         prov = inputs[self.INPUT_NAME]
         out = None
-        # print "PROVENANCETOSERIVCE:  "+str(prov)
         if isinstance(prov, list) and "data" in prov[0]:
             prov = prov[0]["data"]
 
@@ -1196,7 +1213,7 @@ class ProvenanceRecorderToService(ProvenanceRecorder):
         else:
             out = prov
 
-        # self.log("TO SERVICE ________________ID: "+str(prov['_id']))
+        
         params = urllib.urlencode({'prov': json.dumps(out)})
         headers = {
             "Content-type": "application/x-www-form-urlencoded",
@@ -1259,7 +1276,6 @@ class ProvenanceRecorderToServiceBulk(ProvenanceRecorder):
 
         prov = inputs[self.INPUT_NAME]
         out = None
-        # print "PROVENANCETOSERIVCE:  "+str(prov)
         if isinstance(prov, list) and "data" in prov[0]:
             prov = prov[0]["data"]
 
