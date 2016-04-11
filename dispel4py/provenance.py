@@ -26,11 +26,13 @@ import socket
 import json
 import httplib
 import urllib
+import pickle
 from urlparse import urlparse
 from dispel4py.new import simple_process
 from subprocess import Popen, PIPE
 import collections
 from copy import deepcopy
+
 
 from itertools import chain
 try:
@@ -422,10 +424,18 @@ class ProvenancePE(GenericPE):
         
         super(ProvenancePE, self)._preprocess()
     
+    'This method must be implemented in the original PE'
+    'to handle prov feedback'
+    #def process_feedback(self,data):
+    #    self.log("NO Feedback procedure implemented")
+        
+            
     
     def process(self, inputs):
         if '_d4py_feedback' in inputs:
-            self.log(inputs['_d4py_feedback'])
+            #self.log(inputs['_d4py_feedback']+str(type(self)))
+            self._process_feedback(inputs['_d4py_feedback'])
+            
             #self.addToProv(inputs['_d4py_feedback'], metadata={'message': inputs['_d4py_feedback']})
             #self.provon = False
             #None
@@ -434,6 +444,7 @@ class ProvenancePE(GenericPE):
             self.stateless = False
             self.iterationIndex += 1
             self.__processwrapper(inputs)
+            
             if not self.stateless:
                 self.log('STATEFUL CAPTURE: ')
                 if self.provon:
@@ -1364,7 +1375,19 @@ class ProvenanceRecorderToServiceBulk(ProvenanceRecorder):
         return None
 
 
+' for dynamic re-implementation testing purposes'
+def new_process(self,data):
+        self.log("I AM NEW FROM RECORDER")
+        self.operands.append(data['input'])
+        if (len(self.operands)==2):
+            val = (self.operands[0]-1)/self.operands[1]
+            self.write('output',val,metadata={'new_val':val})
+            self.log("New Imp from REC !!!! "+str(val))
+            self.operands=[]
 
+
+'test Recoder Class providing new implementation all' 
+'the instances of an attached PE' 
 class ProvenanceRecorderToServiceWFeedback(ProvenanceRecorder):
 
     
@@ -1401,7 +1424,8 @@ class ProvenanceRecorderToServiceWFeedback(ProvenanceRecorder):
         if 'name' in prov:
             #self.log("RECORDER "+self.id+" GOT: "+str(prov['name'])+" from cluster: "+str(prov['prov_cluster']))
             self.log("WRITING FEEDBACK TO: "+str(prov['name'])+" ON PORT: "+self.porttopemap[prov['name']])
-            self.write(self.porttopemap[prov['name']],"message from "+self.id)
+            code_string = pickle.dumps(new_process)
+            self.write(self.porttopemap[prov['name']],code_string)
         
         self.bulk.append(out)
         params = urllib.urlencode({'prov': json.dumps(self.bulk)})
