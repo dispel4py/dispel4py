@@ -102,8 +102,11 @@ def _process(self, data):
         results = self.compute_fn(data, **self.params)
         if isinstance(results, dict) and '_d4p_prov' in results:
 #            meta = data['_d4p_prov']
-             return results['_d4p_data']
-
+            if isinstance(self, (ProvenancePE)):
+                return results
+            else:
+                return results['_d4p_data']
+                
 
 def addToProv(self,*args, **kwargs):
     self.log("Need to Activate Provenance to use addToProv method")
@@ -351,7 +354,7 @@ class ProvenancePE(GenericPE):
         
         global _d4p_plan_sqn
 
-        self._add_input('_d4py_feedback',grouping='all')
+        self._add_input('_d4py_feedback', grouping='all')
         
         self.impcls = None
         
@@ -423,7 +426,9 @@ class ProvenancePE(GenericPE):
     def process(self, inputs):
         if '_d4py_feedback' in inputs:
             self.log(inputs['_d4py_feedback'])
-            return
+            #self.addToProv(inputs['_d4py_feedback'], metadata={'message': inputs['_d4py_feedback']})
+            #self.provon = False
+            #None
         
         else:
             self.stateless = False
@@ -557,14 +562,15 @@ class ProvenancePE(GenericPE):
     def writeResults(self, name, result):
 
         self.stateless = True
+            
         if isinstance(result, dict) and '_d4p_prov' in result:
             meta = result['_d4p_prov']
             result = (result['_d4p_data'])
-
+            
             if 'error' in meta:
                 self.extractProvenance(result, output_port=name, **meta)
             else:
-
+                
                 self.extractProvenance(
                     result, error=self.error, output_port=name, **meta)
 
@@ -589,7 +595,7 @@ class ProvenancePE(GenericPE):
                 
                 result = self._process(inputs[self.impcls.INPUT_NAME])
                 #self.endTime = datetime.datetime.utcnow()
-
+                
                 if result is not None:
                     self.writeResults(self.impcls.OUTPUT_NAME, result)
             else:
@@ -976,7 +982,8 @@ def InitiateNewRun(
         workflowName=None,
         w3c_prov=False,
         runId=None,
-        clustersRecorders={}):
+        clustersRecorders={},
+        feedbackPEs=[]):
 
     if username is None or workflowId is None or workflowName is None:
         raise Exception("Missing values")
@@ -1004,13 +1011,18 @@ def InitiateNewRun(
     simple_process.process(_graph, {'NewWorkflowRun': [{'input': 'None'}]})
 
     injectProv(graph, provImpClass)
+    print("PREPARING PROVENANCE RECORDERS:")
+    print("Provenance Recorders Clusters: "+str(clustersRecorders))
+    print("PEs processing Recorders feedback: "+str(feedbackPEs))
+    
     attachProvenanceRecorderPE(
         graph,
         provRecorderClass,
         runId,
         username,
         w3c_prov,
-        clustersRecorders)
+        clustersRecorders,
+        feedbackPEs)
     provclusters={}
     return runId
 
@@ -1020,7 +1032,8 @@ def attachProvenanceRecorderPE(
         runId=None,
         username=None,
         w3c_prov=False,
-        clustersRecorders={}):
+        clustersRecorders={},
+        feedbackPEs=[]):
     partitions = []
     provtag=None
     try:
@@ -1060,7 +1073,7 @@ def attachProvenanceRecorderPE(
                     
             
             if provtag!=None:
-                #print(clustersRecorders)
+                
                 ' checks if specific recorders have been specified'
                 if provtag in clustersRecorders:
                         provrecorder = clustersRecorders[provtag](toW3C=w3c_prov)
@@ -1082,18 +1095,19 @@ def attachProvenanceRecorderPE(
                 OUTPUT_METADATA,
                 provrecorder,
                 provport)
-            y=PassThroughPE()
-            graph.connect(
-                provrecorder,
-                provport,
-                y,
-                'input')
-            graph.connect(
-                y,
-               'output',
-                x,
-                '_d4py_feedback')
-            
+            if x.name in feedbackPEs:
+                y=PassThroughPE()
+                graph.connect(
+                        provrecorder,
+                        provport,
+                        y,
+                        'input')
+                graph.connect(
+                        y,
+                        'output',
+                        x,
+                        '_d4py_feedback')
+        
             
             
             #print(type(x))
@@ -1192,6 +1206,7 @@ class PassThroughPE(IterativePE):
 
 class ProvenanceRecorder(GenericPE):
     INPUT_NAME = 'metadata'
+    REPOS_URL = ''
 
     def __init__(self, name='ProvenanceRecorder', toW3C=False):
         GenericPE.__init__(self)
@@ -1234,7 +1249,7 @@ class ProvenanceRecorderToFile(ProvenanceRecorder):
 
 class ProvenanceRecorderToService(ProvenanceRecorder):
 
-    REPOS_URL = ''
+    
 
     def __init__(self, name='ProvenanceRecorderToService', toW3C=False):
         ProvenanceRecorder.__init__(self)
@@ -1244,7 +1259,7 @@ class ProvenanceRecorderToService(ProvenanceRecorder):
         #"name": ProvenanceRecorder.INPUT_NAME}
 
     def _preprocess(self):
-        self.provurl = urlparse(ProvenanceRecorderToService.REPOS_URL)
+        self.provurl = urlparse(ProvenanceRecorder.REPOS_URL)
         self.connection = httplib.HTTPConnection(
             self.provurl.netloc)
 
@@ -1282,7 +1297,7 @@ class ProvenanceRecorderToService(ProvenanceRecorder):
 
 class ProvenanceRecorderToServiceBulk(ProvenanceRecorder):
 
-    REPOS_URL = ''
+    
 
     def __init__(self, name='ProvenanceRecorderToServiceBulk', toW3C=False):
         ProvenanceRecorder.__init__(self)
@@ -1295,7 +1310,7 @@ class ProvenanceRecorderToServiceBulk(ProvenanceRecorder):
         self.timestamp = datetime.datetime.utcnow()
 
     def _preprocess(self):
-        self.provurl = urlparse(ProvenanceRecorderToServiceBulk.REPOS_URL)
+        self.provurl = urlparse(ProvenanceRecorder.REPOS_URL)
         
         self.connection = httplib.HTTPConnection(
             self.provurl.netloc)
@@ -1352,7 +1367,7 @@ class ProvenanceRecorderToServiceBulk(ProvenanceRecorder):
 
 class ProvenanceRecorderToServiceWFeedback(ProvenanceRecorder):
 
-    REPOS_URL = ''
+    
 
     def __init__(self, toW3C=False):
         ProvenanceRecorder.__init__(self)
@@ -1361,27 +1376,14 @@ class ProvenanceRecorderToServiceWFeedback(ProvenanceRecorder):
         self.timestamp = datetime.datetime.utcnow()
 
     def _preprocess(self):
-        self.provurl = urlparse(ProvenanceRecorderToServiceWFeedback.REPOS_URL)
+        self.provurl = urlparse(ProvenanceRecorder.REPOS_URL)
         
         self.connection = httplib.HTTPConnection(
             self.provurl.netloc)
 
     def postprocess(self):
-        params = urllib.urlencode({'prov': json.dumps(self.bulk)})
-        headers = {
-            "Content-type": "application/x-www-form-urlencoded",
-            "Accept": "application/json"}
-        self.connection.request(
-            "POST",
-            self.provurl.path,
-            params,
-            headers)
-        response = self.connection.getresponse()
-        self.log("Postprocress: " +
-                 str((response.status, response.reason, response,
-                      response.read())))
-        #self.connection.close()
-        self.bulk = []
+        self.connection.close()
+        #self.bulk = []
 
     def _process(self, inputs):
         prov=None 
@@ -1395,10 +1397,10 @@ class ProvenanceRecorderToServiceWFeedback(ProvenanceRecorder):
             out = toW3Cprov(prov)
         else:
             out = prov
-        if 'name' in prov:
-            self.log("RECORDER "+self.id+" GOT: "+str(prov['name'])+" from cluster: "+str(prov['prov_cluster']))
-            #self.log("WRITING FEEDBACK TO "+self.porttopemap[prov['name']])
             
+        if 'name' in prov:
+            #self.log("RECORDER "+self.id+" GOT: "+str(prov['name'])+" from cluster: "+str(prov['prov_cluster']))
+            self.log("WRITING FEEDBACK TO: "+str(prov['name'])+" ON PORT: "+self.porttopemap[prov['name']])
             self.write(self.porttopemap[prov['name']],"message from "+self.id)
         
         self.bulk.append(out)
