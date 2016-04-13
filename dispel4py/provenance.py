@@ -433,13 +433,11 @@ class ProvenancePE(GenericPE):
     
     def process(self, inputs):
         if '_d4py_feedback' in inputs:
-            #self.log(inputs['_d4py_feedback']+str(type(self)))
+            
+            'state could be used here to track the occurring changes'
             self._process_feedback(inputs['_d4py_feedback'])
             
-            #self.addToProv(inputs['_d4py_feedback'], metadata={'message': inputs['_d4py_feedback']})
-            #self.provon = False
-            #None
-        
+            
         else:
             self.stateless = False
             self.iterationIndex += 1
@@ -1461,9 +1459,10 @@ class ProvenanceRecorderToFileBulk(ProvenanceRecorder):
         self.bulk = []
 
     def process(self, inputs):
-
-        prov = inputs[self.INPUT_NAME]
+        
         out = None
+        for x in inputs:
+            prov = inputs[x]
 
         if isinstance(prov, list) and "data" in prov[0]:
 
