@@ -96,8 +96,8 @@ def total_size(o, handlers={}, verbose=False):
 def write(self, name, data):
     
     if isinstance(data, dict) and '_d4p_prov' in data:
-#            meta = data['_d4p_prov']
-        data = (data['_d4p_data'])
+       data = (data['_d4p_data'])
+
     self._write(name,data)
     
 def _process(self, data):
@@ -108,7 +108,8 @@ def _process(self, data):
                 return results
             else:
                 return results['_d4p_data']
-                
+        else:
+            return results
 
 def addToProv(self,*args, **kwargs):
     self.log("Need to Activate Provenance to use addToProv method")
@@ -571,7 +572,7 @@ class ProvenancePE(GenericPE):
     def writeResults(self, name, result):
 
         self.stateless = True
-            
+          
         if isinstance(result, dict) and '_d4p_prov' in result:
             meta = result['_d4p_prov']
             result = (result['_d4p_data'])
@@ -603,8 +604,6 @@ class ProvenancePE(GenericPE):
                     self.parameters = self.params
                 
                 result = self._process(inputs[self.impcls.INPUT_NAME])
-                #self.endTime = datetime.datetime.utcnow()
-                
                 if result is not None:
                     self.writeResults(self.impcls.OUTPUT_NAME, result)
             else:
@@ -772,7 +771,19 @@ class ProvenancePE(GenericPE):
         self.flushData(data, usermeta, output_port)
         
     """
-    Overrides the GenericPE write
+    Overrides the GenericPE write inclduing options such as:
+    metadata: is the dictionary of metadata describing the data.
+    format: typically contains the mime-type of the data.
+    errors: users may identify erroneous situations and classify and describe 
+            them using this parameter.
+    control: are the control instructions like con:skip and con:immediateAccess 
+             respectively selectively producing traces for the data stream 
+             passing through the component and trigger- ing data transfer 
+             operations for the specific intermediate ele- ment, towards 
+             an external target resource.
+    state-reset: triggers the reset of the dependencies for the next iteration.
+                 eg. state-reset=False will produce a stateful iteration. 
+                 Default is True
     """
 
     def write(self, name, data, **kwargs):
@@ -992,7 +1003,8 @@ def InitiateNewRun(
         w3c_prov=False,
         runId=None,
         clustersRecorders={},
-        feedbackPEs=[]):
+        feedbackPEs=[],
+        tags=[]):
 
     if username is None or workflowId is None or workflowName is None:
         raise Exception("Missing values")
@@ -1008,7 +1020,8 @@ def InitiateNewRun(
                          "system_id": system_id,
                          "workflowName": workflowName,
                          "runId": runId,
-                         "mapping": sys.argv[1]
+                         "mapping": sys.argv[1],
+                         "tags":tags
                          }
     _graph = WorkflowGraph()
     provrec0 = provRecorderClass(toW3C=w3c_prov)
@@ -1189,6 +1202,7 @@ class NewWorkflowRun(GenericPE):
             bundle["workflowName"] = workflowName
             bundle["mapping"] = self.parameters['mapping']
             bundle["type"] = "workflow_run"
+            bundle["tags"] = self.parameters['tags']
 
         return bundle
 
@@ -1240,7 +1254,8 @@ class ProvenanceRecorderToFile(ProvenanceRecorder):
 
     def process(self, inputs):
 
-        prov = inputs[self.INPUT_NAME]
+        for x in inputs:
+            prov = inputs[x]
         out = None
 
         if isinstance(prov, list) and "data" in prov[0]:
@@ -1273,6 +1288,9 @@ class ProvenanceRecorderToService(ProvenanceRecorder):
             self.provurl.netloc)
 
     def _process(self, inputs):
+        self.provurl = urlparse(ProvenanceRecorder.REPOS_URL)
+        self.connection = httplib.HTTPConnection(
+            self.provurl.netloc)
         prov = inputs[self.INPUT_NAME]
         out = None
         if isinstance(prov, list) and "data" in prov[0]:
