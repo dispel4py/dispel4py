@@ -334,10 +334,14 @@ def toW3Cprov(prov, format='w3c-prov-json'):
     else:
         return json.loads(g.serialize(indent=4))
 
-
-def getUniqueId():
-    return socket.gethostname() + "-" + \
-        str(os.getpid()) + "-" + str(uuid.uuid1())
+def getUniqueId(data=None):
+    if data is None:
+        return socket.gethostname() + "-" + \
+            str(os.getpid()) + "-" + str(uuid.uuid1())
+    else:
+        print("ID: "+str(id(data))+" DATA: "+str(data))
+        return socket.gethostname() + "-" + \
+            str(os.getpid()) + "-" + str(self.instanceId)+ "-" +str(id(data))
 
 
 def num(s):
@@ -351,6 +355,17 @@ _d4p_plan_sqn = 0
 
 
 class ProvenancePE(GenericPE):
+    
+    def getUniqueId(self,data=None):
+    
+        if data is None:
+            return socket.gethostname() + "-" + \
+                str(os.getpid()) + "-" + str(uuid.uuid1())
+        else:
+            
+            retid= str(os.getpid())+ "-object-" +str(uuid.uuid1())
+            print("ID: "+str(retid)+" DATA: "+str(data))
+            return retid
 
     OUTPUT_METADATA = 'metadata'
 
@@ -388,6 +403,7 @@ class ProvenancePE(GenericPE):
         # self.appParameters = None
         self.provon = True
         self.stateless = False
+        self.ignore_input = False
         self.derivationIds = list()
         self.iterationIndex = 0
         self.behalfOf = self.name + '_' + str(_d4p_plan_sqn)
@@ -419,7 +435,7 @@ class ProvenancePE(GenericPE):
 
     def _preprocess(self):
         self.instanceId = self.name + "-Instance-" + \
-            "-" + getUniqueId()
+            "-" + self.getUniqueId()
 
         super(ProvenancePE, self)._preprocess()
 
@@ -590,7 +606,7 @@ class ProvenancePE(GenericPE):
 
     def __markIteration(self):
         self.startTime = datetime.datetime.utcnow()
-        self.iterationId = self.name + '-' + getUniqueId()
+        self.iterationId = self.name + '-' + self.getUniqueId()
 
     def __computewrapper(self, inputs):
 
@@ -636,7 +652,7 @@ class ProvenancePE(GenericPE):
                     streamtransfer[
                         "TriggeredByProcessIterationID"] = self.iterationId
                     if not self.stateless:
-                        # self.log(''' Building OUT Derivation ''')
+                        self.log(''' Building OUT Derivation '''+str(data))
                         self.buildDerivation(streamtransfer)
                 except:
                     pass
@@ -657,20 +673,20 @@ class ProvenancePE(GenericPE):
                 # identifies the actual writing process'
                 metadata.update({'actedOnBehalfOf': self.behalfOf})
                 metadata.update(
-                    {'_id': self.name + '_write_' + str(getUniqueId())})
+                    {'_id': self.name + '_write_' + str(self.getUniqueId())})
                 metadata.update({'iterationIndex': self.iterationIndex})
                 metadata.update({'instanceId': self.instanceId})
                 metadata.update({'annotations': {}})
 
                 if self.feedbackIteration:
                     metadata.update(
-                        {'_id': self.name + '_feedback_' + str(getUniqueId())})
+                        {'_id': self.name + '_feedback_' + str(self.getUniqueId())})
                 elif not self.stateless:
                     metadata.update(
-                        {'_id': self.name + '_stateful_' + str(getUniqueId())})
+                        {'_id': self.name + '_stateful_' + str(self.getUniqueId())})
                 else:
                     metadata.update(
-                        {'_id': self.name + '_write_' + str(getUniqueId())})
+                        {'_id': self.name + '_write_' + str(self.getUniqueId())})
 
                 metadata.update({'stateful': not self.stateless})
                 metadata.update({'feedbackIteration': self.feedbackIteration})
@@ -679,7 +695,16 @@ class ProvenancePE(GenericPE):
                     {'parameters': self.dicToKeyVal(self.parameters)})
                 metadata.update({'errors': self.error})
                 metadata.update({'pid': '%s' % (os.getpid())})
-                metadata.update({'derivationIds': self.derivationIds})
+                
+                if self.ignore_input:
+                    self.log("IGNORE "+str(contentmeta))
+                    metadata.update({'derivationIds': []})
+                    self.ignore_input = False
+                else:
+                    self.log("DONT IGNORE "+str(self.derivationIds))
+                    metadata.update({'derivationIds': self.derivationIds})
+                    
+                    
                 metadata.update({'name': self.name})
                 metadata.update({'runId': self.runId})
                 metadata.update({'username': self.username})
@@ -731,16 +756,21 @@ class ProvenancePE(GenericPE):
             data,
             location="",
             format="",
-            metadata={}
+            metadata={},
+            ignore_input=True,
+            **kwargs
     ):
 
         self.endTime = datetime.datetime.utcnow()
-
+        self.stateless = False
+        self.ignore_input = ignore_input
         self.extractProvenance(data,
                                location,
                                format,
                                metadata,
-                               output_port="_d4p_state")
+                               output_port="_d4p_state",
+                               **kwargs)
+        self.ignore_input = False
 
     def extractProvenance(
             self,
@@ -806,71 +836,7 @@ class ProvenancePE(GenericPE):
 
         self.extractProvenance(data, output_port=name, **kwargs)
 
-    """
-    Reads and formats the stream's metadata
-    """
-
-    def __getMetadataWrapper(self, data):
-        try:
-
-            if self.provon:
-
-                return {"streams": self.getMetadata(data)}
-
-        except Exception:
-                # streamlist=list()
-                # streamItem={}
-                # streammeta=list()
-                # streamItem.update({"content": streammeta})
-                # streamItem.update({"id":getUniqueId()});
-                # streamlist.append(streamItem)
-                # self.metadata.update({"streams":streamlist});
-            traceback.print_exc(file=sys.stderr)
-            self.error += self.name + " Metadata extraction Error: %s" % \
-                traceback.format_exc()
-
-    def getMetadata(self, data):
-        streamlist = list()
-
-        streamItem = {}
-        streammeta = {}
-        streammeta = {}
-        self.extractItemMetadata(data)
-
-        if not isinstance(streammeta, list):
-            streammeta = self.streamItemsMeta[str(id(data))] if \
-                isinstance(self.streamItemsMeta[str(id(data))], list) \
-                else [self.streamItemsMeta[str(id(data))]]
-        elif isinstance(streammeta, list):
-            try:
-                if isinstance(self.streamItemsMeta[str(id(data))], list):
-                    streammeta = streammeta + \
-                        self.streamItemsMeta[str(id(data))]
-                if isinstance(self.streamItemsMeta[str(id(data))], dict):
-                    streammeta.append(self.streamItemsMeta[str(id(data))])
-            except:
-                traceback.print_exc(file=sys.stderr)
-                None
-
-        streamItem.update({"content": streammeta})
-        streamItem.update({"id": getUniqueId()})
-        streamItem.update({"format": ""})
-        streamItem.update({"location": ""})
-        streamItem.update({"annotations": []})
-
-        if (self.streamItemsPorts != {}):
-            streamItem.update({"port": self.streamItemsPorts[str(id(data))]})
-        if (self.streamItemsControl != {}):
-            streamItem.update(self.streamItemsControl[str(id(data))])
-        if (self.streamItemsLocations != {}):
-            streamItem.update(
-                {"location": self.streamItemsLocations[str(id(data))]})
-        if (self.streamItemsFormat != {}):
-            streamItem.update(
-                {"format": self.streamItemsFormat[str(id(data))]})
-        streamlist.append(streamItem)
-
-        return streamlist
+    
 
     def buildUserMetadata(self, data, **kwargs):
         streamlist = list()
@@ -894,7 +860,7 @@ class ProvenancePE(GenericPE):
                 traceback.print_exc(file=sys.stderr)
                 None
         streamItem.update({"content": streammeta})
-        streamItem.update({"id": getUniqueId()})
+        streamItem.update({"id": self.getUniqueId(data)})
         streamItem.update({"format": ""})
         streamItem.update({"location": ""})
         streamItem.update({"annotations": []})
@@ -917,7 +883,8 @@ class ProvenancePE(GenericPE):
             derivation = {'port': port, 'DerivedFromDatasetID':
                           data['id'], 'TriggeredByProcessIterationID':
                           data['TriggeredByProcessIterationID']}
-
+            self.log(derivation)
+            self.log(data)
             self.derivationIds.append(derivation)
 
         except Exception:
