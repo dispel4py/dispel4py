@@ -363,7 +363,8 @@ class ProvenancePE(GenericPE):
                 str(os.getpid()) + "-" + str(uuid.uuid1())
         else:
             
-            retid= str(os.getpid())+ "-object-" +str(uuid.uuid1())
+            #retid= getFromState(data)
+            retid=str(self.instanceId)+ "-object-" +str(id(data))
             print("ID: "+str(retid)+" DATA: "+str(data))
             return retid
 
@@ -403,7 +404,7 @@ class ProvenancePE(GenericPE):
         # self.appParameters = None
         self.provon = True
         self.stateless = False
-        self.ignore_input = False
+        self.ignore_dep = False
         self.derivationIds = list()
         self.iterationIndex = 0
         self.behalfOf = self.name + '_' + str(_d4p_plan_sqn)
@@ -510,7 +511,7 @@ class ProvenancePE(GenericPE):
                             ProvenancePE,
                             self).write(
                             OUTPUT_METADATA,
-                            trace['metadata'])
+                            deepcopy(trace['metadata']))
             except:
                 self.log(traceback.format_exc())
                 'if cant write doesnt matter move on'
@@ -636,14 +637,9 @@ class ProvenancePE(GenericPE):
             self.writeResults('error', {'error': 'null'})
 
     def prepareOutputStream(self, data, trace):
-        ''' To be overridden '''
-
         try:
-
             streamtransfer = {}
-
             streamtransfer['_d4p'] = data
-
             if self.provon:
 
                 try:
@@ -696,10 +692,10 @@ class ProvenancePE(GenericPE):
                 metadata.update({'errors': self.error})
                 metadata.update({'pid': '%s' % (os.getpid())})
                 
-                if self.ignore_input:
+                if self.ignore_dep:
                     self.log("IGNORE "+str(contentmeta))
                     metadata.update({'derivationIds': []})
-                    self.ignore_input = False
+                    self.ignore_dep = False
                 else:
                     self.log("DONT IGNORE "+str(self.derivationIds))
                     metadata.update({'derivationIds': self.derivationIds})
@@ -750,27 +746,29 @@ class ProvenancePE(GenericPE):
     self.streamItemsFormat
     self.outputstreams
     """
-
-    def addToProv(
+       
+        
+    def addToProvState(
             self,
             data,
             location="",
             format="",
             metadata={},
-            ignore_input=True,
+            ignore_dep=True,
+            stateless=True,
             **kwargs
     ):
 
         self.endTime = datetime.datetime.utcnow()
-        self.stateless = False
-        self.ignore_input = ignore_input
+        self.stateless = stateless
+        self.ignore_dep = ignore_dep
         self.extractProvenance(data,
                                location,
                                format,
                                metadata,
                                output_port="_d4p_state",
                                **kwargs)
-        self.ignore_input = False
+        self.ignore_dep = False
 
     def extractProvenance(
             self,
@@ -807,6 +805,7 @@ class ProvenancePE(GenericPE):
                 output_port=output_port)
 
         self.flushData(data, usermeta, output_port)
+        return usermeta
 
     """
     Overrides the GenericPE write inclduing options such as:
@@ -833,8 +832,17 @@ class ProvenancePE(GenericPE):
             self.stateless = bool(kwargs['state_reset'])
         else:
             self.stateless = True
-
+        
+        if 'dep' in kwargs and kwargs['dep']!=None:
+            for d in kwargs['dep']:
+                self.buildDerivation({'id':self.getUniqueId(d),'TriggeredByProcessIterationID':self.iterationId}, "")
+            
         self.extractProvenance(data, output_port=name, **kwargs)
+        
+        if 'dep' in kwargs and kwargs['dep']!=None:
+            for d in kwargs['dep']:
+                self.removeDerivation(d)
+
 
     
 
@@ -875,7 +883,15 @@ class ProvenancePE(GenericPE):
         streamItem.update({"size": total_size(data)})
         streamlist.append(streamItem)
         return streamlist
-
+    
+    def removeDerivation(self,data):
+        id = self.getUniqueId(data)
+        for j in self.derivationIds:
+            
+            
+            if j['DerivedFromDatasetID']==id:
+                del self.derivationIds[self.derivationIds.index(j)]
+            
     def buildDerivation(self, data, port=""):
 
         try:
@@ -1019,7 +1035,7 @@ def InitiateNewRun(
         w3c_prov,
         clustersRecorders,
         feedbackPEs)
-    provclusters = {}
+     
     return runId
 
 
@@ -1031,6 +1047,9 @@ def attachProvenanceRecorderPE(
         w3c_prov=False,
         clustersRecorders={},
         feedbackPEs=[]):
+    
+    
+    provclusters={}
     partitions = []
     provtag = None
     try:
@@ -1074,11 +1093,14 @@ def attachProvenanceRecorderPE(
                     provrecorder = clustersRecorders[provtag](toW3C=w3c_prov)
 
                 print("PROV CLUSTER: Attaching " + x.name +
-                      " to provenance cluster: " + provtag)
+                      " to provenance cluster: " + provtag +
+                      " with recorder:"+str(provrecorder))
+                
                 if provtag not in provclusters:
                     provclusters[provtag] = provrecorder
                 else:
                     provrecorder = provclusters[provtag]
+                     
 
             x.controlParameters["runId"] = runId
             x.controlParameters["username"] = username
@@ -1254,7 +1276,11 @@ class ProvenanceRecorderToService(ProvenanceRecorder):
             self.provurl.netloc)
 
     def _process(self, inputs):
-        prov = inputs[self.INPUT_NAME]
+        
+        #ports are assigned automatically as numbers, we just need to read from any of these
+        for x in inputs:
+            prov = inputs[x]
+            
         out = None
         if isinstance(prov, list) and "data" in prov[0]:
             prov = prov[0]["data"]
@@ -1365,59 +1391,6 @@ def new_process(self, data):
 'the instances of an attached PE'
 
 
-class ProvenanceRecorderToServiceWFeedback(ProvenanceRecorder):
-
-    def __init__(self, toW3C=False):
-        ProvenanceRecorder.__init__(self)
-        self.convertToW3C = toW3C
-        self.bulk = []
-        self.timestamp = datetime.datetime.utcnow()
-
-    def _preprocess(self):
-        self.provurl = urlparse(ProvenanceRecorder.REPOS_URL)
-
-        self.connection = httplib.HTTPConnection(
-            self.provurl.netloc)
-
-    def postprocess(self):
-        self.connection.close()
-        # self.bulk = []
-
-    def _process(self, inputs):
-        prov = None
-        for x in inputs:
-            prov = inputs[x]
-        out = None
-        if isinstance(prov, list) and "data" in prov[0]:
-            prov = prov[0]["data"]
-
-        if self.convertToW3C:
-            out = toW3Cprov(prov)
-        else:
-            out = prov
-
-        if 'name' in prov:
-            code_string = pickle.dumps(new_process)
-            if 'val' in prov['streams'][0]['content'][0] \
-                    and prov['streams'][0]['content'][0]['val'] < 8:
-
-                self.write(self.porttopemap[prov['name']], code_string)
-
-        self.bulk.append(out)
-        params = urllib.urlencode({'prov': json.dumps(self.bulk)})
-        headers = {
-            "Content-type": "application/x-www-form-urlencoded",
-            "Accept": "application/json"}
-        self.connection.request(
-            "POST", self.provurl.path, params, headers)
-        response = self.connection.getresponse()
-        self.log("progress: " + str((response.status, response.reason,
-                                     response, response.read())))
-        # self.connection.close()
-        self.bulk = []
-
-        return None
-
 
 class ProvenanceRecorderToFileBulk(ProvenanceRecorder):
 
@@ -1455,3 +1428,52 @@ class ProvenanceRecorderToFileBulk(ProvenanceRecorder):
                 getUniqueId(),
                 "wr")
             json.dump(self.bulk, filep)
+
+
+class MyProvenanceRecorderWithFeedback(ProvenanceRecorder):
+
+    def __init__(self, toW3C=False):
+        ProvenanceRecorder.__init__(self)
+        self.convertToW3C = toW3C
+        self.bulk = []
+        self.timestamp = datetime.datetime.utcnow()
+
+    def _preprocess(self):
+        self.provurl = urlparse(ProvenanceRecorder.REPOS_URL)
+
+        self.connection = httplib.HTTPConnection(
+            self.provurl.netloc)
+
+    def postprocess(self):
+        self.connection.close()
+        
+    def _process(self, inputs):
+        prov = None
+        for x in inputs:
+            prov = inputs[x]
+        out = None
+        if isinstance(prov, list) and "data" in prov[0]:
+            prov = prov[0]["data"]
+
+        if self.convertToW3C:
+            out = toW3Cprov(prov)
+        else:
+            out = prov
+
+            
+            
+        self.write(self.porttopemap[prov['name']], "FEEDBACK MESSAGGE FROM RECORDER")
+
+        self.bulk.append(out)
+        params = urllib.urlencode({'prov': json.dumps(self.bulk)})
+        headers = {
+            "Content-type": "application/x-www-form-urlencoded",
+            "Accept": "application/json"}
+        self.connection.request(
+            "POST", self.provurl.path, params, headers)
+        response = self.connection.getresponse()
+        self.log("progress: " + str((response.status, response.reason,
+                                         response, response.read())))
+        
+
+        return None
