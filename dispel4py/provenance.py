@@ -364,7 +364,7 @@ class ProvenancePE(GenericPE):
         else:
             
             #retid= getFromState(data)
-            retid=str(self.instanceId)+ "-object-" +str(id(data))
+            retid='data-'+str(self.instanceId)+ "-object-" +str(id(data))
             print("ID: "+str(retid)+" DATA: "+str(data))
             return retid
 
