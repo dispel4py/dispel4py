@@ -87,6 +87,10 @@ from itertools import chain
 from collections import deque
 
 
+def dict_handler(d):
+    return chain.from_iterable(d.items())
+
+
 def total_size(o, handlers={}, verbose=False):
     """
     From: http://code.activestate.com/recipes/577504/
@@ -100,7 +104,6 @@ def total_size(o, handlers={}, verbose=False):
                     OtherContainerClass: OtherContainerClass.get_elements}
 
     """
-    dict_handler = lambda d: chain.from_iterable(d.items())
     all_handlers = {
         tuple: iter,
         list: iter,
@@ -148,3 +151,4 @@ def make_hash(o):
         new_o[k] = make_hash(v)
 
     return hash(tuple(frozenset(sorted(new_o.items()))))
+
