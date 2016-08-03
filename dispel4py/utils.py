@@ -20,7 +20,7 @@ from dispel4py.workflow_graph import WorkflowGraph
 
 from importlib import import_module
 from imp import load_source
-import traceback,sys
+import traceback
 
 
 def findWorkflowGraph(mod, attr):
@@ -61,7 +61,6 @@ def load_graph(graph_source, attr=None):
     except ImportError:
         # it's not a module
         error_message += 'No module "%s"\n' % graph_source
-        traceback.print_exc(file=sys.stderr)
         pass
     except Exception:
         error_message += \
@@ -74,7 +73,6 @@ def load_graph(graph_source, attr=None):
     except IOError:
         # it's not a file
         error_message += 'No file "%s"\n' % graph_source
-        traceback.print_exc(file=sys.stderr)
     except Exception:
         error_message += \
             'Error loading graph from file:\n%s' % traceback.format_exc()
@@ -87,10 +85,6 @@ def load_graph(graph_source, attr=None):
 from sys import getsizeof
 from itertools import chain
 from collections import deque
-
-
-def dict_handler(d):
-    return chain.from_iterable(d.items())
 
 
 def total_size(o, handlers={}, verbose=False):
@@ -106,6 +100,7 @@ def total_size(o, handlers={}, verbose=False):
                     OtherContainerClass: OtherContainerClass.get_elements}
 
     """
+    dict_handler = lambda d: chain.from_iterable(d.items())
     all_handlers = {
         tuple: iter,
         list: iter,
