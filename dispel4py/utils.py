@@ -151,4 +151,3 @@ def make_hash(o):
         new_o[k] = make_hash(v)
 
     return hash(tuple(frozenset(sorted(new_o.items()))))
-
