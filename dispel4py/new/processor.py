@@ -408,8 +408,9 @@ def create_partitioned(workflow_all):
     # sort the external connections so that nodes are added in the same order
     # if doing this in multiple processes in parallel this is important
     for comm, source_partition, source_id, source_output, dest_partition, \
-        dest_id, dest_input in sorted(external_connections, 
-                                      key=lambda connections: len(connections)):
+        dest_id, dest_input in \
+            sorted(external_connections,
+                   key=lambda connections: len(connections)):
         partition_pes[source_partition]._add_output((source_id, source_output))
         partition_pes[dest_partition]._add_input((dest_id, dest_input),
                                                  grouping=comm.name)
