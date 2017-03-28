@@ -1,7 +1,6 @@
 dispel4py
 =========
 
-<img align="right" alt="dispel4py logo" width="350" src="http://dispel4py.org/images/DISPEL4PY_web.jpg">
 dispel4py is a free and open-source Python library for describing abstract stream-based workflows for distributed data-intensive applications. It enables users to focus on their scientific methods, avoiding distracting details and retaining flexibility over the computing infrastructure they use.  It delivers mappings to diverse computing infrastructures, including cloud technologies, HPC architectures and  specialised data-intensive machines, to move seamlessly into production with large-scale data loads. The dispel4py system maps workflows dynamically onto multiple enactment systems, such as MPI, STORM and Multiprocessing, without users having to modify their workflows.
 
 Dependencies 
@@ -53,14 +52,8 @@ Documentation
 
 The wiki documentation explains how to install and test dispel4py: https://github.com/dispel4py/dispel4py/wiki
 
-dispel4py user documentation: http://dispel4py.org/documentation
-
-The dispel4py website is http://dispel4py.org
-
-
 [![Build Status](https://travis-ci.org/dispel4py/dispel4py.svg)](https://travis-ci.org/dispel4py/dispel4py)
 [![PyPI version](https://badge.fury.io/py/dispel4py.svg)](http://badge.fury.io/py/dispel4py)
 [![Coverage Status](https://coveralls.io/repos/dispel4py/dispel4py/badge.svg?branch=master)](https://coveralls.io/r/dispel4py/dispel4py?branch=master)
 
-![Logo](http://dispel4py.org/images/DISPEL4PY_web.jpg)
 
