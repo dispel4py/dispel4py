@@ -4,8 +4,7 @@
 Tests all Python files of the project with flake8. This ensure PEP8 conformance
 and some other sanity checks as well.
 """
-import flake8
-import flake8.api.legacy
+from flake8.api import legacy as flake8
 import flake8.main
 import inspect
 import os
@@ -42,7 +41,7 @@ def test_flake8():
             files.append(full_path)
 
     # Get the style checker with the default style.
-    flake8_style = flake8.api.legacy.get_style_guide(
+    flake8_style = flake8.get_style_guide(
         parse_argv=False, config_file=flake8.main.DEFAULT_CONFIG)
     flake8_style.options.ignore = tuple(set(
             flake8_style.options.ignore).union(set(FLAKE8_IGNORE_CODES)))
