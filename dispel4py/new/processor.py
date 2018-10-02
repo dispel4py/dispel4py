@@ -360,7 +360,7 @@ def create_partitioned(workflow_all):
         processes, inputmappings, outputmappings = \
             assign_and_connect(workflow, len(graph.nodes()))
         proc_to_pe = {}
-        for node in graph.nodes():
+        for node in list(graph.nodes()):
             pe = node.getContainedObject()
             proc_to_pe[processes[pe.id][0]] = pe
         for node in graph.nodes():
