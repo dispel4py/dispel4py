@@ -176,7 +176,7 @@ class WorkflowGraph(object):
         while hasComposites:
             hasComposites = False
             toRemove = set()
-            for node in self.graph.nodes():
+            for node in list(self.graph.nodes()):
                 if node.nodeType == WorkflowNode.WORKFLOW_NODE_CP:
                     hasComposites = True
                     toRemove.add(node)
